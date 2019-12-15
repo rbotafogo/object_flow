@@ -19,17 +19,17 @@ import logging
 
 from object_flow.util.util import Util
 from object_flow.ipc.doer import Doer
-from object_flow.decoder.video_manager import VideoManager
+from object_flow.flow.flow_manager import FlowManager
 from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
 
 #==========================================================================================
-# VideoSupervisor supervises as many VideoManagers as there are video cameras.
-# VideoSupervisor will create VideoManagers for every camera and supervise all external
+# VideoSupervisor supervises as many FlowManagers as there are video cameras.
+# VideoSupervisor will create FlowManagers for every camera and supervise all external
 # requests.  For instance, when the user whats to see a video, it should ask the
 # VideoSupervisor
 #==========================================================================================
 
-class VideoSupervisor(Doer):
+class MultiFlow(Doer):
 
     # ----------------------------------------------------------------------------------
     #
@@ -46,7 +46,7 @@ class VideoSupervisor(Doer):
     def add_camera(self, video_name, path):
         # create the camera manager and initialize it with video_name and
         # the Yolo neural net
-        manager = self.hire(video_name, VideoManager, video_name, path, self._yolo)
+        manager = self.hire(video_name, FlowManager, video_name, path, self._yolo)
         
         # post a message to the manager just created for it to start processing
         self.post(manager, 'run')

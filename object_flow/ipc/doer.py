@@ -34,6 +34,19 @@ from object_flow.ipc.hr import HR
 class Doer(HR, Actor):
 
     # ----------------------------------------------------------------------------------
+    # init_done is a noop method that is called after an actor ends its 'initialize'
+    # method.  If an actor has an 'initialize' method this methos is called
+    # synchronously after the 'hire' method is called.
+    # ----------------------------------------------------------------------------------
+
+    def init_done(self, response):
+        # logging.info("init_done called with response %s", response)
+        pass
+
+    def wait_done(self, response):
+        pass
+    
+    # ----------------------------------------------------------------------------------
     # Hires a new 'doer' for the 'group'
     # ----------------------------------------------------------------------------------
     
@@ -46,23 +59,11 @@ class Doer(HR, Actor):
         self._doers[group][name] = doer
 
         if 'initialize' in dir(klass):
-            logging.info("==========+++++++++++++++++++++")
-            logging.info("I have an initialize method")
             method = getattr(klass, 'initialize')
             self.phone(doer, 'initialize', *args, **kwargs, callback = 'init_done') 
         
         return doer
         
-    # ----------------------------------------------------------------------------------
-    # init_done is a noop method that is called after an actor ends its 'initialize'
-    # method.  If an actor has an 'initialize' method this methos is called
-    # synchronously after the 'hire' method is called.
-    # ----------------------------------------------------------------------------------
-
-    def init_done(self, response):
-        # logging.info("init_done called with response %s", response)
-        pass
-    
     # ----------------------------------------------------------------------------------
     # Sends a message to the given address.  Creates a Memo from the *args and
     # **kwargs with memo_type = 'tell'
