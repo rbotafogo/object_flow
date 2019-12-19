@@ -30,13 +30,34 @@ from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
 #==========================================================================================
 
 class MultiFlow(Doer):
-
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
     
     def initialize(self):
-        self._yolo = self.hire('YoloNet', YoloTf2)
+        logging.basicConfig(filename='myapp.log', level=logging.INFO)
+        
+        self._yolo = self.hire('YoloNet', YoloTf2, group = 'DeepLearners')
+        self.main()
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def hired(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'DeepLearners':
+            logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
+                         "Yolo neural net ready to roll!")
+        if hiree_group == 'flow_manager':
+            pass
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def flow_manager_initialized(self, video_name):
+        self.start_playback(video_name)
     
     # ----------------------------------------------------------------------------------
     # Adds a new camera to be processes.  It creates a camera manager and let's it do
@@ -44,24 +65,29 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
 
     def add_camera(self, video_name, path):
-        # create the camera manager and initialize it with video_name and
+        # create th e camera manager and initialize it with video_name and
         # the Yolo neural net
-        manager = self.hire(video_name, FlowManager, video_name, path, self._yolo)
+        manager = self.hire(video_name, FlowManager, video_name, path, self._yolo,
+                            group = 'flow_manager')
         
-        # post a message to the manager just created for it to start processing
-        self.post(manager, 'run')
-    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     def start_playback(self, video_name):
-        self.tell(video_name, 'start_playback')
+        self.tell(video_name, 'start_playback', group = 'flow_manager')
     
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
     def stop_playback(self, video_name):
-        self.tell(video_name, 'stop_playback')
+        self.tell(video_name, 'stop_playback', group = 'flow_manager')
         
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def main(self):
+        self.add_camera('Vivo', 'resources/videos/Vivo.avi')
+        self.add_camera('Shopping3', 'resources/videos/shopping3.avi')

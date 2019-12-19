@@ -22,7 +22,7 @@ from object_flow.flow.item import Item
 class Setting:
 
     def __init__(self):
-        self._items = []
+        self.items = []
         
     # ---------------------------------------------------------------------------------
     # Convert every new identified bounding box to an iten and returns the list of
@@ -56,4 +56,4 @@ class Setting:
         new_inputs = self.bboxes2items(bboxes, class_ids, confidences)
 
         # TODO: lots of things....!!!
-        self._items = new_inputs
+        self.items = new_inputs

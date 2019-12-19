@@ -18,6 +18,7 @@ import tensorflow as tf
 import numpy as np
 import mmap
 import logging
+import cv2
 
 from object_flow.util.util import Util
 from object_flow.ipc.doer import Doer
@@ -34,6 +35,7 @@ class YoloTf2(Doer):
 
     def __init__(self):
         # logging.set_verbosity(logging.INFO)
+        super().__init__()
         
         logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
                      "yolotf2 initialization started")
@@ -73,7 +75,6 @@ class YoloTf2(Doer):
         # TODO. This should come from the config file
         self.min_confidence = 0.3
 
-        
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
@@ -91,6 +92,11 @@ class YoloTf2(Doer):
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))  # 480, 704, 3
+
+        # Resize the frame to 416 x 416 as required by Yolo and then convert it
+        # to RGB
+        frame = cv2.resize(frame, (416, 416))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
         # initialize our lists of detected bounding boxes, confidences,
         # and class IDs, respectively
@@ -100,7 +106,7 @@ class YoloTf2(Doer):
     
         img = frame
 
-        # resize the image to 416 x 416 (seems to be de dimention required by yolo)
+        # resize the image to 416 x 416 (seems to be the dimention required by yolo)
         # imge = np.array(img).reshape(-1, 416, 416, 3)
         imge = tf.expand_dims(img, 0)
         imge = transform_images(imge, 416)
@@ -109,6 +115,8 @@ class YoloTf2(Doer):
         bboxes, scores, classes, nums = self.yolo.predict(imge)
         bboxes, objectness, classes, nums = bboxes[0], scores[0], classes[0], nums[0]
         wh = np.flip(img.shape[0:2])
+
+        # Constants needed to resize the identified bboxes to the original frame size
         kw = width/416
         kh = height/416
         
@@ -119,12 +127,10 @@ class YoloTf2(Doer):
                     x1y1 = tuple((np.array(bboxes[i][0:2]) * wh).astype(np.int32))
                     x2y2 = tuple((np.array(bboxes[i][2:4]) * wh).astype(np.int32))
                     
-                    box = [x1y1[0], x1y1[1], x2y2[0] - x1y1[0], x2y2[1] - x1y1[1]] # new
-                    box = box * np.array([kh, kw, kh, kw]) # new
-                    box = box.astype(np.int32) # new
-                    boxes.append(box) # new
+                    box = [x1y1[0], x1y1[1], x2y2[0], x2y2[1]]
+                    box = box * np.array([kw, kh, kw, kh])
+                    boxes.append(box.astype(np.int32))
                     
-                    # boxes.append([x1y1[0], x1y1[1], x2y2[0] - x1y1[0], x2y2[1] - x1y1[1]]) # old
                     confidences.append(objectness[i])
                     classIDs.append(classes[i])
 

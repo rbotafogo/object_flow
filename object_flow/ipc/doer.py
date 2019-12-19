@@ -22,6 +22,7 @@ from thespian.actors import ChildActorExited
 from thespian.actors import PoisonMessage
 from thespian.actors import ActorSystemConventionUpdate
 from thespian.actors import WakeupMessage
+from thespian.initmsgs import *
 
 from object_flow.util.util import Util
 from object_flow.ipc.memo import Memo
@@ -31,19 +32,45 @@ from object_flow.ipc.hr import HR
 #
 #==========================================================================================
 
-class Doer(HR, Actor):
+class Doer(Actor):
 
     # ----------------------------------------------------------------------------------
-    # init_done is a noop method that is called after an actor ends its 'initialize'
-    # method.  If an actor has an 'initialize' method this methos is called
-    # synchronously after the 'hire' method is called.
+    #
     # ----------------------------------------------------------------------------------
 
-    def init_done(self, response):
-        # logging.info("init_done called with response %s", response)
-        pass
+    def __init__(self):
+        super().__init__()
+        
+        self._doers = {}
+        self._doers['default'] = {}
+        
+        logging.basicConfig(filename='myapp.log', level=logging.INFO)
 
-    def wait_done(self, response):
+    # ----------------------------------------------------------------------------------
+    # When a Doer is hired, it imediately gets the '_set_id_' message, with its name
+    # and group (given by the hiring doer) and eventually some parameters to use for
+    # calling the 'initialize' method.  The 'initialize' method can be added to
+    # any Doer to do any necessary initialization that requires runtime information.
+    # Initializations that do not require runtime information can be done in the
+    # __init__ method normaly
+    # ----------------------------------------------------------------------------------
+
+    def _set_id_(self, *args, _name_ = None, _group_ = None, _parent_ = None, **kwargs):
+        self.name = _name_
+        self.group = _group_
+        self.parent_address = _parent_
+
+        if 'initialize' in dir(self):
+            method = getattr(self, 'initialize')
+            method(*args, **kwargs)
+        
+    # ----------------------------------------------------------------------------------
+    # After a Doer has initialized, going throuhg '_set_id_' and 'initialize' the
+    # hiring Doer receives the 'hired' message with the name, group and address of the
+    # hiree
+    # ----------------------------------------------------------------------------------
+
+    def hired(self, hiree_name, hiree_group, hiree_address):
         pass
     
     # ----------------------------------------------------------------------------------
@@ -54,14 +81,13 @@ class Doer(HR, Actor):
              target_actor_requirements = None, global_name = None, **kwargs):
         
         self.check_group(group)
-
-        doer = self.createActor(klass, target_actor_requirements, global_name)
-        self._doers[group][name] = doer
-
-        if 'initialize' in dir(klass):
-            method = getattr(klass, 'initialize')
-            self.phone(doer, 'initialize', *args, **kwargs, callback = 'init_done') 
         
+        doer = self.createActor(klass, target_actor_requirements, global_name)
+        self._doers[group][name] = (doer, klass)
+
+        self.phone(doer, '_set_id_', *args, **kwargs, _name_ = name, _group_ = group,
+                   _parent_ = self.myAddress, callback = 'hired', memo_type = 'hire')
+
         return doer
         
     # ----------------------------------------------------------------------------------
@@ -81,12 +107,13 @@ class Doer(HR, Actor):
     #
     # ----------------------------------------------------------------------------------
 
-    def phone(self, address, method, *args, callback = None, reply_to = None, **kwargs):
+    def phone(self, address, method, *args, callback = None, reply_to = None,
+              memo_type = 'ask', **kwargs):
         if callback == None:
             logging.debug("%s, %d, error: asking requires a callback function",
                           Util.br_time(), os.getpid())
         else:
-            memo = Memo(method, *args, memo_type = 'ask', callback = callback,
+            memo = Memo(method, *args, memo_type = memo_type, callback = callback,
                         reply_to = reply_to, **kwargs)
             self.send(address, memo)
             
@@ -117,28 +144,6 @@ class Doer(HR, Actor):
             for address in self._addresses(whom, group):
                 self.send(address, memo)
 
-    # ----------------------------------------------------------------------------------
-    # Sends a message to the sender of the last message, unless the message has a
-    # reply to field. In this case, the response should be sent to the reply_to
-    # address
-    # ----------------------------------------------------------------------------------
-
-    def _response(self, return_value):
-        
-        callback = self.last_message._callback
-        
-        if isinstance(return_value, tuple):
-            memo = Memo(callback, *return_value, memo_type = 'reply')
-        else:
-            memo = Memo(callback, return_value, memo_type = 'reply')
-                        
-        if self.last_message._reply_to != None:
-            recipient = self.last_message._reply_to
-        else:
-            recipient = self.last_message_sender
-            
-        self.send(recipient, memo)
-        
     # ----------------------------------------------------------------------------------
     # Sends a message to the sender of the last message
     # ----------------------------------------------------------------------------------
@@ -198,13 +203,21 @@ class Doer(HR, Actor):
         if isinstance(message, Memo):
             # logging.debug("%s, %d, got a Memo: %s",
             #               Util.br_time(), os.getpid(), message._method)
-            
+
+            # logging.debug("%s, %s, %s, receiveMessage: calling method %s", Util.br_time(),
+            #               "all", os.getpid(), message._method)
             method = getattr(self, message._method)
             ret = method(*message._args, **message._kwargs)
 
             # if it's as 'ask' message, then we should reply to it
             if message._memo_type == 'ask':
+                # logging.debug("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
+                #               "receiveMessage sending response")
                 self._response(ret)
+            elif message._memo_type == 'hire':
+                # logging.debug("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
+                #               "receiveMessage hiring done")
+                self._response((self.name, self.group, self.myAddress))
 
         elif isinstance(message, ActorExitRequest):
             self.actor_exit_request(message, sender)
@@ -220,4 +233,78 @@ class Doer(HR, Actor):
         # delete the 'last_message' since it has already been processed
         self.last_message = None
         self.last_message_sender = None
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def check_group(self, group):
+        if not group in self._doers:
+            logging.info("%s, %d, creating new group: %s",
+                         Util.br_time(), os.getpid(), group)
+            self._doers[group] = {}
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+    
+    def hrreport(self):
+        logging.info("%s, %d, doers reporting to me: %s",
+                     Util.br_time(), os.getpid(), self._doers)
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def hrreport2(self):
+        self.reply(self._doers)
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+    
+    def _addresses(self, whom, group = 'default'):
+        # send the memo to everyone
+        if whom == 'all':
+            for group in self._doers:
+                for doer in self._doers[group]:
+                    yield doer[0]
+        # send the memo to group
+        elif whom == None:
+            for doer in self._doers[group].items():
+                yield doer[1][0]
+        elif whom in self._doers[group]:
+            yield self._doers[group][whom][0]
+        else:
+            logging.info("%s, %d, doer: %s is not in the group: %s",
+                          Util.br_time(), os.getpid(), whom, group)
+
+    # ----------------------------------------------------------------------------------
+    # Sends a message to the sender of the last message, unless the message has a
+    # reply to field. In this case, the response should be sent to the reply_to
+    # address
+    # ----------------------------------------------------------------------------------
+
+    def _response(self, return_value):
+
+        callback = self.last_message._callback
+        
+        if isinstance(return_value, tuple):
+            memo = Memo(callback, *return_value, memo_type = 'reply')
+        else:
+            memo = Memo(callback, return_value, memo_type = 'reply')
+                        
+        if self.last_message._reply_to != None:
+            recipient = self.last_message._reply_to
+        else:
+            recipient = self.last_message_sender
+            
+        self.send(recipient, memo)
+        
             

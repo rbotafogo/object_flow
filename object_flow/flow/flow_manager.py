@@ -20,6 +20,7 @@ import mmap
 import numpy as np
 
 from thespian.actors import ActorSystem
+
 from object_flow.ipc.doer import Doer
 
 from object_flow.util.util import Util
@@ -52,7 +53,6 @@ class FlowManager(Doer):
         # loaded
         self._listeners = {}
 
-        self.ready = False
         self.playback = False
         self.playback_started = False
         
@@ -61,8 +61,6 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def initialize(self, video_name, path, yolo):
-        logging.info("+++++++++++++++++++++++++++++++")
-        logging.info("FlowManager initializing with video_name %s", video_name)
         self.video_name = video_name
         self.path = path
         self._yolo = yolo
@@ -83,7 +81,9 @@ class FlowManager(Doer):
         # says that memory sharing is possible
         self._detect_buf = mmap.mmap(
             self._fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_WRITE)
-            
+
+        self.run()
+
     # ----------------------------------------------------------------------------------
     # This method is a callback function when it becomes a listener to the video
     # decoder.  Only after the video decoder is initialize that we have information
@@ -99,11 +99,31 @@ class FlowManager(Doer):
         # open the mmap file whith the decoded frame. 
         fd = os.open(mmap_path, os.O_RDONLY)
         self._raw_buf = mmap.mmap(fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
-        
-        self.ready = True
+
+        # now that the mmap file has been initialized, we can call 'start_processing'
+        self.post(self.vd, 'start_processing')
+        self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
         
     # ----------------------------------------------------------------------------------
-    # Adds a new listener to this decoder. When a new listener is added it can receive
+    #
+    # ----------------------------------------------------------------------------------
+
+    def hired(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'decoders':
+            self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
+                       self.myAddress, 'process_frame', callback = 'initialize_mmap')
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def run(self):
+        # hire a new video decoder named 'self.video_name'
+        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
+                            group = 'decoders')
+        
+    # ----------------------------------------------------------------------------------
+    # Adds a new listener to this flow_manager. When a new listener is added it can
     # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
 
@@ -124,10 +144,13 @@ class FlowManager(Doer):
 
     def next_frame(self):
 
-        # notify every listener
+        # notify every listener that we have a new frame and give it the
+        # buffer size
         for name, listener in self._listeners.items():
             # listener[0]: doer's address
             # listener[1]: doer's method to call
+            self.post(listener[0], 'base_image', self._buf_size)
+            self.post(listener[0], 'overlay_bboxes', self._setting.items)
             self.post(listener[0], listener[1], self._buf_size)
         
         # call the video decoder to process the next frame
@@ -138,7 +161,7 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def detections(self, boxes, confidences, classIDs):
-        logging.info(boxes)
+        # logging.info(boxes)
         # logging.info(confidences)
         # logging.info(classIDs)
 
@@ -146,15 +169,12 @@ class FlowManager(Doer):
         # if (self.cfg.data["video_processor"]["show_input_bbox"]):
         if True:
             self._setting.add_detections(boxes, confidences, classIDs)
+            # logging.info(self._setting.items)
             
-            for bbox in boxes:
-                cv2.rectangle(self._raw_frame, (bbox[0], bbox[1]),
-                              (bbox[2], bbox[3]), (0, 250, 0), 2)
-                
             # write the frame to the mmap file.  First move the offset to
             # position 0
-            self._detect_buf.seek(0)
-            size = self._detect_buf.write(self._raw_frame)
+            # self._detect_buf.seek(0)
+            # size = self._detect_buf.write(self._raw_frame)
             
         self.next_frame()
             
@@ -174,7 +194,7 @@ class FlowManager(Doer):
         
         self._total_frames += 1
 
-        if self._total_frames % 20 == 0:
+        if self._total_frames % 10 == 0:
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
                        self.width, self.height, self.depth, size,
                        callback = 'detections')
@@ -185,41 +205,28 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def run(self):
-        # hire a new video decoder named 'self.video_name'
-        vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
-                       group = 'decoders')
-        
-        # add this manager as a listener to the decoded video frames
-        self.phone(vd, 'add_listener', self.video_name + '_manager', self.myAddress,
-                   'process_frame', callback = 'initialize_mmap')
-        self.post(vd, 'start_processing')
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
     def _add_listener(self, v2):
         # Starts displaying the video on a new window. For this, add a new listener
         # to the video_decoder and have it callback the initialize method of the
         # Display we have just created above
         self.add_listener(self.video_name, self._dp, 'display')
         self.playback_started = True
+
+
         
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # PLAYBACK MANAGEMENT
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     def start_playback(self):
 
-        # check if this flow_managers is ready already. If not, then wait a bit
-        if self.ready == False:
-            self.post(self.myAddress, 'start_playback')
-            return
-
-        self.playback = True
-        
-        display = self.video_name + '_display'
+        display  = self.video_name + '_display'
         self._dp = self.hire(display, Display, self.video_name, group = 'displayers')
 
         # initialize the display

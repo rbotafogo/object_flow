@@ -58,23 +58,40 @@ class Display(Doer):
         self._buf = mmap.mmap(fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
         
     # ----------------------------------------------------------------------------------
-    # Callback method called whenever a new frame is available in the mmap file
+    # 
     # ----------------------------------------------------------------------------------
 
-    def display(self, size):
-        # logging.info("%s, %s, %s, display for video %s with size %d",
-        #              Util.br_time(), os.getpid(), 'Display', video_name, size)
-
+    def base_image(self, size):
         if self._stop:
             return
         
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
-        frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
-        
-        cv2.imshow("Iris 8 - Contagem - " + self.video_name, frame)
+        self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
+
+        # self.frame = cv2.resize(self.frame, (416, 416))        
+        # self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
+    
+    # ----------------------------------------------------------------------------------
+    # Callback method called whenever a new frame is available in the mmap file
+    # ----------------------------------------------------------------------------------
+
+    def display(self, size):
+        # logging.debug("%s, %s, %s, display for video %s with size %d",
+        #               Util.br_time(), os.getpid(), 'Display', video_name, size)
+        cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         cv2.waitKey(25)
 
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+    
+    def overlay_bboxes(self, items):
+        for item in items:
+            # logging.info((item.startX, item.startY, item.endX, item.endY))
+            cv2.rectangle(self.frame, (item.startX, item.startY),
+                          (item.endX, item.endY), (0, 250, 0), 2)
+    
     # ----------------------------------------------------------------------------------
     # Destroys the display window. Need to set self._stop = True to make sure that no
     # other frame will be shown, which would make the window reapear.

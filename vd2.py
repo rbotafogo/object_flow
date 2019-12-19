@@ -15,40 +15,17 @@
 if __name__ == '__main__':
     import time
     import threading
+    import logging
 
-    # from object_flow.neural_nets.yolov3_tf2.yolotf2 import YoloTf2
-    from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
     from object_flow.ipc.board import Board
     from object_flow.flow.multi_flow import MultiFlow
 
-    def vivo():
-        board.tell('MultiFlow', 'add_camera', 'Vivo', 'resources/videos/Vivo.avi')
-        # give time for the add_camera to start
-        time.sleep(1 )
-        board.tell('MultiFlow', 'start_playback', 'Vivo')
-        time.sleep(5)
-        board.tell('MultiFlow', 'stop_playback', 'Vivo')
-        time.sleep(5)
-        board.tell('MultiFlow', 'start_playback', 'Vivo')
-
-    def shopping3():
-        board.tell('MultiFlow', 'add_camera', 'Shopping3',
-                   'resources/videos/shopping3.avi')
-        board.tell('MultiFlow', 'start_playback', 'Shopping3')
-
-        
+    logging.basicConfig(filename='myapp.log', level=logging.INFO)
+    
     board = Board()
     board.hire('MultiFlow', MultiFlow)
 
-    time.sleep(10)
-    
-    thread1 = threading.Thread(target = vivo, args = ())
-    thread2 = threading.Thread(target = shopping3, args = ())
-
-    thread1.start()
-    thread2.start()
-    
-    time.sleep(60)
+    time.sleep(120)
     board.shutdown()
 
 # import ctypes

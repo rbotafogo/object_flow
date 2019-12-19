@@ -85,7 +85,7 @@ class VideoDecoder(Doer):
             # the file. I had hoped that we could share memory.  In Linux, documentation
             # says that memory sharing is possible
             self._buf = mmap.mmap(self._fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_WRITE)
-            
+
         else:
             logging.info("Path %s not valid", path)
             self.send(self.myAddress, ActorExitRequest)            
