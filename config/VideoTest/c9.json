@@ -1,0 +1,67 @@
+{
+  
+  "io": {
+    "input": "resources/videos/sábado_tarde.avi",
+    "record": "resources/output/Cam9_sabado_tarde.avi"
+  },
+  
+  "neural_net": {
+    "confidence": 0.1
+  },
+  
+  "video_processor": {
+    "record": "True",
+    "record_time": "18:00-18:02",
+    "record_weekday": 0,
+    "gamma_filter": 1.5,
+    "show_input_bbox": "False",
+    "show_tracking_bbox": "True"
+  },
+  
+  "trackable_objects": {
+    "comment": "If the identified object and the tracked object have an iou of at least 'iou_match', then consider that they are the same object.  In camera 9, when a person is entering from bellow, its head is first identified, then the whole body is identified, in this case bbox(head)/bbox(body) is often small and the person is identified twice or even more times, then iou_match should be a small number.  However, if we make this number two small, then we might not identify a kid in a parents arm.  In order to reduce this problem we can also use the drop_overlap parameter.  If two tracked object have 'drop_overlap' percent overlap, then consider that they are the same object and drop the last one.  Another alternative to this problem is to only identify an object when it is a bit away from the entry border.",
+    "iou_match": 0.2,
+    "drop_overlap": 0.6
+  },
+  
+  "counting_lines": {
+    
+    "middle_screen": {
+      "end_points": [177, 202, 415, 255],
+      "count_splits": "True",
+      "line_color": [0, 255, 255],
+      "side1": "Negative",
+      "label1_text": "UP",
+      "label1_id": "ms1",
+      "label1_color": [10, 10, 10],
+      "label1_position": [10, 305],
+      "label2_text": "DOWN",
+      "label2_id": "ms2",
+      "label2_color": [10, 10, 10],
+      "label2_position": [10, 330]
+    }
+    
+  },
+  
+  "entry_lines": {
+    
+    "top_line": {
+      "end_points": [283, 116, 413, 147],
+      "line_color": [255, 0, 255],
+      "side1": "Positive"
+    },
+    
+    "bottom_line": {
+      "end_points": [13, 382, 411, 382],
+      "line_color": [255, 0, 255],
+      "side1": "Negative"
+    },
+    
+    "left_vertical_line": {
+      "end_points": [29, 4, 29, 362],
+      "line_color": [255, 0, 255],
+      "side1": "Negative"
+    }
+  }
+  
+}

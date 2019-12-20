@@ -19,6 +19,7 @@ import logging
 import mmap
 import numpy as np
 from imutils.video import FPS
+import math
 
 from datetime import timedelta
 # from sys import getsizeof
@@ -74,11 +75,13 @@ class VideoDecoder(Doer):
             # open a file for storing the frames
             self.file_name = "log/mmap_" + self.video_name
             self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-            
+
             # number of pages 260 should be calculated from the image size
             # ceil((width x height x 3) / 4k (page size) + k), where k is a small
             # value to make sure that all image overhead are accounted for. 
-            os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
+            # os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
+            npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+            os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
             
             # It seems that there is no way to share memory between processes in
             # Windows, so we use mmap.ACCESS_WRITE that will store the frame on

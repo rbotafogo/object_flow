@@ -1,0 +1,17 @@
+{
+  
+  "system_info": {
+    "analytics_output_dir": "resources/analytics",
+    "num_partial_trackers": 3
+  },
+  
+  "neural_net": {
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "video_cameras": {
+    "cam3": "c12_1.json"
+  }
+  
+}

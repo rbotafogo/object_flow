@@ -1,0 +1,53 @@
+{
+
+    "io": {
+	"input": "resources/videos/Cam12_Shopping.avi",
+	"output": "resources/output/Cam12_Shopping_openimage.avi"
+    },
+    
+    "neural_net": {
+	"nn_dir": "neural_nets/nn_configs/yolo-openimage",
+	"names": "openimages.names",
+	"config_file": "yolov3-openimages.cfg",
+	"weights": "yolov3-openimages.weights",
+	"confidence": 0.1
+    },
+    
+    "video_processor": {
+	"gamma_filter": 2.0,
+	"show_input_bbox": "False",
+	"show_tracking_bbox": "False"
+    },
+
+    "video_analyser": {
+	"skip_detection_frames": 5
+    },
+
+    "trackable_objects": {
+	"iou_match": 0.3,
+	"drop_overlap": 1.0
+    },
+
+    "counting_lines": {
+	
+	"middle_screen": {
+	    "end_points": [222, 286, 633, 247],
+	    "line_color": [0, 255, 255],
+	    "side1": "Negative",
+	    "label1_text": "UP",
+	    "label1_color": [10, 10, 10],
+	    "label1_position": [10, 305],
+	    "label2_text": "DOWN",
+	    "label2_color": [10, 10, 10],
+	    "label2_position": [10, 330]
+	}
+
+    },
+    
+    "entry_line": {
+	"line1": [45, 273, 163, 479],
+	"line2": [567, 173, 673, 220],
+	"line3": [673, 220, 651, 479]
+    }
+
+}

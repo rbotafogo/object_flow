@@ -66,22 +66,6 @@ class FlowManager(Doer):
         self._yolo = yolo
         self._setting = Setting()
 
-        # open a file for storing modified frames, with detections and tracking
-        self.detect_path = "log/detect_" + self.video_name
-        self._fd = os.open(self.detect_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-
-        # number of pages 260 should be calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
-        
-        # It seems that there is no way to share memory between processes in
-        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
-        # the file. I had hoped that we could share memory.  In Linux, documentation
-        # says that memory sharing is possible
-        self._detect_buf = mmap.mmap(
-            self._fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_WRITE)
-
         self.run()
 
     # ----------------------------------------------------------------------------------

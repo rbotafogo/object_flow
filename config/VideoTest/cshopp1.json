@@ -1,0 +1,50 @@
+{
+
+    "io": {
+	"input": "resources/videos/shopping1.avi",
+	"output": "resources/output/shopping1.avi"
+    },
+    
+    "neural_net": {
+	"confidence": 0.1
+    },
+    
+    "video_processor": {
+	"gamma_filter": 1.5,
+	"show_input_bbox": "False",
+	"show_tracking_bbox": "False",
+	"num_processors": 3
+    },
+
+    "video_analyser": {
+	"comment": "When identification of objects is easy, then augmenting the 'skip_detection_frames' is good as we reduce the number of matches between new objects and tracked object.  It also is more efficient.",
+	"skip_detection_frames": 30
+    },
+
+    "trackable_objects": {
+	"comment": "If the identified object and the tracked object have an iou of at least 'iou_match', then consider that they are the same object.  In camera 9, when a person is entering from bellow, its head is first identified, then the whole body is identified, in this case bbox(head)/bbox(body) is often small and the person is identified twice or even more times, then iou_match should be a small number.  However, if we make this number two small, then we might not identify a kid in a parents arm.  In order to reduce this problem we can also use the drop_overlap parameter.  If two tracked object have 'drop_overlap' percent overlap, then consider that they are the same object and drop the last one.  Another alternative to this problem is to only identify an object when it is a bit away from the entry border.",
+	"iou_match": 0.2,
+	"drop_overlap": 0.6
+    },
+
+    "counting_lines": {
+	
+	"middle_screen": {
+	    "end_points": [207, 211, 415, 255],
+	    "count_splits": "True",
+	    "line_color": [0, 255, 255],
+	    "side1": "Negative",
+	    "label1_text": "UP",
+	    "label1_color": [10, 10, 10],
+	    "label1_position": [10, 305],
+	    "label2_text": "DOWN",
+	    "label2_color": [10, 10, 10],
+	    "label2_position": [10, 330]
+	}
+
+    },
+    
+    "entry_line": {
+    }
+
+}

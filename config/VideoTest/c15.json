@@ -1,0 +1,76 @@
+{
+  
+  "io": {
+    "input": "resources/videos/Vivo.avi",
+    "output": "resources/output/Cam15_Vivo.avi"
+  },
+  
+  "neural_net": {
+    "confidence": 0.1
+  },
+  
+  "video_processor": {
+    "gamma_filter": 1.0,
+    "show_input_bbox": "True",
+    "show_tracking_bbox": "False"
+  },
+  
+  "video_analyser": {
+    "comment": "When identification of objects is easy, then augmenting the 'skip_detection_frames' is good as we reduce the number of matches between new objects and tracked object.  It also is more efficient.",
+    "skip_detection_frames": 1,
+    "track_every_x_frames": 30
+  },
+  
+  "trackable_objects": {
+    "comment": "If the identified object and the tracked object have an iou of at least 'iou_match', then consider that they are the same object.  In camera 9, when a person is entering from bellow, its head is first identified, then the whole body is identified, in this case bbox(head)/bbox(body) is often small and the person is identified twice or even more times, then iou_match should be a small number.  However, if we make this number two small, then we might not identify a kid in a parents arm.  In order to reduce this problem we can also use the drop_overlap parameter.  If two tracked object have 'drop_overlap' percent overlap, then consider that they are the same object and drop the last one.  Another alternative to this problem is to only identify an object when it is a bit away from the entry border.",
+    "iou_match": 0.2,
+    "drop_overlap": 0.6
+  },
+  
+  "counting_lines": {
+    
+    "middle_screen": {
+      "end_points": [4, 221, 170, 46],
+      "line_color": [0, 255, 255],
+      "count_splits": "True",
+      "side1": "Negative",
+      "label1_text": "UP",
+      "label1_color": [10, 10, 10],
+      "label1_position": [10, 305],
+      "label1_id": "1.2.2.0003",
+      "label2_text": "DOWN",
+      "label2_color": [10, 10, 10],
+      "label2_position": [10, 330],
+      "label2_id": "1.2.2.0004"
+    }
+    
+  },
+  
+  "entry_lines": {
+    
+    "top_line": {
+      "end_points": [1, 126, 86, 53],
+      "line_color": [255, 0, 255],
+      "side1": "Positive"
+    },
+    
+    "bottom_line": {
+      "end_points": [2, 368, 415, 368],
+      "line_color": [255, 0, 255],
+      "side1": "Negative"
+    },
+    
+    "left_vertical_line": {
+      "end_points": [12, 247, 96, 415],
+      "line_color": [255, 0, 255],
+      "side1": "Negative"
+    },
+    
+    "right_vertical_line": {
+      "end_points": [394, 191, 388, 414],
+      "line_color": [255, 0, 255],
+      "side1": "Positive"
+    }
+  }
+  
+}

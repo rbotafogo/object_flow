@@ -1,0 +1,64 @@
+{
+  "io": {
+  },
+    
+  "neural_net": {
+    "comment": "Use by default the yolov3 algorithm trained on the Coco dataset.",
+    "neural_net": "yolo",
+    "nn_dir": "contagem/neural_nets/nn_configs/yolo-coco/",
+    "names": "coco.names",
+    "config_file": "yolov3.cfg",
+    "weights": "yolov3.weights",
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "yolov3_tf2": {
+    "comment": "Yolov2 running on tensorflow v2. https://github.com/zzh8829/yolov3-tf2/blob/master/README.md",
+    "neural_net": "yolov3_tf2",
+    "nn_dir": "contagem/neural_nets/nn_configs/yolo-coco/",
+    "names": "coco.names",
+    "config_file": "yolov3.cfg",
+    "weights": "yolov3.weights",
+    "tiny": "yolov3-tiny.weights",
+    "tf2_weights": "contagem/neural_nets/nn_configs/yolov3_tf2/checkpoints/yolov3.tf",
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "video_processor": {
+    "record": "False",
+    "record_time": "00:00-00:01",
+    "record_weekday": 3,
+    "gamma_filter": 1.0,
+    "interactive": "False",
+    "show_input_bbox": "False",
+    "show_tracking_bbox": "False",
+    "show_id": "True",
+    "num_processors": 1,
+    "num_frame_output": 22500
+  },
+  
+  "video_analyser": {
+    "comment": "When identification of objects is easy, then augmenting the 'skip_detection_frames' is good as we reduce the number of matches between new objects and tracked object.  It also is more efficient.",
+    "comment": "Run detection every 30 frames.",
+    "skip_detection_frames": 20,
+    "track_every_x_frames": 1
+  },
+  
+  "trackable_objects": {
+    "algorithm": "dlib",
+    "match": "iou_match",
+    "iou_match": 0.3,
+    "centroid_match_max_distance": 2000,
+    "drop_overlap": 0.5,
+    "disappear": 250
+  },
+  
+  "counting_lines": {
+  },
+  
+  "entry_lines": {
+  }
+  
+}

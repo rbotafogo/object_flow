@@ -1,0 +1,52 @@
+{
+  
+  "io": {
+    "input": "resources/videos/Cam12_Shopping.avi",
+    "output": "resources/output/Cam12_Shopping.avi"
+  },
+  
+  "neural_net": {
+    "confidence": 0.1
+  },
+  
+  "video_processor": {
+    "gamma_filter": 1.2,
+    "show_input_bbox": "False",
+    "show_tracking_bbox": "False"
+  },
+  
+  "trackable_objects": {
+    "iou_match": 0.3,
+    "drop_overlap": 0.7
+  },
+  
+  "counting_lines": {
+    
+    "middle_screen": {
+      "end_points": [14, 311, 328, 206],
+      "count_splits": "True",
+      "line_color": [0, 255, 255],
+      "side1": "Negative",
+      "label1_text": "UP",
+      "label1_id": "ms1",
+      "label1_color": [10, 10, 10],
+      "label1_position": [10, 305],
+      "label2_text": "DOWN",
+      "label2_id": "ms2",
+      "label2_color": [10, 10, 10],
+      "label2_position": [10, 330]
+    }
+    
+  },
+  
+  "entry_line": {
+    
+    "top_line": {
+      "end_points": [70, 124, 301, 118],
+      "line_color": [255, 0, 255],
+      "side1": "Positive"
+    }
+    
+  }
+  
+}
