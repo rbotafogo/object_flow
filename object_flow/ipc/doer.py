@@ -24,7 +24,6 @@ from thespian.actors import ActorSystemConventionUpdate
 from thespian.actors import WakeupMessage
 from thespian.initmsgs import *
 
-from object_flow.util.util import Util
 from object_flow.ipc.memo import Memo
 from object_flow.ipc.hr import HR
 
@@ -44,8 +43,6 @@ class Doer(Actor):
         self._doers = {}
         self._doers['default'] = {}
         
-        logging.basicConfig(filename='myapp.log', level=logging.INFO)
-
     # ----------------------------------------------------------------------------------
     # When a Doer is hired, it imediately gets the '_set_id_' message, with its name
     # and group (given by the hiring doer) and eventually some parameters to use for
@@ -110,8 +107,8 @@ class Doer(Actor):
     def phone(self, address, method, *args, callback = None, reply_to = None,
               memo_type = 'ask', **kwargs):
         if callback == None:
-            logging.debug("%s, %d, error: asking requires a callback function",
-                          Util.br_time(), os.getpid())
+            logging.debug("%s, %s: asking requires a callback function", self.name,
+                          self.group)
         else:
             memo = Memo(method, *args, memo_type = memo_type, callback = callback,
                         reply_to = reply_to, **kwargs)
@@ -135,8 +132,7 @@ class Doer(Actor):
     def ask(self, whom, method, *args, group = 'default', callback = None,
             reply_to = None, **kwargs):
         if callback == None:
-            logging.debug("%s, %d, error: asking requires a callback function",
-                          Util.br_time(), os.getpid())
+            logging.debug("asking requires a callback function")
         else:
             # create a Memo from the give parameters
             memo = Memo(method, *args, memo_type = 'ask', callback = callback,
@@ -157,8 +153,7 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
 
     def actor_exit_request(self, message, sender):
-        logging.info("%s, %d, got actor_exit_request",
-                     Util.br_time(), os.getpid())
+        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
         pass
     
     # ----------------------------------------------------------------------------------
@@ -194,18 +189,15 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
     
     def receiveMessage(self, message, sender):
-        # logging.debug("%s, %d, got message: %s",
-        #               Util.br_time(), os.getpid(), message)
+        # logging.debug("got message: %s", message)
 
         self.last_message = message
         self.last_message_sender = sender
 
         if isinstance(message, Memo):
-            # logging.debug("%s, %d, got a Memo: %s",
-            #               Util.br_time(), os.getpid(), message._method)
-
-            # logging.debug("%s, %s, %s, receiveMessage: calling method %s", Util.br_time(),
-            #               "all", os.getpid(), message._method)
+            # logging.debug("%s, %s: got a Memo: %s", self.name, self.group, message._method)
+            # logging.debug("%s, %s: receiveMessage: calling method %s", self.name,
+            #               self.group, message._method)
             method = getattr(self, message._method)
             ret = method(*message._args, **message._kwargs)
 
@@ -240,8 +232,7 @@ class Doer(Actor):
 
     def check_group(self, group):
         if not group in self._doers:
-            logging.info("%s, %d, creating new group: %s",
-                         Util.br_time(), os.getpid(), group)
+            logging.info("creating new group: %s", group)
             self._doers[group] = {}
 
     # ----------------------------------------------------------------------------------
@@ -249,8 +240,7 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
     
     def hrreport(self):
-        logging.info("%s, %d, doers reporting to me: %s",
-                     Util.br_time(), os.getpid(), self._doers)
+        logging.info("doers reporting to me: %s", self._doers)
 
     # ----------------------------------------------------------------------------------
     # 
@@ -282,8 +272,7 @@ class Doer(Actor):
         elif whom in self._doers[group]:
             yield self._doers[group][whom][0]
         else:
-            logging.info("%s, %d, doer: %s is not in the group: %s",
-                          Util.br_time(), os.getpid(), whom, group)
+            logging.info("doer: %s is not in the group: %s", whom, group)
 
     # ----------------------------------------------------------------------------------
     # Sends a message to the sender of the last message, unless the message has a

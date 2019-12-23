@@ -12,7 +12,6 @@
 import time
 import itertools
 
-from object_flow.util.util import Util
 from object_flow.flow.item import Item
 
 # =========================================================================================

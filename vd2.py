@@ -125,8 +125,50 @@ if __name__ == '__main__':
     else:
         cfg.data['neural_net']['process'] = 'tf2'
 
+
+    class actorLogFilter(logging.Filter):
+        def filter(self, logrecord):
+            return 'actorAddress' in logrecord.__dict__
         
-    board = Board()
+    class notActorLogFilter(logging.Filter):
+        def filter(self, logrecord):
+            return 'actorAddress' not in logrecord.__dict__
+        
+    logcfg = { 'version': 1,
+               'formatters': {
+                   'normal': {'format': '%(levelname)-8s %(message)s'},
+                   'actor': {'format': '%(levelname)-8s %(actorAddress)s => %(message)s'}},
+               'filters': { 'isActorLog': { '()': actorLogFilter},
+                            'notActorLog': { '()': notActorLogFilter}},
+               'handlers': { 'h1': {'class': 'logging.FileHandler',
+                                    'filename': 'example.log',
+                                    'formatter': 'normal',
+                                    'filters': ['notActorLog'],
+                                    'level': logging.INFO},
+                             'h2': {'class': 'logging.FileHandler',
+                                    'filename': 'example.log',
+                                    'formatter': 'actor',
+                                    'filters': ['isActorLog'],
+                                    'level': logging.INFO},},
+               'loggers' : { '': {'handlers': ['h1', 'h2'], 'level': logging.DEBUG}}
+    }
+    
+    logcfg = { 'version': 1,
+               'formatters': {
+                   'normal': {
+                       # 'format': "%(asctime)s;%(levelname)s;%(message)s"}},
+                       'format': "%(asctime)s;%(filename)s;%(funcName)s;%(lineno)d;%(process)d;%(levelname)s;%(message)s", 'datefmt': '%Y-%m-%d;%H:%M:%S'}
+               },
+               'handlers': {
+                   'h': {'class': 'logging.FileHandler',
+                         'filename': 'log/flow.log',
+                         'formatter': 'normal',
+                         'level': logging.INFO}},
+               'loggers' : {
+                   '': {'handlers': ['h'], 'level': logging.DEBUG}}
+    }
+    
+    board = Board(logcfg=logcfg)
     board.hire('MultiFlow', MultiFlow, cfg)
 
     time.sleep(30)

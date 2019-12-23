@@ -61,38 +61,39 @@ class VideoDecoder(Doer):
         # allow for channing filters which would be ideal
         self._adjust_gamma = False
                 
-        if os.path.exists(path):
-            logging.info("%s, %s, %s, Starting decoding video in path %s",
-                         Util.br_time(), self.video_name, os.getpid(), path)
-            
-            self._stream = cv2.VideoCapture(path)
-            self._read_properties()
-            
-            logging.info("%s, %s, width: %d, height: %d, fps: %f, format: %f",
-                         Util.br_time(), self.video_name, self.width,
-                         self.height, self.fps, self.format)
+        self._stream = cv2.VideoCapture(path)
 
-            # open a file for storing the frames
-            self.file_name = "log/mmap_" + self.video_name
-            self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-
-            # number of pages 260 should be calculated from the image size
-            # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-            # value to make sure that all image overhead are accounted for. 
-            # os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
-            npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
-            os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-            
-            # It seems that there is no way to share memory between processes in
-            # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
-            # the file. I had hoped that we could share memory.  In Linux, documentation
-            # says that memory sharing is possible
-            self._buf = mmap.mmap(self._fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_WRITE)
-
-        else:
-            logging.info("Path %s not valid", path)
-            self.send(self.myAddress, ActorExitRequest)            
-            
+        if (not self._stream.isOpened()):
+            return
+        
+        logging.info("%s, %s, %s, Starting decoding video in path %s",
+                     Util.br_time(), self.video_name, os.getpid(), path)
+        
+        self._stream = cv2.VideoCapture(path)
+        self._read_properties()
+        
+        logging.info("%s, %s, width: %d, height: %d, fps: %f, format: %f",
+                     Util.br_time(), self.video_name, self.width,
+                     self.height, self.fps, self.format)
+        
+        # open a file for storing the frames
+        self.file_name = "log/mmap_" + self.video_name
+        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        
+        # number of pages 260 should be calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
+        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
+        
+        # It seems that there is no way to share memory between processes in
+        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
+        # the file. I had hoped that we could share memory.  In Linux, documentation
+        # says that memory sharing is possible
+        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
+                              access = mmap.ACCESS_WRITE)
+        
     # ----------------------------------------------------------------------------------
     # Adds a new listener to this decoder. When a new listener is added it can receive
     # use the values of width, height and depth already initialized from the camera

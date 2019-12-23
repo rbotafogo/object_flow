@@ -23,7 +23,6 @@ from thespian.actors import ActorSystem
 
 from object_flow.ipc.doer import Doer
 
-from object_flow.util.util import Util
 from object_flow.util.display import Display
 
 from object_flow.decoder.video_decoder import VideoDecoder
@@ -66,6 +65,8 @@ class FlowManager(Doer):
         self._yolo = yolo
         self._setting = Setting()
 
+        logging.info("initializing flow_manager %s in path %s", video_name, path)
+        
         self.run()
 
     # ----------------------------------------------------------------------------------
@@ -84,6 +85,8 @@ class FlowManager(Doer):
         fd = os.open(mmap_path, os.O_RDONLY)
         self._raw_buf = mmap.mmap(fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
 
+        logging.info("mmap file for %s opened", self.video_name)
+
         # now that the mmap file has been initialized, we can call 'start_processing'
         self.post(self.vd, 'start_processing')
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
@@ -94,6 +97,7 @@ class FlowManager(Doer):
 
     def hired(self, hiree_name, hiree_group, hiree_address):
         if hiree_group == 'decoders':
+            logging.info("decoder for %s created", self.video_name)
             self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
                        self.myAddress, 'process_frame', callback = 'initialize_mmap')
             
@@ -112,6 +116,8 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def add_listener(self, name, address, callback):
+        logging.info("adding listener to flow_manager %s with name %s", self.video_name,
+                     name)
         self._listeners[name] = (address, callback)
         return (self.mmap_path, self.width, self.height, self.depth)
     
@@ -120,6 +126,7 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def remove_listener(self, name):
+        logging.info("listener %s removed from flow_manager %s", name, self.video_name)
         del self._listeners[name]
         
     # ----------------------------------------------------------------------------------
@@ -138,27 +145,17 @@ class FlowManager(Doer):
             self.post(listener[0], listener[1], self._buf_size)
         
         # call the video decoder to process the next frame
-        self.tell(self.video_name, 'next_frame', group = 'decoders')        
+        self.tell(self.video_name, 'next_frame', group = 'decoders')
         
     # ----------------------------------------------------------------------------------
     # Callback method for the find_bboxes call to the Neural Net
     # ----------------------------------------------------------------------------------
 
     def detections(self, boxes, confidences, classIDs):
-        # logging.info(boxes)
-        # logging.info(confidences)
-        # logging.info(classIDs)
-
         # if we should draw the input_bbox(es)
         # if (self.cfg.data["video_processor"]["show_input_bbox"]):
         if True:
             self._setting.add_detections(boxes, confidences, classIDs)
-            # logging.info(self._setting.items)
-            
-            # write the frame to the mmap file.  First move the offset to
-            # position 0
-            # self._detect_buf.seek(0)
-            # size = self._detect_buf.write(self._raw_frame)
             
         self.next_frame()
             
@@ -167,9 +164,6 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def process_frame(self, size):
-        # logging.info("%s, %s, %s, processing_frame for video %s with size %d",
-        #              Util.br_time(), os.getpid(), 'Supervisor', self.video_name, size)
-
         # read the raw frame
         self._buf_size = size
         self._raw_buf.seek(0)
@@ -196,8 +190,6 @@ class FlowManager(Doer):
         self.add_listener(self.video_name, self._dp, 'display')
         self.playback_started = True
 
-
-        
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -213,6 +205,8 @@ class FlowManager(Doer):
         display  = self.video_name + '_display'
         self._dp = self.hire(display, Display, self.video_name, group = 'displayers')
 
+        logging.info("starting playback for video %s", self.video_name)
+        
         # initialize the display
         self.phone(self._dp, 'initialize_mmap', self.mmap_path, self.width,
                    self.height, self.depth, callback = '_add_listener')
@@ -237,6 +231,8 @@ class FlowManager(Doer):
         elif self.playback_started == False:
             self.post(self.myAddress, 'stop_playback')
             return
+
+        logging.info("stopping playback for video %s", self.video_name)
         
         # self.ask(self.video_name, 'remove_listener', self.video_name,
         #          callback = 'destroy_window', group = 'decoders')

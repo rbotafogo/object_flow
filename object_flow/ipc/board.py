@@ -34,13 +34,16 @@ class Board(HR):
     #
     # ----------------------------------------------------------------------------------
     
-    def __init__(self, proc = 'tcp'):
+    def __init__(self, proc = 'tcp', logcfg = None):
         super().__init__()
         if proc == 'tcp':
-            self._system = ActorSystem('multiprocTCPBase')
+            logging.info("Starting Actor System with mutiplrocTCPBase")
+            self._system = ActorSystem('multiprocTCPBase', logDefs=logcfg)
         elif proc == 'udp':
-            self._system = ActorSystem('multiprocUDPBase')
+            logging.info("Starting Actor System with mutiplrocUDPBase")
+            self._system = ActorSystem('multiprocUDPBase', logDefs=logcfg)
         else:
+            logging.info("Wrong Actor System type")
             raise('Invalid system type definition')
 
     # ----------------------------------------------------------------------------------
@@ -58,6 +61,9 @@ class Board(HR):
              target_actor_requirements = None, global_name = None, source_hash = None,
              **kwargs):
 
+        logging.info("Hiring new doer of class %s with name %s in group %s", klass, name,
+                     group)
+        
         self.check_group(group)
 
         doer = self._system.createActor(
