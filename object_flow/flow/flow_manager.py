@@ -18,6 +18,7 @@ import logging
 import cv2
 import mmap
 import numpy as np
+import math
 
 from thespian.actors import ActorSystem
 
@@ -82,8 +83,12 @@ class FlowManager(Doer):
         self.depth = depth
         
         # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
         fd = os.open(mmap_path, os.O_RDONLY)
-        self._raw_buf = mmap.mmap(fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
+        self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
 
         logging.info("mmap file for %s opened", self.video_name)
 

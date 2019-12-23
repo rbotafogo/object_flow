@@ -163,9 +163,17 @@ if __name__ == '__main__':
                    'h': {'class': 'logging.FileHandler',
                          'filename': 'log/flow.log',
                          'formatter': 'normal',
-                         'level': logging.INFO}},
+                         'level': logging.INFO
+                   },
+                   'console': {'class': 'logging.StreamHandler',
+                               'formatter': 'normal',
+                               'stream': 'ext://sys.stdout',
+                               'level': logging.INFO
+                   },
+               },
                'loggers' : {
-                   '': {'handlers': ['h'], 'level': logging.DEBUG}}
+                   '': {'handlers': ['h', 'console'],
+                        'level': logging.DEBUG}}
     }
     
     board = Board(logcfg=logcfg)

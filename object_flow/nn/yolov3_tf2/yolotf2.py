@@ -19,6 +19,7 @@ import numpy as np
 import mmap
 import logging
 import cv2
+import math
 
 from object_flow.util.util import Util
 from object_flow.ipc.doer import Doer
@@ -87,8 +88,14 @@ class YoloTf2(Doer):
             self._fd[name] = os.open(file_name, os.O_RDONLY)
 
         # read the image
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((width * height * depth)/ 4000) + 10
+        
         self._buf = mmap.mmap(
-            self._fd[name], 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
+            self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))  # 480, 704, 3

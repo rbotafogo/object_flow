@@ -18,6 +18,7 @@ import cv2
 import logging
 import mmap
 import numpy as np
+import math
 
 from datetime import timedelta
 
@@ -54,8 +55,14 @@ class Display(Doer):
         self.height = height
         self.depth = depth
         
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
         fd = os.open(mmap_path, os.O_RDONLY)
-        self._buf = mmap.mmap(fd, 256 * mmap.PAGESIZE, access = mmap.ACCESS_READ)
+
+        self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
         
     # ----------------------------------------------------------------------------------
     # 
@@ -69,9 +76,6 @@ class Display(Doer):
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 
-        # self.frame = cv2.resize(self.frame, (416, 416))        
-        # self.frame = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)
-    
     # ----------------------------------------------------------------------------------
     # Callback method called whenever a new frame is available in the mmap file
     # ----------------------------------------------------------------------------------

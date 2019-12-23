@@ -19,12 +19,12 @@ import logging
 import mmap
 import numpy as np
 from imutils.video import FPS
+import imutils
 import math
 
 from datetime import timedelta
 # from sys import getsizeof
 
-from object_flow.util.util import Util
 from object_flow.ipc.doer import Doer
 
 # CHECK_PERIOD = timedelta(milliseconds=25)
@@ -66,24 +66,29 @@ class VideoDecoder(Doer):
         if (not self._stream.isOpened()):
             return
         
-        logging.info("%s, %s, %s, Starting decoding video in path %s",
-                     Util.br_time(), self.video_name, os.getpid(), path)
+        logging.info("Starting decoding video %s in path %s", self.video_name, path)
         
         self._stream = cv2.VideoCapture(path)
+        # Read all the video properties        
         self._read_properties()
+
+        # Scale the image
+        scale_percent = 60 # percent of original size
+        self.width = int(self.width * scale_percent / 100)
+        self.height = int(self.height * scale_percent / 100)
+        self.dim = (self.width, self.height)        
         
-        logging.info("%s, %s, width: %d, height: %d, fps: %f, format: %f",
-                     Util.br_time(), self.video_name, self.width,
-                     self.height, self.fps, self.format)
+        logging.info("%s: width: %d, height: %d, fps: %f", self.video_name, self.width,
+                     self.height, self.fps)
         
         # open a file for storing the frames
         self.file_name = "log/mmap_" + self.video_name
         self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
         
-        # number of pages 260 should be calculated from the image size
+        # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * 260)
+        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
         npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
         os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
         
@@ -141,14 +146,17 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def next_frame(self):
-        # logging.info("%s, %s, %s, %s",
-        #              Util.br_time(), self.video_name, os.getpid(),                          
-        #              "loading frame for video camera")
+        # logging.debug("%s, %s, %s, %s",
+        #               Util.br_time(), self.video_name, os.getpid(),                          
+        #               "loading frame for video camera")
         
         # (grabbed, frame) = self._stream.read()
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
 
+        # resize image
+        frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
+ 
         if self._adjust_gamma:
             frame = cv2.LUT(frame, self._gamma_table)
         
@@ -161,12 +169,8 @@ class VideoDecoder(Doer):
         self.frame_number += 1
         
         if not grabbed:
-            logging.warning("%s, %s, %s, %s",
-                            Util.br_time(), self.video_name, os.getpid(), 
-                            "Could not grab video stream")
-            logging.warning("%s, %s, %s, %s",
-                            Util.br_time(), self.video_name, os.getpid(), 
-                            "Trying to re-open video stream")
+            logging.warning("%s: Could not grab video stream", self.video_name)
+            logging.warning("%s: Trying to re-open video stream", self.video_name)
             self._reopen()
             
         else:
@@ -216,9 +220,8 @@ class VideoDecoder(Doer):
             self._not_grabbed += 1
             
             if self._not_grabbed > 20:
-                logging.Warning("%s, %s, %s, %s",
-                                Util.br_time(), self.video_name, os.getpid(), 
-                                "Shutting down video stream: too many failures")
+                logging.warning("%s: Shutting down video stream: too many failures", 
+                                self.video_name)
                 self.send(self.myAddress, ActorExitRequest)
             else:
                 self._stream.release()
@@ -226,9 +229,7 @@ class VideoDecoder(Doer):
         self._stream = cv2.VideoCapture(self.path)
         
         if not self._stream.isOpened():
-            logging.warning("%s, %s, %s, %s",
-                            Util.br_time(), self.video_name, os.getpid(), 
-                            "Could not open stream")
+            logging.warning("%s: Could not open stream", self.video_name)
             self.send(self.myAddress, ActorExitRequest)            
         else:
             self._not_grabbed = 0
@@ -243,9 +244,8 @@ class VideoDecoder(Doer):
             self._not_grabbed += 1
             
             if self._not_grabbed > 20:
-                logging.info("%s, %s, %s, %s",
-                             Util.br_time(), self.video_name, os.getpid(), 
-                             "Shutting down video stream: too many failures")
+                logging.info("%s: Shutting down video stream: too many failures", 
+                             self.video_name)
                 self.__stopped = True
             else:
                 self._stream.release()
@@ -253,9 +253,7 @@ class VideoDecoder(Doer):
         self._stream = cv2.VideoCapture(path)
         
         if not self._stream.isOpened():
-            logging.info("%s, %s, %s, %s",
-                         Util.br_time(), self.video_name, os.getpid(), 
-                         "Could not open stream")
+            logging.info("%s: Could not open stream", self.video_name)
             # self.__stopped = True
         else:
             self._not_grabbed = 0
@@ -290,17 +288,10 @@ class VideoDecoder(Doer):
             prop = cv2.cv.CV_CAP_PROP_FRAME_COUNT if imutils.is_cv2() \
                 else cv2.CAP_PROP_FRAME_COUNT
             self.total = int(self._stream.get(prop))
-            logging.info("%s, %s, %s, total frames in video %d",
-                         Util.br_time(), self.camera_id, os.getpid(), 
-                         self.total)
+            logging.info("%s: total frames in video %d",
+                         self.camera_id, self.total)
         # an error occurred while trying to determine the total
         # number of frames in the video file
         except:
-            logging.info("%s, %s, %s, %s",
-                         Util.br_time(), self.camera_id, os.getpid(), 
-                         "could not determine # of frames in video")
-            logging.info("%s, %s, %s, %s",
-                         Util.br_time(), self.camera_id, os.getpid(), 
-                         "no approx. completion time can be provided")
             self.total = -1
 
