@@ -169,6 +169,13 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def process_frame(self, size):
+
+        # There was an error reading the last frame, so just move on to the next
+        # frame
+        if size < (self.height * self.width * self.depth):
+            self.next_frame()
+            return
+            
         # read the raw frame
         self._buf_size = size
         self._raw_buf.seek(0)

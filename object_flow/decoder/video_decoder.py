@@ -153,31 +153,31 @@ class VideoDecoder(Doer):
         # (grabbed, frame) = self._stream.read()
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
-
-        # resize image
-        frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
- 
-        if self._adjust_gamma:
-            frame = cv2.LUT(frame, self._gamma_table)
-        
-        # write the frame to the mmap file.  First move the offset to
-        # position 0
-        self._buf.seek(0)
-        tot = self._buf.write(frame)
-        
-        # logging.info(getsizeof(frame))
-        self.frame_number += 1
-        
+       
         if not grabbed:
-            logging.warning("%s: Could not grab video stream", self.video_name)
-            logging.warning("%s: Trying to re-open video stream", self.video_name)
+            logging.warning("%s: could not grab video stream", self.video_name)
+            logging.warning("%s: checking video stream status", self.video_name)
+            tot = 0
             self._reopen()
-            
         else:
-            for name, listener in self._listeners.items():
-                # listener[0]: doer's address
-                # listener[1]: doer's method to call
-                self.post(listener[0], listener[1], tot)                
+            # resize image
+            frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
+            
+            if self._adjust_gamma:
+                frame = cv2.LUT(frame, self._gamma_table)
+        
+            # write the frame to the mmap file.  First move the offset to
+            # position 0
+            self._buf.seek(0)
+            tot = self._buf.write(frame)
+        
+            # logging.info(getsizeof(frame))
+            self.frame_number += 1
+            
+        for name, listener in self._listeners.items():
+            # listener[0]: doer's address
+            # listener[1]: doer's method to call
+            self.post(listener[0], listener[1], tot)                
                 
         self._fps.update()
         
@@ -214,25 +214,14 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def _reopen(self):
+        self._stream.release()
+        logging.info("%s: trying to reopen video stream", self.video_name)
         
-        if self._stream.isOpened():
-            
-            self._not_grabbed += 1
-            
-            if self._not_grabbed > 20:
-                logging.warning("%s: Shutting down video stream: too many failures", 
-                                self.video_name)
-                self.send(self.myAddress, ActorExitRequest)
-            else:
-                self._stream.release()
-
         self._stream = cv2.VideoCapture(self.path)
-        
+    
         if not self._stream.isOpened():
             logging.warning("%s: Could not open stream", self.video_name)
             self.send(self.myAddress, ActorExitRequest)            
-        else:
-            self._not_grabbed = 0
         
     # ----------------------------------------------------------------------------------
     #
