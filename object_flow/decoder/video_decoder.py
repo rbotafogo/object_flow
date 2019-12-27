@@ -53,7 +53,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, video_name, path):
+    def initialize(self, video_name, path, width = 500):
         self.path = path
         self.video_name = video_name
 
@@ -69,14 +69,15 @@ class VideoDecoder(Doer):
         logging.info("Starting decoding video %s in path %s", self.video_name, path)
         
         self._stream = cv2.VideoCapture(path)
+        
         # Read all the video properties        
         self._read_properties()
 
         # Scale the image
-        scale_percent = 60 # percent of original size
+        scale_percent = (width * 100) / self.width
         self.width = int(self.width * scale_percent / 100)
         self.height = int(self.height * scale_percent / 100)
-        self.dim = (self.width, self.height)        
+        self.dim = (self.width, self.height)
         
         logging.info("%s: width: %d, height: %d, fps: %f", self.video_name, self.width,
                      self.height, self.fps)

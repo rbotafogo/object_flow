@@ -70,12 +70,14 @@ class FlowManager(Doer):
         logging.info("initializing flow_manager %s in path %s", self.video_name,
                      self.path)
         
-        self.run()
-
+        # hire a new video decoder named 'self.video_name'
+        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
+                            group = 'decoders')
+        
     # ----------------------------------------------------------------------------------
     # This method is a callback function when it becomes a listener to the video
     # decoder.  Only after the video decoder is initialize that we have information
-    # abuot the width, height and depth of the video being decoded.
+    # abuot the width, height and depth of the video being decoded. 
     # ----------------------------------------------------------------------------------
 
     def initialize_mmap(self, mmap_path, width, height, depth):    
@@ -109,15 +111,6 @@ class FlowManager(Doer):
                        self.myAddress, 'process_frame', callback = 'initialize_mmap')
             
     # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def run(self):
-        # hire a new video decoder named 'self.video_name'
-        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
-                            group = 'decoders')
-        
-    # ----------------------------------------------------------------------------------
     # Adds a new listener to this flow_manager. When a new listener is added it can
     # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
@@ -141,7 +134,7 @@ class FlowManager(Doer):
     # the following messages to the listeners:
     # 'base_image': with the size of the buffer (mmap) where the image is
     # 'overlay_bboxes': with all the detection boxes found
-    # registered method.... TODO: should change this!!!
+    # 'display': tells the listener that it can display the image
     # Finally, this method sends to the decoder the 'next_frame' message for it to
     # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
     # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
@@ -158,7 +151,7 @@ class FlowManager(Doer):
             # listener[1]: doer's method to call
             self.post(listener[0], 'base_image', self._buf_size)
             self.post(listener[0], 'overlay_bboxes', self._setting.items)
-            self.post(listener[0], listener[1], self._buf_size)
+            self.post(listener[0], 'display', self._buf_size)
         
         # call the video decoder to process the next frame
         self.tell(self.video_name, 'next_frame', group = 'decoders')
@@ -197,6 +190,10 @@ class FlowManager(Doer):
         self._buf_size = size
         self._raw_buf.seek(0)
         b2 = np.frombuffer(self._raw_buf.read(size), dtype=np.uint8)
+
+        # The raw_frame is not necessarily in the same shape that we want to process
+        # the video.  Should resize the video to the width, height and depth given
+        # when mmap was initialized
         self._raw_frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
         
         self._total_frames += 1
