@@ -60,13 +60,15 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, video_name, path, yolo):
-        self.video_name = video_name
-        self.path = path
+    def initialize(self, cfg, yolo):
+        self.cfg = cfg
+        self.video_name = cfg.analyser_id
+        self.path = cfg.data['io']['input']
         self._yolo = yolo
         self._setting = Setting()
 
-        logging.info("initializing flow_manager %s in path %s", video_name, path)
+        logging.info("initializing flow_manager %s in path %s", self.video_name,
+                     self.path)
         
         self.run()
 
@@ -135,7 +137,16 @@ class FlowManager(Doer):
         del self._listeners[name]
         
     # ----------------------------------------------------------------------------------
-    # 
+    # This method notifies all listeners that we have a new frame processed. It sends
+    # the following messages to the listeners:
+    # 'base_image': with the size of the buffer (mmap) where the image is
+    # 'overlay_bboxes': with all the detection boxes found
+    # registered method.... TODO: should change this!!!
+    # Finally, this method sends to the decoder the 'next_frame' message for it to
+    # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
+    # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
+    # it needs to to with the frame; 4) flow_manager calls 'next_frame' (this method);
+    # 5) 'next_frame' calls back onto the decoder (step 1 above)
     # ----------------------------------------------------------------------------------
 
     def next_frame(self):
@@ -153,19 +164,25 @@ class FlowManager(Doer):
         self.tell(self.video_name, 'next_frame', group = 'decoders')
         
     # ----------------------------------------------------------------------------------
-    # Callback method for the find_bboxes call to the Neural Net
+    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
+    # registered by method 'process_frame'. This method simply adds the detected
+    # items into the 'setting' and calls 'next_frame' to process the next frame.
     # ----------------------------------------------------------------------------------
 
     def detections(self, boxes, confidences, classIDs):
-        # if we should draw the input_bbox(es)
-        # if (self.cfg.data["video_processor"]["show_input_bbox"]):
-        if True:
-            self._setting.add_detections(boxes, confidences, classIDs)
-            
+        
+        self._setting.add_detections(boxes, confidences, classIDs)
         self.next_frame()
             
     # ----------------------------------------------------------------------------------
-    # 
+    # This is the main loop for the flow_manager. This method is registered as a
+    # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
+    # frame it calls this method.  This method checks that the size of the decoded
+    # video is correct and then reads the frame (from a mmap file). Then, it will
+    # either track the itens in the frame or make a new detection.  If it is time
+    # to make new detections, a message is sent to the Neural Network to 'find_bboxes'
+    # with method 'detections' as the callback for when all the detections are
+    # finished.
     # ----------------------------------------------------------------------------------
 
     def process_frame(self, size):

@@ -18,8 +18,14 @@ from collections import deque
 
 class Item:
 
-    def __init__(self, startX, startY, endX, endY,
-                 class_id = None, confidence = None):
+    # ---------------------------------------------------------------------------------
+    # An item has a bounding box represented by its starting (x, y) point which lies
+    # on the top left corner of the box and and ending point (x, y) which lies on the
+    # right bottom corner of the box.  It also has a class id representing the type of
+    # item, like person, car, etc. and the confidence
+    # ---------------------------------------------------------------------------------
+
+    def __init__(self, startX, startY, endX, endY, class_id = None, confidence = None):
 
         # Coordinates of the bounding box
         self.startX = startX
@@ -68,13 +74,13 @@ class Item:
         self.direction = ""
 
         # update the centroid
-        self.update_centroid()
+        self._update_centroid()
 
     # ---------------------------------------------------------------------------------
     # Updates the centroid of this tracked object
     # ---------------------------------------------------------------------------------
 
-    def update_centroid(self):
+    def _update_centroid(self):
 
         # when updating the centroid, also update the area of
         # the bounding box
@@ -94,7 +100,7 @@ class Item:
     # by bbox
     # ---------------------------------------------------------------------------------
 
-    def update_bbox(self, startX, startY, endX, endY):
+    def _update_bbox(self, startX, startY, endX, endY):
 
         self.startX = startX
         self.startY = startY

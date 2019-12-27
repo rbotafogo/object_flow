@@ -15,7 +15,8 @@
     "record_weekday": 0,
     "gamma_filter": 1.5,
     "show_input_bbox": "False",
-    "show_tracking_bbox": "True"
+    "show_tracking_bbox": "True",
+    "dimensions": [416, 416]
   },
   
   "trackable_objects": {

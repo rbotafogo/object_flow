@@ -64,10 +64,12 @@ class MultiFlow(Doer):
     # its work
     # ----------------------------------------------------------------------------------
 
-    def add_camera(self, video_name, path):
-        # create th e camera manager and initialize it with video_name and
+    def add_camera(self, cfg):
+        # create the flow manager and initialize it with video_name and
         # the Yolo neural net
-        manager = self.hire(video_name, FlowManager, video_name, path, self._yolo,
+        # manager = self.hire(video_name, FlowManager, video_name, path, self._yolo,
+        #                     group = 'flow_manager')
+        manager = self.hire(cfg.analyser_id, FlowManager, cfg, self._yolo,
                             group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
@@ -104,11 +106,12 @@ class MultiFlow(Doer):
             cfg.analyser_id = os.path.splitext(os.path.basename(videos[video]))[0]
             cfg.delta_csv_update = self.system_cfg.data['system_info']['delta']
 
-            self.add_camera(cfg.analyser_id, cfg.data['io']['input'])
+            # self.add_camera(cfg.analyser_id, cfg.data['io']['input'])
+            self.add_camera(cfg)
             
-        # self.add_camera('Shopping3', 'resources/videos/shopping3.avi')
     # ----------------------------------------------------------------------------------
-    #
+    # Reads the configuration file for the video specific video. It first reads the
+    # default configuration file and then reads the specific file. 
     # ----------------------------------------------------------------------------------
     
     def _read_configuration_file(config_file, system_info):

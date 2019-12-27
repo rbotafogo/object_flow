@@ -39,20 +39,6 @@ class Config:
         # be used on the csv output file.
         self.file_name = None
         
-        # Keep the frame and framenumber in a shared object (this one) that is
-        # accessed by all the other classes that require information about the
-        # frame and frame_number
-        self.frame = None
-        self.frame_encoding = None
-        self.frame_number = None
-
-        # width and height of the frame
-        self.width = None
-        self.height = None
-
-        # initialize the video stream, pointer to output video file
-        # self.output = self.data["video_processor"]["output"]
-
         # file to write our processed video
         self.writer = None
 
@@ -65,12 +51,6 @@ class Config:
         # last time the csv file was updated
         self.last_csv_update = None
         self.delta_csv_update = None
-
-        # individual detected queue out, for receiving detection information from 
-        # the detection algorithm (neural net - GPU)
-        self.detect_q_out = None
-        self.detect_q_in = None
-        self.detect_q_out_index = None
 
     # ---------------------------------------------------------------------------------
     # Convert configuration string parameter to boolean

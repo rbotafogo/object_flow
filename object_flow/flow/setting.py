@@ -21,6 +21,7 @@ from object_flow.flow.item import Item
 class Setting:
 
     def __init__(self):
+        # list of items in this setting
         self.items = []
         
     # ---------------------------------------------------------------------------------
@@ -51,7 +52,6 @@ class Setting:
         # Checks if the item should be added/removed from the Setting.  Items should
         # only be in the Setting if they are inside the entry lines.
         # bboxes = self.validate_entry(bboxes)
-        
         new_inputs = self.bboxes2items(bboxes, class_ids, confidences)
 
         # TODO: lots of things....!!!

@@ -179,7 +179,7 @@ if __name__ == '__main__':
     board = Board(logcfg=logcfg)
     board.hire('MultiFlow', MultiFlow, cfg)
 
-    time.sleep(240)
+    time.sleep(30)
     board.shutdown()
 
 # import ctypes
