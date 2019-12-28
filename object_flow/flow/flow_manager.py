@@ -62,7 +62,7 @@ class FlowManager(Doer):
 
     def initialize(self, cfg, yolo):
         self.cfg = cfg
-        self.video_name = cfg.analyser_id
+        self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
         self._yolo = yolo
         

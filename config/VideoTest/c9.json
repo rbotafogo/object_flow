@@ -5,10 +5,6 @@
     "record": "resources/output/Cam9_sabado_tarde.avi"
   },
   
-  "neural_net": {
-    "confidence": 0.1
-  },
-  
   "video_processor": {
     "record": "True",
     "record_time": "18:00-18:02",

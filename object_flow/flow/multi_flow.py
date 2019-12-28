@@ -72,7 +72,7 @@ class MultiFlow(Doer):
         # the Yolo neural net
         # manager = self.hire(video_name, FlowManager, video_name, path, self._yolo,
         #                     group = 'flow_manager')
-        manager = self.hire(cfg.analyser_id, FlowManager, cfg, self._yolo,
+        manager = self.hire(cfg.video_name, FlowManager, cfg, self._yolo,
                             group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
@@ -106,7 +106,7 @@ class MultiFlow(Doer):
             
             cfg = MultiFlow._read_configuration_file(
                 config_file, self.system_cfg.data['system_info'])
-            cfg.analyser_id = os.path.splitext(os.path.basename(videos[video]))[0]
+            cfg.video_name = os.path.splitext(os.path.basename(videos[video]))[0]
             cfg.delta_csv_update = self.system_cfg.data['system_info']['delta']
 
             self.add_camera(cfg)
