@@ -65,8 +65,7 @@ class FlowManager(Doer):
         self.video_name = cfg.analyser_id
         self.path = cfg.data['io']['input']
         self._yolo = yolo
-        self._setting = Setting()
-
+        
         logging.info("initializing flow_manager %s in path %s", self.video_name,
                      self.path)
         
@@ -74,6 +73,32 @@ class FlowManager(Doer):
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
                             group = 'decoders')
         
+    # ----------------------------------------------------------------------------------
+    # Lines configurations (on the configuration file) are done over an image of
+    # a certain dimension.  If we show the image in another dimension, the overlayed
+    # lines need to be converted to the new dimension
+    # ----------------------------------------------------------------------------------
+
+    def _fix_lines_dimensions(self):
+        
+        lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
+        
+        # Constants needed to resize the identified bboxes to the original frame size
+        kw = self.width/lines_dimensions[0]
+        kh = self.height/lines_dimensions[1]
+
+        for line_name, spec in self.cfg.data['entry_lines'].items():
+            end_points = spec['end_points']
+            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
+                                  int(end_points[2] * kw), int(end_points[3] * kh)]
+
+        for line_name, spec in self.cfg.data['counting_lines'].items():
+            end_points = spec['end_points']
+            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
+                                  int(end_points[2] * kw), int(end_points[3] * kh)]
+
+        self.cfg.data['video_processor']['lines_dimensions'] = [self.width, self.height]
+                                  
     # ----------------------------------------------------------------------------------
     # This method is a callback function when it becomes a listener to the video
     # decoder.  Only after the video decoder is initialize that we have information
@@ -93,9 +118,11 @@ class FlowManager(Doer):
         npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
         fd = os.open(mmap_path, os.O_RDONLY)
         self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-
         logging.info("mmap file for %s opened", self.video_name)
 
+        self._fix_lines_dimensions()
+        self._setting = Setting(self.cfg)
+        
         # now that the mmap file has been initialized, we can call 'start_processing'
         self.post(self.vd, 'start_processing')
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
@@ -115,10 +142,10 @@ class FlowManager(Doer):
     # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
 
-    def add_listener(self, name, address, callback):
+    def add_listener(self, name, address):
         logging.info("adding listener to flow_manager %s with name %s", self.video_name,
                      name)
-        self._listeners[name] = (address, callback)
+        self._listeners[name] = address
         return (self.mmap_path, self.width, self.height, self.depth)
     
     # ----------------------------------------------------------------------------------
@@ -147,11 +174,12 @@ class FlowManager(Doer):
         # notify every listener that we have a new frame and give it the
         # buffer size
         for name, listener in self._listeners.items():
-            # listener[0]: doer's address
-            # listener[1]: doer's method to call
-            self.post(listener[0], 'base_image', self._buf_size)
-            self.post(listener[0], 'overlay_bboxes', self._setting.items)
-            self.post(listener[0], 'display', self._buf_size)
+            # listener: doer's address
+            self.post(listener, 'base_image', self._buf_size)
+            self.post(listener, 'overlay_bboxes', self._setting.items)
+            self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
+            self.post(listener, 'add_lines', self.cfg.data['counting_lines'])
+            self.post(listener, 'display', self._buf_size)
         
         # call the video decoder to process the next frame
         self.tell(self.video_name, 'next_frame', group = 'decoders')
@@ -213,7 +241,7 @@ class FlowManager(Doer):
         # Starts displaying the video on a new window. For this, add a new listener
         # to the video_decoder and have it callback the initialize method of the
         # Display we have just created above
-        self.add_listener(self.video_name, self._dp, 'display')
+        self.add_listener(self.video_name, self._dp)
         self.playback_started = True
 
     # ----------------------------------------------------------------------------------

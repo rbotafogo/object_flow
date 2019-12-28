@@ -35,11 +35,9 @@ class YoloTf2(Doer):
     # ---------------------------------------------------------------------------------
 
     def __init__(self):
-        # logging.set_verbosity(logging.INFO)
         super().__init__()
         
-        logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
-                     "yolotf2 initialization started")
+        logging.info("yolotf2 initialization started")
         
         # base path to the yolo directory with weights, names and config
         yolo_dir = 'object_flow/nn/resources/'
@@ -54,8 +52,7 @@ class YoloTf2(Doer):
         self.COLORS = np.random.randint(0, 255, size=(len(self.LABELS), 3),
                                         dtype="uint8")
 
-        logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
-                     "set memory growth to True")
+        logging.info("set memory growth to True")
         gpus = tf.config.experimental.list_physical_devices('GPU')
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
@@ -63,19 +60,25 @@ class YoloTf2(Doer):
         # TODO: number of classes should be on the nn_cfg file
         self.yolo = YoloV3(classes=80)
         self.yolo.load_weights('object_flow/nn/resources/checkpoints/yolov3.tf')
-        logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
-                     "weights loaded")
+        logging.info("weights loaded")
             
         class_names = [c.strip() for c in open(names_path).readlines()]
-        logging.info("%s, %s, %s, %s", Util.br_time(), "all", os.getpid(), 
-                     "classes loaded")
+        logging.info("classes loaded")
 
         # file descriptors opened where frames are stored
         self._fd = {}
         
-        # TODO. This should come from the config file
-        self.min_confidence = 0.3
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
 
+    def initialize(self, confidence, threshold):
+        logging.info("Yolo, setting confidence to %f", confidence)
+        logging.info("Yolo, setting threshold to %f", threshold)
+        
+        self.min_confidence = confidence
+        self.threshold = threshold
+        
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
@@ -98,7 +101,7 @@ class YoloTf2(Doer):
             self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
-        frame = b2.reshape((height, width, depth))  # 480, 704, 3
+        frame = b2.reshape((height, width, depth))
 
         # Resize the frame to 416 x 416 as required by Yolo and then convert it
         # to RGB

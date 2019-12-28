@@ -53,19 +53,6 @@ class Config:
         self.delta_csv_update = None
 
     # ---------------------------------------------------------------------------------
-    # Convert configuration string parameter to boolean
-    # ---------------------------------------------------------------------------------
-
-    def fix_configurations(self):
-
-        self.data["video_processor"]["show_input_bbox"] = (
-            self.data["video_processor"]["show_input_bbox"] == 'True')
-        self.data["video_processor"]["show_tracking_bbox"] = (
-            self.data["video_processor"]["show_tracking_bbox"] == "True")
-        self.data["video_processor"]["show_id"] = (
-            self.data["video_processor"]["show_id"] == "True")
-        
-    # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
 
@@ -86,7 +73,6 @@ class Config:
                 result2.append(change)
 
         self.data = patch(result2, self.data)
-        self.fix_configurations()
         
     # ---------------------------------------------------------------------------------
     #

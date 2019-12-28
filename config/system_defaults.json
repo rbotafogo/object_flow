@@ -1,0 +1,26 @@
+{
+  "neural_net": {
+    "comment": "Use by default the yolov3 algorithm trained on the Coco dataset.",
+    "neural_net": "yolo",
+    "nn_dir": "contagem/neural_nets/nn_configs/yolo-coco/",
+    "names": "coco.names",
+    "config_file": "yolov3.cfg",
+    "weights": "yolov3.weights",
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "yolov3_tf2": {
+    "comment": "Yolov2 running on tensorflow v2. https://github.com/zzh8829/yolov3-tf2/blob/master/README.md",
+    "neural_net": "yolov3_tf2",
+    "nn_dir": "contagem/neural_nets/nn_configs/yolo-coco/",
+    "names": "coco.names",
+    "config_file": "yolov3.cfg",
+    "weights": "yolov3.weights",
+    "tiny": "yolov3-tiny.weights",
+    "tf2_weights": "contagem/neural_nets/nn_configs/yolov3_tf2/checkpoints/yolov3.tf",
+    "confidence": 0.3,
+    "threshold": 0.3
+  }
+  
+}

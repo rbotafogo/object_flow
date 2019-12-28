@@ -77,16 +77,6 @@ class Display(Doer):
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 
     # ----------------------------------------------------------------------------------
-    # Callback method called whenever a new frame is available in the mmap file
-    # ----------------------------------------------------------------------------------
-
-    def display(self, size):
-        # logging.debug("%s, %s, %s, display for video %s with size %d",
-        #               Util.br_time(), os.getpid(), 'Display', video_name, size)
-        cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
-        cv2.waitKey(25)
-
-    # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
     
@@ -96,6 +86,29 @@ class Display(Doer):
             cv2.rectangle(self.frame, (item.startX, item.startY),
                           (item.endX, item.endY), (0, 250, 0), 2)
     
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def add_lines(self, lines):
+        
+        for line_name, spec in lines.items():
+            end_points = spec['end_points']
+            first_point = (int(end_points[0]), int(end_points[1]))
+            second_point = (int(end_points[2]), int(end_points[3]))
+
+            cv2.line(self.frame, first_point, second_point, spec['line_color'], 2)
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def display(self, size):
+        # logging.debug("%s, %s, %s, display for video %s with size %d",
+        #               Util.br_time(), os.getpid(), 'Display', video_name, size)
+        cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
+        cv2.waitKey(25)
+
     # ----------------------------------------------------------------------------------
     # Destroys the display window. Need to set self._stop = True to make sure that no
     # other frame will be shown, which would make the window reapear.

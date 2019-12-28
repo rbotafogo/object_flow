@@ -38,8 +38,11 @@ class MultiFlow(Doer):
     
     def initialize(self, system_cfg):
         self.system_cfg = system_cfg
+        confidence = system_cfg.data['yolov3_tf2']['confidence']
+        threshold = system_cfg.data['yolov3_tf2']['threshold']
         
-        self._yolo = self.hire('YoloNet', YoloTf2, group = 'DeepLearners')
+        self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
+                               group = 'DeepLearners')
         self.main()
     
     # ----------------------------------------------------------------------------------
@@ -106,7 +109,6 @@ class MultiFlow(Doer):
             cfg.analyser_id = os.path.splitext(os.path.basename(videos[video]))[0]
             cfg.delta_csv_update = self.system_cfg.data['system_info']['delta']
 
-            # self.add_camera(cfg.analyser_id, cfg.data['io']['input'])
             self.add_camera(cfg)
             
     # ----------------------------------------------------------------------------------
@@ -137,7 +139,7 @@ class MultiFlow(Doer):
         if 'record' in cfg.data["video_processor"]:
             cfg.data["video_processor"]["record"] = (
                 cfg.data["video_processor"]["record"] == 'True')
-        # if 'record' no set in config, then check its value on the command
+        # if 'record' not set in config, then check its value on the command
         # line parameters.  The config file takes precedence over the
         # command line parameters.
         else:
@@ -186,6 +188,11 @@ class MultiFlow(Doer):
         # Correct the 'show_id' configuration parameter
         cfg.data["video_processor"]["show_id"] = (
             cfg.data["video_processor"]["show_id"] == 'True')        
-
+        # Correct the 'show_input_bbox' configuration parameter
+        cfg.data["video_processor"]["show_input_bbox"] = (
+            cfg.data["video_processor"]["show_input_bbox"] == 'True')
+        # Correct the 'show_tracking_bbox' configuration parameter
+        cfg.data["video_processor"]["show_tracking_bbox"] = (
+            cfg.data["video_processor"]["show_tracking_bbox"] == "True")
+        
         return cfg
-            

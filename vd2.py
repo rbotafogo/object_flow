@@ -76,8 +76,10 @@ if __name__ == '__main__':
     # Create configuration object and loads the defaults configuration file
     logging.info("%s, %s, %s, %s", Util.br_time(), args['config'], os.getpid(), 
                  "Reading configuration file")
-    
-    cfg = Config(args["config"])
+
+    # cfg = Config(args["config"])
+    cfg = Config("config/system_defaults.json")
+    cfg.update(args['config'])
 
     cfg.data['system_info']['config_dir'] = args['config']
     cfg.data['system_info']['edit'] = (args['edit'] == 'True')
@@ -157,7 +159,7 @@ if __name__ == '__main__':
                'formatters': {
                    'normal': {
                        # 'format': "%(asctime)s;%(levelname)s;%(message)s"}},
-                       'format': "%(asctime)s;%(filename)s;%(funcName)s;%(lineno)d;%(process)d;%(levelname)s;%(message)s", 'datefmt': '%Y-%m-%d;%H:%M:%S'}
+                       'format': "%(levelname)-6s;%(asctime)s;%(filename)s;%(funcName)s;%(lineno)d;%(process)d;%(message)s", 'datefmt': '%Y-%m-%d;%H:%M:%S'}
                },
                'handlers': {
                    'h': {'class': 'logging.FileHandler',
