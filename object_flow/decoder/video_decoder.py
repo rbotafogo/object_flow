@@ -12,15 +12,16 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
+# needed to open the mmap file
 import os
-import time
+import mmap
+import math
+
 import cv2
 import logging
-import mmap
 import numpy as np
 from imutils.video import FPS
 import imutils
-import math
 
 from datetime import timedelta
 # from sys import getsizeof
@@ -140,13 +141,19 @@ class VideoDecoder(Doer):
     def start_processing(self):
         # start the frames per second throughput estimator
         self._fps = FPS().start()
-        self.next_frame()
+        self._next_frame()
         
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def next_frame(self):
+    # PRIVATE METHODS
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _next_frame(self):
         # logging.debug("%s, %s, %s, %s",
         #               Util.br_time(), self.video_name, os.getpid(),                          
         #               "loading frame for video camera")
@@ -183,12 +190,6 @@ class VideoDecoder(Doer):
         self._fps.update()
         
     # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    # PRIVATE METHODS
-
-    # ----------------------------------------------------------------------------------
     # Table to adjust the image gamma filter
     # ----------------------------------------------------------------------------------
 
@@ -207,7 +208,7 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def _wakeup(self):
-        self.next_frame()
+        self._next_frame()
         self.wakeupAfter(CHECK_PERIOD)
         
     # ----------------------------------------------------------------------------------

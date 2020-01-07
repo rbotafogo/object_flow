@@ -20,8 +20,8 @@ import logging
 from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
 from object_flow.util.config import Config
-from object_flow.flow.flow_manager import FlowManager
 from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
+from object_flow.flow.flow_manager import FlowManager
 from object_flow.flow.tracker import Tracker
 
 #==========================================================================================
@@ -57,7 +57,7 @@ class MultiFlow(Doer):
         self.add_tracker()
         self.add_tracker()
         
-        self.main()
+        self._main()
     
     # ----------------------------------------------------------------------------------
     #
@@ -102,24 +102,12 @@ class MultiFlow(Doer):
                             group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
-    #
+    # Main control flow of multi_flow: for every camera in the 'video_cameras'
+    # configuration section of the system configuration file, read the specific
+    # configuration file for the camera and start the camera.
     # ----------------------------------------------------------------------------------
 
-    def start_playback(self, video_name):
-        self.tell(video_name, 'start_playback', group = 'flow_manager')
-    
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def stop_playback(self, video_name):
-        self.tell(video_name, 'stop_playback', group = 'flow_manager')
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def main(self):
+    def _main(self):
         videos = self.system_cfg.data['video_cameras']
         
         for j, video in enumerate(videos):
@@ -222,3 +210,25 @@ class MultiFlow(Doer):
             cfg.data["video_processor"]["show_tracking_bbox"] == "True")
         
         return cfg
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PLAYBACK CONTROL
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def start_playback(self, video_name):
+        self.tell(video_name, 'start_playback', group = 'flow_manager')
+    
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def stop_playback(self, video_name):
+        self.tell(video_name, 'stop_playback', group = 'flow_manager')
+        
+    

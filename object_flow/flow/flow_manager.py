@@ -12,18 +12,15 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
+# needed to open the mmap file
 import os
-import time
-import logging
-import cv2
 import mmap
-import numpy as np
 import math
 
-from thespian.actors import ActorSystem
+import logging
+import numpy as np
 
 from object_flow.ipc.doer import Doer
-
 from object_flow.util.display import Display
 
 from object_flow.decoder.video_decoder import VideoDecoder
@@ -169,7 +166,7 @@ class FlowManager(Doer):
     # 5) 'next_frame' calls back onto the decoder (step 1 above)
     # ----------------------------------------------------------------------------------
 
-    def next_frame(self):
+    def _next_frame(self):
 
         # notify every listener that we have a new frame and give it the
         # buffer size
@@ -182,18 +179,18 @@ class FlowManager(Doer):
             self.post(listener, 'display', self._buf_size)
         
         # call the video decoder to process the next frame
-        self.tell(self.video_name, 'next_frame', group = 'decoders')
+        self.tell(self.video_name, '_next_frame', group = 'decoders')
         
     # ----------------------------------------------------------------------------------
     # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
     # registered by method 'process_frame'. This method simply adds the detected
-    # items into the 'setting' and calls 'next_frame' to process the next frame.
+    # items into the 'setting' and calls '_next_frame' to process the next frame.
     # ----------------------------------------------------------------------------------
 
     def detections(self, boxes, confidences, classIDs):
         
         self._setting.add_detections(boxes, confidences, classIDs)
-        self.next_frame()
+        self._next_frame()
             
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
@@ -211,7 +208,7 @@ class FlowManager(Doer):
         # There was an error reading the last frame, so just move on to the next
         # frame
         if size < (self.height * self.width * self.depth):
-            self.next_frame()
+            self._next_frame()
             return
             
         # read the raw frame
@@ -231,7 +228,7 @@ class FlowManager(Doer):
                        self.width, self.height, self.depth, size,
                        callback = 'detections')
         else:
-            self.next_frame()
+            self._next_frame()
             
     # ----------------------------------------------------------------------------------
     #
