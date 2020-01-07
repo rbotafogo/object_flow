@@ -38,16 +38,21 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
     
-    def __init__(self, id):
+    def __init__(self):
         # every Doer should call super().__init__() if it has an __init__ method
         super().__init__()
 
-        # this tracker id
-        self.id = id
-        
         # A Tracker can track itens from different videos, so it has a list of all
         # videos and for each video, the list of itens it is tracking
         self.video_analysers = {}
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def initialize(self, id):
+        # this tracker id
+        self.id = id
         
     # ----------------------------------------------------------------------------------
     # Returns the id of this partial tracker

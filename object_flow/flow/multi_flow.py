@@ -22,6 +22,7 @@ from object_flow.util.util import Util
 from object_flow.util.config import Config
 from object_flow.flow.flow_manager import FlowManager
 from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
+from object_flow.flow.tracker import Tracker
 
 #==========================================================================================
 # VideoSupervisor supervises as many FlowManagers as there are video cameras.
@@ -35,6 +36,16 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
+
+    def __init__(self):
+        super().__init__()
+        
+        # list of trackers
+        self.trackers = []
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
     
     def initialize(self, system_cfg):
         self.system_cfg = system_cfg
@@ -43,6 +54,9 @@ class MultiFlow(Doer):
         
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
                                group = 'DeepLearners')
+        self.add_tracker()
+        self.add_tracker()
+        
         self.main()
     
     # ----------------------------------------------------------------------------------
@@ -50,10 +64,22 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
 
     def hired(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'Trackers':
+            logging.info("New tracker %s hired", hiree_name)
         if hiree_group == 'DeepLearners':
             logging.info("Yolo neural net ready to roll")
         if hiree_group == 'flow_manager':
-            pass
+            logging.info("New flow_manager %s hired", hiree_name)
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def add_tracker(self):
+        num_tracker = len(self.trackers) + 1
+        self.trackers.append(
+            self.hire('Tracker_' + str(num_tracker), Tracker, num_tracker,
+                      group = 'Trackers') )
             
     # ----------------------------------------------------------------------------------
     #
