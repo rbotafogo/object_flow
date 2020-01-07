@@ -70,9 +70,9 @@ class Board(HR):
             klass, target_actor_requirements, global_name, source_hash)
         self._doers[group][name] = doer
 
-        if 'initialize' in dir(klass):
-            method = getattr(klass, 'initialize')
-            self.phone(doer, 'initialize', *args, **kwargs, callback = 'init_done')
+        if '__initialize__' in dir(klass):
+            method = getattr(klass, '__initialize__')
+            self.phone(doer, '__initialize__', *args, **kwargs, callback = 'init_done')
             
         return doer
 

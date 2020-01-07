@@ -50,7 +50,7 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, id):
+    def __initialize__(self, id):
         # this tracker id
         self.id = id
         

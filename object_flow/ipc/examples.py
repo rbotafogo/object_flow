@@ -31,7 +31,7 @@ class Eng(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, boss, salary):
+    def __initialize__(self, boss, salary):
         logging.info("initializing Eng with boss %s and salary %f", boss, salary)
         
         self.boss = boss

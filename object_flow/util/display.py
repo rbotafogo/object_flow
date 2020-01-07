@@ -36,7 +36,7 @@ class Display(Doer):
     # @param video_name [String] name of the video camera
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, video_name):
+    def __initialize__(self, video_name):
         self.video_name = video_name
         self._stop = False
     

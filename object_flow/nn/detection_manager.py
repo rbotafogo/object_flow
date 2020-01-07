@@ -29,5 +29,5 @@ class DetectionManager(Doer):
     #
     # ----------------------------------------------------------------------------------
     
-    def initialize(self):
+    def __initialize__(self):
         pass

@@ -47,7 +47,7 @@ class MultiFlow(Doer):
     #
     # ----------------------------------------------------------------------------------
     
-    def initialize(self, system_cfg):
+    def __initialize__(self, system_cfg):
         self.system_cfg = system_cfg
         confidence = system_cfg.data['yolov3_tf2']['confidence']
         threshold = system_cfg.data['yolov3_tf2']['threshold']
@@ -63,7 +63,7 @@ class MultiFlow(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def hired(self, hiree_name, hiree_group, hiree_address):
+    def __hired__(self, hiree_name, hiree_group, hiree_address):
         if hiree_group == 'Trackers':
             logging.info("New tracker %s hired", hiree_name)
         if hiree_group == 'DeepLearners':
@@ -75,19 +75,33 @@ class MultiFlow(Doer):
     #
     # ----------------------------------------------------------------------------------
 
+    # SERVICES
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def start_playback(self, video_name):
+        self.tell(video_name, 'start_playback', group = 'flow_manager')
+    
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def stop_playback(self, video_name):
+        self.tell(video_name, 'stop_playback', group = 'flow_manager')
+        
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
     def add_tracker(self):
         num_tracker = len(self.trackers) + 1
         self.trackers.append(
             self.hire('Tracker_' + str(num_tracker), Tracker, num_tracker,
                       group = 'Trackers') )
             
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def flow_manager_initialized(self, video_name):
-        self.start_playback(video_name)
-    
     # ----------------------------------------------------------------------------------
     # Adds a new camera to be processes.  It creates a camera manager and let's it do
     # its work
@@ -101,6 +115,26 @@ class MultiFlow(Doer):
         manager = self.hire(cfg.video_name, FlowManager, cfg, self._yolo,
                             group = 'flow_manager')
         
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # SYNCHRONIZATION METHODS
+
+    # ----------------------------------------------------------------------------------
+    # This method is called by a flow_manager just after it has been initialized to
+    # let multi_flow know that it can use this flow_manager
+    # ----------------------------------------------------------------------------------
+
+    def flow_manager_initialized(self, video_name):
+        self.start_playback(video_name)
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+    
     # ----------------------------------------------------------------------------------
     # Main control flow of multi_flow: for every camera in the 'video_cameras'
     # configuration section of the system configuration file, read the specific
@@ -210,25 +244,3 @@ class MultiFlow(Doer):
             cfg.data["video_processor"]["show_tracking_bbox"] == "True")
         
         return cfg
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    # PLAYBACK CONTROL
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def start_playback(self, video_name):
-        self.tell(video_name, 'start_playback', group = 'flow_manager')
-    
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def stop_playback(self, video_name):
-        self.tell(video_name, 'stop_playback', group = 'flow_manager')
-        
-    

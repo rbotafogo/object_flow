@@ -72,7 +72,7 @@ class YoloTf2(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    def initialize(self, confidence, threshold):
+    def __initialize__(self, confidence, threshold):
         logging.info("Yolo, setting confidence to %f", confidence)
         logging.info("Yolo, setting threshold to %f", threshold)
         

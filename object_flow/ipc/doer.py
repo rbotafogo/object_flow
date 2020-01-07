@@ -44,32 +44,32 @@ class Doer(Actor):
         self._doers['default'] = {}
         
     # ----------------------------------------------------------------------------------
+    # After a Doer has initialized, going throuhg '_set_id_' and '__initialize__' the
+    # hiring Doer receives the 'hired' message with the name, group and address of the
+    # hiree
+    # ----------------------------------------------------------------------------------
+
+    def __hired__(self, hiree_name, hiree_group, hiree_address):
+        pass
+    
+    # ----------------------------------------------------------------------------------
     # When a Doer is hired, it imediately gets the '_set_id_' message, with its name
     # and group (given by the hiring doer) and eventually some parameters to use for
-    # calling the 'initialize' method.  The 'initialize' method can be added to
+    # calling the '__initialize__' method.  The '__initialize__' method can be added to
     # any Doer to do any necessary initialization that requires runtime information.
     # Initializations that do not require runtime information can be done in the
     # __init__ method normaly
     # ----------------------------------------------------------------------------------
 
-    def _set_id_(self, *args, _name_ = None, _group_ = None, _parent_ = None, **kwargs):
+    def __set_id__(self, *args, _name_ = None, _group_ = None, _parent_ = None, **kwargs):
         self.name = _name_
         self.group = _group_
         self.parent_address = _parent_
 
-        if 'initialize' in dir(self):
-            method = getattr(self, 'initialize')
+        if '__initialize__' in dir(self):
+            method = getattr(self, '__initialize__')
             method(*args, **kwargs)
         
-    # ----------------------------------------------------------------------------------
-    # After a Doer has initialized, going throuhg '_set_id_' and 'initialize' the
-    # hiring Doer receives the 'hired' message with the name, group and address of the
-    # hiree
-    # ----------------------------------------------------------------------------------
-
-    def hired(self, hiree_name, hiree_group, hiree_address):
-        pass
-    
     # ----------------------------------------------------------------------------------
     # Hires a new 'doer' for the 'group'
     # ----------------------------------------------------------------------------------
@@ -82,8 +82,8 @@ class Doer(Actor):
         doer = self.createActor(klass, target_actor_requirements, global_name)
         self._doers[group][name] = (doer, klass)
 
-        self.phone(doer, '_set_id_', *args, **kwargs, _name_ = name, _group_ = group,
-                   _parent_ = self.myAddress, callback = 'hired', memo_type = 'hire')
+        self.phone(doer, '__set_id__', *args, **kwargs, _name_ = name, _group_ = group,
+                   _parent_ = self.myAddress, callback = '__hired__', memo_type = 'hire')
 
         return doer
         

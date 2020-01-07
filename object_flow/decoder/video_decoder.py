@@ -54,7 +54,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, video_name, path, width = 500):
+    def __initialize__(self, video_name, path, width = 500):
         self.path = path
         self.video_name = video_name
 

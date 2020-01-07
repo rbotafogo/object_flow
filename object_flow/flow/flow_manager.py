@@ -57,7 +57,7 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def initialize(self, cfg, yolo):
+    def __initialize__(self, cfg, yolo):
         self.cfg = cfg
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
@@ -68,7 +68,69 @@ class FlowManager(Doer):
         
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
-                            group = 'decoders')
+                                group = 'decoders')
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def __hired__(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'decoders':
+            logging.info("decoder for %s created", self.video_name)
+            self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
+                       self.myAddress, 'process_frame', callback = 'initialize_mmap')
+            
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # SERVICES
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def start_playback(self):
+
+        display  = self.video_name + '_display'
+        self._dp = self.hire(display, Display, self.video_name, group = 'displayers')
+
+        logging.info("starting playback for video %s", self.video_name)
+        
+        # initialize the display
+        self.phone(self._dp, 'initialize_mmap', self.mmap_path, self.width,
+                   self.height, self.depth, callback = '_add_listener')
+                
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # TODO: remove video_name as a parameter
+    def destroy_window(self, video_name):
+        display = self.video_name + '_display'
+        self.tell(display, 'destroy_window', group = 'displayers')
+        
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def stop_playback(self):
+        
+        if self.playback == False:
+            return
+        elif self.playback_started == False:
+            self.post(self.myAddress, 'stop_playback')
+            return
+
+        logging.info("stopping playback for video %s", self.video_name)
+        
+        # self.ask(self.video_name, 'remove_listener', self.video_name,
+        #          callback = 'destroy_window', group = 'decoders')
+        self.remove_listener(self.video_name)
+        self.destroy_window(self.video_name)
+        
+        self.playback = False
+        self.playback_started = False
         
     # ----------------------------------------------------------------------------------
     # Lines configurations (on the configuration file) are done over an image of
@@ -124,16 +186,6 @@ class FlowManager(Doer):
         self.post(self.vd, 'start_processing')
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
         
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def hired(self, hiree_name, hiree_group, hiree_address):
-        if hiree_group == 'decoders':
-            logging.info("decoder for %s created", self.video_name)
-            self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
-                       self.myAddress, 'process_frame', callback = 'initialize_mmap')
-            
     # ----------------------------------------------------------------------------------
     # Adds a new listener to this flow_manager. When a new listener is added it can
     # use the values of width, height and depth already initialized from the camera
@@ -241,55 +293,3 @@ class FlowManager(Doer):
         self.add_listener(self.video_name, self._dp)
         self.playback_started = True
 
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    # PLAYBACK MANAGEMENT
-    
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def start_playback(self):
-
-        display  = self.video_name + '_display'
-        self._dp = self.hire(display, Display, self.video_name, group = 'displayers')
-
-        logging.info("starting playback for video %s", self.video_name)
-        
-        # initialize the display
-        self.phone(self._dp, 'initialize_mmap', self.mmap_path, self.width,
-                   self.height, self.depth, callback = '_add_listener')
-                
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    # TODO: remove video_name as a parameter
-    def destroy_window(self, video_name):
-        display = self.video_name + '_display'
-        self.tell(display, 'destroy_window', group = 'displayers')
-        
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def stop_playback(self):
-        
-        if self.playback == False:
-            return
-        elif self.playback_started == False:
-            self.post(self.myAddress, 'stop_playback')
-            return
-
-        logging.info("stopping playback for video %s", self.video_name)
-        
-        # self.ask(self.video_name, 'remove_listener', self.video_name,
-        #          callback = 'destroy_window', group = 'decoders')
-        self.remove_listener(self.video_name)
-        self.destroy_window(self.video_name)
-        
-        self.playback = False
-        self.playback_started = False
-        
