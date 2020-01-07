@@ -133,35 +133,34 @@ class FlowManager(Doer):
         self.playback_started = False
         
     # ----------------------------------------------------------------------------------
-    # Lines configurations (on the configuration file) are done over an image of
-    # a certain dimension.  If we show the image in another dimension, the overlayed
-    # lines need to be converted to the new dimension
+    # Adds a new listener to this flow_manager. When a new listener is added it can
+    # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
 
-    def _fix_lines_dimensions(self):
-        
-        lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
-        
-        # Constants needed to resize the identified bboxes to the original frame size
-        kw = self.width/lines_dimensions[0]
-        kh = self.height/lines_dimensions[1]
-
-        for line_name, spec in self.cfg.data['entry_lines'].items():
-            end_points = spec['end_points']
-            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
-                                  int(end_points[2] * kw), int(end_points[3] * kh)]
-
-        for line_name, spec in self.cfg.data['counting_lines'].items():
-            end_points = spec['end_points']
-            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
-                                  int(end_points[2] * kw), int(end_points[3] * kh)]
-
-        self.cfg.data['video_processor']['lines_dimensions'] = [self.width, self.height]
-                                  
+    def add_listener(self, name, address):
+        logging.info("adding listener to flow_manager %s with name %s", self.video_name,
+                     name)
+        self._listeners[name] = address
+        return (self.mmap_path, self.width, self.height, self.depth)
+    
     # ----------------------------------------------------------------------------------
-    # This method is a callback function when it becomes a listener to the video
+    # Removes the listener
+    # ----------------------------------------------------------------------------------
+
+    def remove_listener(self, name):
+        logging.info("listener %s removed from flow_manager %s", name, self.video_name)
+        del self._listeners[name]
+        
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # CALLBACK METHODS
+    
+    # ----------------------------------------------------------------------------------
+    # Callback method: when it becomes a listener to the video
     # decoder.  Only after the video decoder is initialize that we have information
-    # abuot the width, height and depth of the video being decoded. 
+    # about the width, height and depth of the video being decoded. 
     # ----------------------------------------------------------------------------------
 
     def initialize_mmap(self, mmap_path, width, height, depth):    
@@ -187,24 +186,48 @@ class FlowManager(Doer):
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
         
     # ----------------------------------------------------------------------------------
-    # Adds a new listener to this flow_manager. When a new listener is added it can
-    # use the values of width, height and depth already initialized from the camera
+    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
+    # registered by method 'process_frame'. This method simply adds the detected
+    # items into the 'setting' and calls '_next_frame' to process the next frame.
     # ----------------------------------------------------------------------------------
 
-    def add_listener(self, name, address):
-        logging.info("adding listener to flow_manager %s with name %s", self.video_name,
-                     name)
-        self._listeners[name] = address
-        return (self.mmap_path, self.width, self.height, self.depth)
+    def detections(self, boxes, confidences, classIDs):
+        
+        self._setting.add_detections(boxes, confidences, classIDs)
+        self._next_frame()
+            
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
     
     # ----------------------------------------------------------------------------------
-    # Removes the listener
+    # Lines configurations (on the configuration file) are done over an image of
+    # a certain dimension.  If we show the image in another dimension, the overlayed
+    # lines need to be converted to the new dimension
     # ----------------------------------------------------------------------------------
 
-    def remove_listener(self, name):
-        logging.info("listener %s removed from flow_manager %s", name, self.video_name)
-        del self._listeners[name]
+    def _fix_lines_dimensions(self):
         
+        lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
+        
+        # Constants needed to resize the identified bboxes to the original frame size
+        kw = self.width/lines_dimensions[0]
+        kh = self.height/lines_dimensions[1]
+
+        for line_name, spec in self.cfg.data['entry_lines'].items():
+            end_points = spec['end_points']
+            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
+                                  int(end_points[2] * kw), int(end_points[3] * kh)]
+
+        for line_name, spec in self.cfg.data['counting_lines'].items():
+            end_points = spec['end_points']
+            spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
+                                  int(end_points[2] * kw), int(end_points[3] * kh)]
+
+        self.cfg.data['video_processor']['lines_dimensions'] = [self.width, self.height]
+                                  
     # ----------------------------------------------------------------------------------
     # This method notifies all listeners that we have a new frame processed. It sends
     # the following messages to the listeners:
@@ -233,17 +256,6 @@ class FlowManager(Doer):
         # call the video decoder to process the next frame
         self.tell(self.video_name, '_next_frame', group = 'decoders')
         
-    # ----------------------------------------------------------------------------------
-    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
-    # registered by method 'process_frame'. This method simply adds the detected
-    # items into the 'setting' and calls '_next_frame' to process the next frame.
-    # ----------------------------------------------------------------------------------
-
-    def detections(self, boxes, confidences, classIDs):
-        
-        self._setting.add_detections(boxes, confidences, classIDs)
-        self._next_frame()
-            
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
