@@ -193,8 +193,47 @@ class FlowManager(Doer):
 
     def detections(self, boxes, confidences, classIDs):
         
-        self._setting.add_detections(boxes, confidences, classIDs)
+        self._setting.detections2items(boxes, confidences, classIDs)
         self._next_frame()
+            
+    # ----------------------------------------------------------------------------------
+    # This is the main loop for the flow_manager. This method is registered as a
+    # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
+    # frame it calls this method.  This method checks that the size of the decoded
+    # video is correct and then reads the frame (from a mmap file). Then, it will
+    # either track the itens in the frame or make a new detection.  If it is time
+    # to make new detections, a message is sent to the Neural Network to 'find_bboxes'
+    # with method 'detections' as the callback for when all the detections are
+    # finished.
+    # ----------------------------------------------------------------------------------
+
+    def process_frame(self, size):
+
+        # There was an error reading the last frame, so just move on to the next
+        # frame
+        if size < (self.height * self.width * self.depth):
+            self._next_frame()
+            return
+            
+        # read the raw frame
+        self._buf_size = size
+        self._raw_buf.seek(0)
+        b2 = np.frombuffer(self._raw_buf.read(size), dtype=np.uint8)
+
+        # The raw_frame is not necessarily in the same shape that we want to process
+        # the video.  Should resize the video to the width, height and depth given
+        # when mmap was initialized
+        self._raw_frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
+        
+        self._total_frames += 1
+        self.cfg.frame_number = self._total_frames
+        
+        if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
+            self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
+                       self.width, self.height, self.depth, size,
+                       callback = 'detections')
+        else:
+            self._next_frame()
             
     # ----------------------------------------------------------------------------------
     # 
@@ -256,44 +295,6 @@ class FlowManager(Doer):
         # call the video decoder to process the next frame
         self.tell(self.video_name, '_next_frame', group = 'decoders')
         
-    # ----------------------------------------------------------------------------------
-    # This is the main loop for the flow_manager. This method is registered as a
-    # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
-    # frame it calls this method.  This method checks that the size of the decoded
-    # video is correct and then reads the frame (from a mmap file). Then, it will
-    # either track the itens in the frame or make a new detection.  If it is time
-    # to make new detections, a message is sent to the Neural Network to 'find_bboxes'
-    # with method 'detections' as the callback for when all the detections are
-    # finished.
-    # ----------------------------------------------------------------------------------
-
-    def process_frame(self, size):
-
-        # There was an error reading the last frame, so just move on to the next
-        # frame
-        if size < (self.height * self.width * self.depth):
-            self._next_frame()
-            return
-            
-        # read the raw frame
-        self._buf_size = size
-        self._raw_buf.seek(0)
-        b2 = np.frombuffer(self._raw_buf.read(size), dtype=np.uint8)
-
-        # The raw_frame is not necessarily in the same shape that we want to process
-        # the video.  Should resize the video to the width, height and depth given
-        # when mmap was initialized
-        self._raw_frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
-        
-        self._total_frames += 1
-
-        if self._total_frames % 10 == 0:
-            self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
-                       self.width, self.height, self.depth, size,
-                       callback = 'detections')
-        else:
-            self._next_frame()
-            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

@@ -89,6 +89,9 @@ class Util:
         if round_minute == 0:
             round_minute = 0
             hour += 1
+        if hour == 24:
+            hour = 0
+            
         round_dt = dt.replace(hour=hour, minute=round_minute, second=0)        
         return round_dt
     

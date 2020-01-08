@@ -147,10 +147,14 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    # PRIVATE METHODS
+    # PROTECTED METHODS
 
     # ----------------------------------------------------------------------------------
-    #
+    # This method is called by the flow_manager to get the next available frame. Only
+    # flow_manager should call this function.  Flow manager is registered as one of
+    # the listeners to this decoder and this is how all frames are processed,
+    # video_decoder _next_frame and flow_manager's _next_frame each call each other
+    # 'recursively'.
     # ----------------------------------------------------------------------------------
 
     def _next_frame(self):
@@ -189,6 +193,12 @@ class VideoDecoder(Doer):
                 
         self._fps.update()
         
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+
     # ----------------------------------------------------------------------------------
     # Table to adjust the image gamma filter
     # ----------------------------------------------------------------------------------
