@@ -28,7 +28,8 @@ class Setting:
 
     def __init__(self, cfg):
         self.cfg = cfg
-
+        self._set_counters()
+        
         # list of items in this setting
         self.items = []
         

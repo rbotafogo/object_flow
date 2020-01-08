@@ -194,6 +194,8 @@ class FlowManager(Doer):
     def detections(self, boxes, confidences, classIDs):
         
         self._setting.detections2items(boxes, confidences, classIDs)
+        self._setting.init_counters(self._setting.items)
+        
         self._next_frame()
             
     # ----------------------------------------------------------------------------------
