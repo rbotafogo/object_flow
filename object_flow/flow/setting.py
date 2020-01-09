@@ -56,9 +56,6 @@ class Setting:
         # convert the bounding boxes to items
         self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
 
-        # TODO: lots of things....!!!
-        # self.items = self.new_inputs
-        
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------

@@ -46,6 +46,9 @@ class FlowManager(Doer):
         # total number of frames processed by this FlowManager
         self._total_frames = 0
         
+        # id of the next item
+        self.next_item_id = 0
+        
         # list of listeners interested to get a message everytime a new frame is
         # loaded
         self._listeners = {}
@@ -197,7 +200,7 @@ class FlowManager(Doer):
 
         # now manage the tracking of items. This method will match the already tracked
         # items with the detected items
-        self._setting.track_items()
+        self._track_items()
         self._setting.init_counters(self._setting.items)
 
         self._next_frame()
@@ -246,6 +249,48 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     # PRIVATE METHODS
+            
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _track_items(self):
+        
+        # if we are currently not tracking any objects we should
+        # start tracking them
+        # logging.info("track_items was called")
+        if (len(self._setting.items) == 0):
+            self._tracks_new_items(self._setting.new_inputs)
+            self._setting.items = self._setting.new_inputs
+            return
+
+        # TODO: lots of things....:
+        
+        # match the new items to the already tracked objects using
+        # iou match
+
+        # or using
+        # centroid match
+
+        # then find the elements that did not match and start tracking them
+        # then add to the items list the new items
+        self._setting.items = self._setting.new_inputs
+
+    # ----------------------------------------------------------------------------------
+    # The given items should be tracked. Store in the item the following information:
+    # ----------------------------------------------------------------------------------
+
+    def _tracks_new_items(self, items):
+        # logging.info("tracks_all was called with number of items %d", len(items))
+        for item in items:
+            item.first_frame = self.cfg.frame_number
+            
+            # set the id of this item to the next value
+            self.next_item_id += 1
+            item.object_id = self.next_item_id
+
+            # self.tell(tracker, 'start_tracking', self.video_name, self.cfg.file_name,
+            # item.object_id, item.startX, item.startY, item.endX, item.endY)
             
     # ----------------------------------------------------------------------------------
     # Lines configurations (on the configuration file) are done over an image of
