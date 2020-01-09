@@ -12,19 +12,21 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
+# needed to open the mmap file
 import os
-import time
-import logging
-import cv2
 import mmap
-import numpy as np
 import math
+
+import logging
+import time
+
+import cv2
+import numpy as np
+
+# tracking algorithm
 import dlib
 
-from thespian.actors import ActorSystem
-
 from object_flow.ipc.doer import Doer
-
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
 
@@ -44,7 +46,10 @@ class Tracker(Doer):
 
         # A Tracker can track itens from different videos, so it has a list of all
         # videos and for each video, the list of itens it is tracking
-        self.video_analysers = {}
+        self.videos = {}
+        
+        # file descriptors opened where frames are stored
+        self._fd = {}
         
     # ----------------------------------------------------------------------------------
     #
@@ -69,10 +74,33 @@ class Tracker(Doer):
     # could be used.
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, video_name, frame, object_id, startX, startY, endX, endY):
+    def start_tracking(self, video_name, file_name, object_id, startX, startY, endX,
+                       endY):
+        
+        # open the file descriptor if not already opened
+        if not name in self._fd:
+            self._fd[name] = os.open(file_name, os.O_RDONLY)
+
+        # read the image
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((width * height * depth)/ 4000) + 10
+        
+        self._buf = mmap.mmap(
+            self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        self._buf.seek(0)
+        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
+        frame = b2.reshape((height, width, depth))
+
+
+    #-----
+        
+    def _start_tracking(self, video_name, frame, object_id, startX, startY, endX, endY):
 
         # gets the correct list of video analyser objects
-        va_objs = self.video_analysers.get(video_name, {})
+        va_objs = self.videos.get(video_name, {})
         
         dlib_tracker = dlib.correlation_tracker()
         rect = dlib.rectangle(startX, startY, endX, endY)

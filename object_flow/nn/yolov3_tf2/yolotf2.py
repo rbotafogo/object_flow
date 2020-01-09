@@ -12,14 +12,17 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
-import time
+# needed to open the mmap file
 import os
+import mmap
+import math
+
+import logging
+import time
+
 import tensorflow as tf
 import numpy as np
-import mmap
-import logging
 import cv2
-import math
 
 from object_flow.util.util import Util
 from object_flow.ipc.doer import Doer

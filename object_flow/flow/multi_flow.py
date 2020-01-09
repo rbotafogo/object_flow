@@ -39,37 +39,44 @@ class MultiFlow(Doer):
 
     def __init__(self):
         super().__init__()
+        self.nn_ready = False
 
-        # number of available trackers
-        self.ntrackers = 0
-        
-        # list of trackers
-        # self.trackers = []
-        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
     
     def __initialize__(self, system_cfg):
         self.system_cfg = system_cfg
-        confidence = system_cfg.data['yolov3_tf2']['confidence']
-        threshold = system_cfg.data['yolov3_tf2']['threshold']
+        neural_net = system_cfg.data['neural_net']['neural_net']
+        
+        # load confidence and threshold from the specific neural net algo
+        confidence = system_cfg.data[neural_net]['confidence']
+        threshold = system_cfg.data[neural_net]['threshold']
         
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
                                group = 'DeepLearners')
-        self.add_tracker()
-        self.add_tracker()
+
+        # read from conf file how many trackers we want and create the trackers
+        self.ntrackers = system_cfg.data[neural_net]['num_trackers']
+        self.add_trackers(self.ntrackers)
         
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     def __hired__(self, hiree_name, hiree_group, hiree_address):
-        if hiree_group == 'Trackers':
+        if hiree_group == 'trackers':
             logging.info("New tracker %s hired", hiree_name)
+            # _main should only run after all the trackers and the neural net have
+            # being instantiated. We call _main multiple times but check if
+            # ntrackers == 0 (all trackers hired) and that nn_ready is True
+            self._main()
         if hiree_group == 'DeepLearners':
             logging.info("Yolo neural net ready to roll")
-            # only start the main loop after Yolo has been loaded
+            self.nn_ready = True
+            # _main should only run after all the trackers and the neural net have
+            # being instantiated. We call _main multiple times but check if
+            # ntrackers == 0 (all trackers hired) and that nn_ready is True
             self._main()
         if hiree_group == 'flow_manager':
             logging.info("New flow_manager %s hired", hiree_name)
@@ -100,10 +107,18 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
 
     def add_tracker(self):
-        self.ntrackers += 1
+        self.ntrackers -= 1
         self.hire('Tracker_' + str(self.ntrackers), Tracker, self.ntrackers,
-                  group = 'Trackers')
+                  group = 'trackers')
             
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def add_trackers(self, num):
+        for i in range(num):
+            self.add_tracker()
+    
     # ----------------------------------------------------------------------------------
     # Adds a new camera to be processes.  It creates a camera manager and let's it do
     # its work
@@ -112,8 +127,8 @@ class MultiFlow(Doer):
     def add_camera(self, cfg):
         # create the flow manager and initialize it with video_name and
         # the Yolo neural net
-        manager = self.hire(cfg.video_name, FlowManager, cfg, self._yolo,
-                            group = 'flow_manager')
+        manager = self.hire(cfg.video_name, FlowManager, cfg, self._doers['trackers'],
+                            self._yolo, group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
     #
@@ -142,6 +157,9 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
 
     def _main(self):
+        if not(self.nn_ready == True and self.ntrackers == 0):
+            return
+        
         videos = self.system_cfg.data['video_cameras']
         
         for j, video in enumerate(videos):
@@ -250,6 +268,6 @@ class MultiFlow(Doer):
     # ----------------------------------------------------------------------------------
 
     def _test_tracker_communication(self):
-        for tracker in self._doers['Trackers']:
-            self.tell(tracker, 'say_hello', 1, 2, 3, a = 4, b = 5, group='Trackers')
+        for tracker in self._doers['trackers']:
+            self.tell(tracker, 'say_hello', 1, 2, 3, a = 4, b = 5, group='trackers')
         
