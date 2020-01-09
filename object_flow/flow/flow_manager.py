@@ -187,15 +187,19 @@ class FlowManager(Doer):
         
     # ----------------------------------------------------------------------------------
     # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
-    # registered by method 'process_frame'. This method simply adds the detected
-    # items into the 'setting' and calls '_next_frame' to process the next frame.
+    # registered by method 'process_frame'.
     # ----------------------------------------------------------------------------------
 
-    def detections(self, boxes, confidences, classIDs):
-        
+    def boxes_detected(self, boxes, confidences, classIDs):
+
+        # convert the detected bounding boxes to Items
         self._setting.detections2items(boxes, confidences, classIDs)
+
+        # now manage the tracking of items. This method will match the already tracked
+        # items with the detected items
+        self._setting.track_items()
         self._setting.init_counters(self._setting.items)
-        
+
         self._next_frame()
             
     # ----------------------------------------------------------------------------------
@@ -203,7 +207,7 @@ class FlowManager(Doer):
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
     # frame it calls this method.  This method checks that the size of the decoded
     # video is correct and then reads the frame (from a mmap file). Then, it will
-    # either track the itens in the frame or make a new detection.  If it is time
+    # either track the items in the frame or make a new detection.  If it is time
     # to make new detections, a message is sent to the Neural Network to 'find_bboxes'
     # with method 'detections' as the callback for when all the detections are
     # finished.
@@ -233,7 +237,7 @@ class FlowManager(Doer):
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
                        self.width, self.height, self.depth, size,
-                       callback = 'detections')
+                       callback = 'boxes_detected')
         else:
             self._next_frame()
             
@@ -242,7 +246,7 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     # PRIVATE METHODS
-    
+            
     # ----------------------------------------------------------------------------------
     # Lines configurations (on the configuration file) are done over an image of
     # a certain dimension.  If we show the image in another dimension, the overlayed

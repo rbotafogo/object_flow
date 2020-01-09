@@ -69,10 +69,10 @@ class Tracker(Doer):
     # could be used.
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, analyser_id, frame, object_id, startX, startY, endX, endY):
+    def start_tracking(self, video_name, frame, object_id, startX, startY, endX, endY):
 
         # gets the correct list of video analyser objects
-        va_objs = self.video_analysers.get(analyser_id, {})
+        va_objs = self.video_analysers.get(video_name, {})
         
         dlib_tracker = dlib.correlation_tracker()
         rect = dlib.rectangle(startX, startY, endX, endY)
@@ -81,6 +81,14 @@ class Tracker(Doer):
         # add this dlib tracker to the list of tracked objects by this tracker
         va_objs[object_id] = dlib_tracker
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+    
+    def say_hello(self, *args, **kwargs):
+        logging.info("Hello from tracker %d with args %s and kwargs %s", self.id,
+                     args, kwargs)
+        
 
 
 

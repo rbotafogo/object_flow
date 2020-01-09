@@ -39,9 +39,12 @@ class MultiFlow(Doer):
 
     def __init__(self):
         super().__init__()
+
+        # number of available trackers
+        self.ntrackers = 0
         
         # list of trackers
-        self.trackers = []
+        # self.trackers = []
         
     # ----------------------------------------------------------------------------------
     #
@@ -57,8 +60,6 @@ class MultiFlow(Doer):
         self.add_tracker()
         self.add_tracker()
         
-        self._main()
-    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -68,8 +69,11 @@ class MultiFlow(Doer):
             logging.info("New tracker %s hired", hiree_name)
         if hiree_group == 'DeepLearners':
             logging.info("Yolo neural net ready to roll")
+            # only start the main loop after Yolo has been loaded
+            self._main()
         if hiree_group == 'flow_manager':
             logging.info("New flow_manager %s hired", hiree_name)
+            # self._test_tracker_communication()
             
     # ----------------------------------------------------------------------------------
     #
@@ -90,17 +94,15 @@ class MultiFlow(Doer):
 
     def stop_playback(self, video_name):
         self.tell(video_name, 'stop_playback', group = 'flow_manager')
-        
     
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     def add_tracker(self):
-        num_tracker = len(self.trackers) + 1
-        self.trackers.append(
-            self.hire('Tracker_' + str(num_tracker), Tracker, num_tracker,
-                      group = 'Trackers') )
+        self.ntrackers += 1
+        self.hire('Tracker_' + str(self.ntrackers), Tracker, self.ntrackers,
+                  group = 'Trackers')
             
     # ----------------------------------------------------------------------------------
     # Adds a new camera to be processes.  It creates a camera manager and let's it do
@@ -110,8 +112,6 @@ class MultiFlow(Doer):
     def add_camera(self, cfg):
         # create the flow manager and initialize it with video_name and
         # the Yolo neural net
-        # manager = self.hire(video_name, FlowManager, video_name, path, self._yolo,
-        #                     group = 'flow_manager')
         manager = self.hire(cfg.video_name, FlowManager, cfg, self._yolo,
                             group = 'flow_manager')
         
@@ -244,3 +244,12 @@ class MultiFlow(Doer):
             cfg.data["video_processor"]["show_tracking_bbox"] == "True")
         
         return cfg
+
+    # ----------------------------------------------------------------------------------
+    # broadcast to all trackers a 'say_hello' message
+    # ----------------------------------------------------------------------------------
+
+    def _test_tracker_communication(self):
+        for tracker in self._doers['Trackers']:
+            self.tell(tracker, 'say_hello', 1, 2, 3, a = 4, b = 5, group='Trackers')
+        
