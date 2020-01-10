@@ -36,7 +36,7 @@ class Item:
         # the bounding box will receive an object id for the duration
         # of the streaming video. The tracking algorithm is responsible
         # for registering the bounding box and giving it an object id
-        self.object_id = None
+        self.item_id = None
 
         # class_id and confidence for this class id.  Those values are
         # given by the detection algorithm

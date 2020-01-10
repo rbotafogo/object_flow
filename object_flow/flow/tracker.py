@@ -74,40 +74,43 @@ class Tracker(Doer):
     # could be used.
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, video_name, file_name, object_id, startX, startY, endX,
-                       endY):
+    def start_tracking(self, video_name, file_name, width, height, depth, size,
+                       item_id, startX, startY, endX, endY):
+
+        frame = self._get_frame(video_name, file_name, width, height, depth, size)
         
-        # open the file descriptor if not already opened
-        if not name in self._fd:
-            self._fd[name] = os.open(file_name, os.O_RDONLY)
+        logging.info("started tracking for video %s item_id %d", video_name, item_id)
 
-        # read the image
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        npage = math.ceil((width * height * depth)/ 4000) + 10
-        
-        self._buf = mmap.mmap(
-            self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(0)
-        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
-        frame = b2.reshape((height, width, depth))
-
-
-    #-----
-        
-    def _start_tracking(self, video_name, frame, object_id, startX, startY, endX, endY):
-
-        # gets the correct list of video analyser objects
+        # gets the correct list of video items.
         va_objs = self.videos.get(video_name, {})
         
         dlib_tracker = dlib.correlation_tracker()
         rect = dlib.rectangle(startX, startY, endX, endY)
         dlib_tracker.start_track(frame, rect)
         
-        # add this dlib tracker to the list of tracked objects by this tracker
-        va_objs[object_id] = dlib_tracker
+        # add this dlib tracker to the list of tracked items by this tracker for the
+        # specified video
+        va_objs.update({item_id:dlib_tracker})
+        self.videos[video_name] = va_objs
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def update_tracked_items(self, video_name, file_name, width, height, depth, size):
+
+        frame = self._get_frame(video_name, file_name, width, height, depth, size)
+        
+        # get all tracked objects from the given camera
+        # va_objs = self.videos[video_name]
+        if not (video_name in self.videos.keys()):
+            return None
+        
+        logging.info('update_tracked_items videos %s', self.videos)
+
+        # for item_id, item in va_objs.items():
+        #     pass
+        return [[0, 0, 0, 0]]
 
     # ----------------------------------------------------------------------------------
     #
@@ -118,72 +121,27 @@ class Tracker(Doer):
                      args, kwargs)
         
 
-
-
-
-
-
-    
     # ----------------------------------------------------------------------------------
-    # This method is the main loop for the partial tracking process.
+    #
     # ----------------------------------------------------------------------------------
 
-    def tracker(self):
-        logging.info("Starting tracker %d", self.id)
+    def _get_frame(self, video_name, file_name, width, height, depth, size):
 
-        for data in iter(self.comm_q_in.get, None):
-            logging.debug("%s, %d, %s, got message: %s",
-                          Util.br_time(), self.id, os.getpid(), data[0])
-            
-            # data[0] contains the type of message received. Can be 'Start', 'Update',
-            # 'Remove'
-            if data[0] == 'Start':
-                # data[1] = analyser_id
-                # data[2] = frame
-                # data[3] = object_id
-                # data[4] = startX
-                # data[5] = startY
-                # data[6] = endX
-                # data[7] = endY
-                # print("process " + str(os.getpid()) + " with id: " + str(self.id) +
-                #       " got " + str(data[0]))
-                logging.debug(Util.br_time() +
-                    ", Tracker %d: tracking object %d for camera %s", self.id, data[3], data[1])
-                self.__start_tracker(data[1], data[2], data[3], data[4], data[5], data[6], data[7])
-            elif data[0] == 'Update':
-                # data[1] = analyser_id
-                # data[2] = frame
-                logging.debug(Util.br_time() +
-                    ", Tracker %d: updating for camera %s", self.id, data[1])
-                self.__update_trackers(data[1], data[2])
-            elif data[0] == "Remove":
-                # data[1] = analyser_id
-                # data[2] = object_id
-                logging.debug(Util.br_time() +
-                    ", Tracker %d: removing object %d for camera %s", self.id, data[2], data[1])
-                self.__remove_tracked(data[1], data[2])
-            elif data[0] == 'End':
-                logging.info("%s, %d, %s, %s",
-                             Util.br_time(), self.id, os.getpid(), 
-                             "Shutting down tracker. Received 'End' message")
-                break
-            elif data[0] == "Info":
-                for key, value in self.video_analysers.items():
-                    if key != "info":
-                        total_items = len(self.video_analysers[key])
-                        logging.info("%s, %d, %s, tracking %d objects for analyser %s",
-                                     Util.br_time(), self.id, os.getpid(), total_items, key)
-                p = psutil.Process()
-                with p.oneshot():
-                    logging.info("%s, %d, %s, cpu_times: %s, cpu_percent: %s, memory: %s",
-                                 Util.br_time(), self.id, os.getpid(), p.cpu_times(),
-                                 p.cpu_percent(), p.memory_info())
-            elif data[0] == 'Test':
-                logging.info("%s, %d, %s, Hello from server %d",
-                             Util.br_time(), self.id, os.getpid(), self.id)
-            else:
-                logging.debug(Util.br_time() +
-                              ", Unknown message type: " + data[0])
-                
+        # open the file descriptor if not already opened
+        if not video_name in self._fd:
+            self._fd[video_name] = os.open(file_name, os.O_RDONLY)
 
+        # read the image
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((width * height * depth)/ 4000) + 10
         
+        self._buf = mmap.mmap(
+            self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        self._buf.seek(0)
+        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
+        frame = b2.reshape((height, width, depth))
+
+        return frame

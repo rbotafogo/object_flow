@@ -190,6 +190,26 @@ class FlowManager(Doer):
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
         
     # ----------------------------------------------------------------------------------
+    # This method sends to the decoder the 'next_frame' message for it to
+    # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
+    # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
+    # it needs to to with the frame; 4) flow_manager calls 'next_frame' (this method);
+    # 5) 'next_frame' calls back onto the decoder (step 1 above)
+    # ----------------------------------------------------------------------------------
+
+    def _next_frame(self):
+
+        # notify all the listeners to this flow_manager that we have finished
+        # processing this frame and are going to process the next one.
+        # TODO: Might not be enough time for all listeners to do something with the
+        # frame before we get the next frame. Not a problem right now since we only
+        # have one listener to this object
+        self._notify_listeners()
+        
+        # call the video decoder to process the next frame
+        self.tell(self.video_name, '_next_frame', group = 'decoders')
+        
+    # ----------------------------------------------------------------------------------
     # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
     # registered by method 'process_frame'.
     # ----------------------------------------------------------------------------------
@@ -206,6 +226,14 @@ class FlowManager(Doer):
 
         self._next_frame()
             
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def tracking_done(self, bounding_boxes):
+        # logging.info("tracking done for video camera", self.video_name)
+        pass
+    
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
@@ -224,25 +252,30 @@ class FlowManager(Doer):
         if size < (self.height * self.width * self.depth):
             self._next_frame()
             return
-            
-        # read the raw frame
-        self._buf_size = size
-        self._raw_buf.seek(0)
-        b2 = np.frombuffer(self._raw_buf.read(size), dtype=np.uint8)
 
-        # The raw_frame is not necessarily in the same shape that we want to process
-        # the video.  Should resize the video to the width, height and depth given
-        # when mmap was initialized
-        self._raw_frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
-        
+        self._buf_size = size
         self._total_frames += 1
         self.cfg.frame_number = self._total_frames
+
+        # do the tracking phase of the algorithm
+        # update tracked items for this video every 'x' frames according to
+        # configuration
+        if (self.cfg.data['video_analyser']['track_every_x_frames'] == 1 or
+            (self.cfg.frame_number %
+             self.cfg.data['video_analyser']['track_every_x_frames'] != 0)):
+            self._trackers_broadcast_with_callback(
+                'update_tracked_items', self.video_name, self.mmap_path, self.width,
+                self.height, self.depth, size, callback = 'tracking_done')
         
+        # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
                        self.width, self.height, self.depth, size,
                        callback = 'boxes_detected')
         else:
+            # This is one problem with callback functions: the '_next_frame' method is
+            # called here and also on the 'boxes_detected' callback method. It's
+            # a bit confusing.
             self._next_frame()
             
     # ----------------------------------------------------------------------------------
@@ -250,6 +283,48 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     # PRIVATE METHODS
+            
+    # ----------------------------------------------------------------------------------
+    # broadcast a message to all the trackers.
+    # ----------------------------------------------------------------------------------
+
+    def _trackers_broadcast_with_callback(self, method, *args, **kwargs):
+        for tracker_name, tracker in self.trackers.items():
+            self.phone(tracker[0], method, *args, **kwargs)
+    
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def _send_unique(self, item):
+        # TODO: Get the firs tracker... should define a better policy for sending to
+        # trackers.  How many itens to track by tracker? Is there any advantage in
+        # querying the tracker before sending data to it? For instance, should we
+        # check how many items it's already tracking in order to define how many
+        # more to give to it?
+        tracker = self.trackers['Tracker_0']
+        
+        self.post(tracker[0], 'start_tracking', self.video_name, self.mmap_path,
+                  self.width, self.height, self.depth, self._buf_size, item.item_id,
+                  item.startX, item.startY, item.endX, item.endY)
+    
+    # ----------------------------------------------------------------------------------
+    # The given items should be tracked. Store in the item the following information:
+    # ----------------------------------------------------------------------------------
+
+    def _tracks_new_items(self, items):
+        # logging.info("tracks_all was called with number of items %d", len(items))
+        for item in items:
+            item.first_frame = self.cfg.frame_number
+            
+            # set the id of this item to the next value
+            self.next_item_id += 1
+            item.item_id = self.next_item_id
+
+            self._send_unique(item)
+
+            # self.tell(tracker, 'start_tracking', self.video_name, self.cfg.file_name,
+            # item.object_id, item.startX, item.startY, item.endX, item.endY)
             
     # ---------------------------------------------------------------------------------
     #
@@ -277,22 +352,29 @@ class FlowManager(Doer):
         # then add to the items list the new items
         self._setting.items = self._setting.new_inputs
 
-    # ----------------------------------------------------------------------------------
-    # The given items should be tracked. Store in the item the following information:
-    # ----------------------------------------------------------------------------------
+    # ---------------------------------------------------------------------------------
+    # This method notifies all listeners that we have a new frame processed. It sends
+    # the following messages to the listeners:
+    # * 'base_image': with the size of the buffer (mmap) where the image is
+    # * 'overlay_bboxes': with all the detection boxes found
+    # * 'add_lines': to add the entry_lines
+    # * 'add_lines': to add the counting_lines
+    # * 'display': tells the listener that it can display the image
+    # ---------------------------------------------------------------------------------
 
-    def _tracks_new_items(self, items):
-        # logging.info("tracks_all was called with number of items %d", len(items))
-        for item in items:
-            item.first_frame = self.cfg.frame_number
-            
-            # set the id of this item to the next value
-            self.next_item_id += 1
-            item.object_id = self.next_item_id
-
-            # self.tell(tracker, 'start_tracking', self.video_name, self.cfg.file_name,
-            # item.object_id, item.startX, item.startY, item.endX, item.endY)
-            
+    def _notify_listeners(self):
+        
+        # notify every listener that we have a new frame and give it the
+        # buffer size
+        for name, listener in self._listeners.items():
+            # listener: doer's address
+            self.post(listener, 'base_image', self._buf_size)
+            self.post(listener, 'overlay_bboxes', self._setting.items)
+            self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
+            self.post(listener, 'add_lines', self.cfg.data['counting_lines'])
+            self.post(listener, 'display', self._buf_size)
+        
+        
     # ----------------------------------------------------------------------------------
     # Lines configurations (on the configuration file) are done over an image of
     # a certain dimension.  If we show the image in another dimension, the overlayed
@@ -319,34 +401,6 @@ class FlowManager(Doer):
 
         self.cfg.data['video_processor']['lines_dimensions'] = [self.width, self.height]
                                   
-    # ----------------------------------------------------------------------------------
-    # This method notifies all listeners that we have a new frame processed. It sends
-    # the following messages to the listeners:
-    # 'base_image': with the size of the buffer (mmap) where the image is
-    # 'overlay_bboxes': with all the detection boxes found
-    # 'display': tells the listener that it can display the image
-    # Finally, this method sends to the decoder the 'next_frame' message for it to
-    # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
-    # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
-    # it needs to to with the frame; 4) flow_manager calls 'next_frame' (this method);
-    # 5) 'next_frame' calls back onto the decoder (step 1 above)
-    # ----------------------------------------------------------------------------------
-
-    def _next_frame(self):
-
-        # notify every listener that we have a new frame and give it the
-        # buffer size
-        for name, listener in self._listeners.items():
-            # listener: doer's address
-            self.post(listener, 'base_image', self._buf_size)
-            self.post(listener, 'overlay_bboxes', self._setting.items)
-            self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
-            self.post(listener, 'add_lines', self.cfg.data['counting_lines'])
-            self.post(listener, 'display', self._buf_size)
-        
-        # call the video decoder to process the next frame
-        self.tell(self.video_name, '_next_frame', group = 'decoders')
-        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
