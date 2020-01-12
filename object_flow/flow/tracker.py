@@ -82,7 +82,7 @@ class Tracker(Doer):
         logging.info("started tracking for video %s item_id %d", video_name, item_id)
 
         # gets the correct list of video items.
-        va_objs = self.videos.get(video_name, {})
+        video_items = self.videos.get(video_name, {})
         
         dlib_tracker = dlib.correlation_tracker()
         rect = dlib.rectangle(startX, startY, endX, endY)
@@ -90,8 +90,8 @@ class Tracker(Doer):
         
         # add this dlib tracker to the list of tracked items by this tracker for the
         # specified video
-        va_objs.update({item_id:dlib_tracker})
-        self.videos[video_name] = va_objs
+        video_items.update({item_id:dlib_tracker})
+        self.videos[video_name] = video_items
         
     # ----------------------------------------------------------------------------------
     #
@@ -102,13 +102,38 @@ class Tracker(Doer):
         frame = self._get_frame(video_name, file_name, width, height, depth, size)
         
         # get all tracked objects from the given camera
-        # va_objs = self.videos[video_name]
+        # video_items = self.videos[video_name]
         if not (video_name in self.videos.keys()):
             return None
+
+        video_items = self.videos[video_name]
+
+        bounding_boxes = []
+        
+        for item_id, dlib_tracker in video_items.items():
+            confidence = dlib_tracker.update(frame)
+            pos = dlib_tracker.get_position()
+            # make sure t
+            pl = int(pos.left())
+            if pl < 0:
+                pl = 0
+                
+            pt = int(pos.top())
+            if pt < 0:
+                pt = 0
+                
+            pr = int(pos.right())
+            if pr > width:
+                pr = width
+                
+            pb = int(pos.bottom())
+            if pb > height:
+                pb = height 
+    
         
         logging.info('update_tracked_items videos %s', self.videos)
 
-        # for item_id, item in va_objs.items():
+        # for item_id, item in video_items.items():
         #     pass
         return [[0, 0, 0, 0]]
 
