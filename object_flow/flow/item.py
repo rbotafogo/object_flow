@@ -9,6 +9,8 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
+import numpy as np
+
 from collections import deque
 
 # =========================================================================================
@@ -25,7 +27,7 @@ class Item:
     # item, like person, car, etc. and the confidence
     # ---------------------------------------------------------------------------------
 
-    def __init__(self, startX, startY, endX, endY, class_id = None, confidence = None):
+    def __init__(self, startX, startY, endX, endY, class_id = None, confidence = 1.0):
 
         # Coordinates of the bounding box
         self.startX = startX
@@ -56,9 +58,6 @@ class Item:
         # dlib tracker to track this object
         self.tracker = None
         
-        # which partial tracker is tracking this object
-        self.partial_tracker_id = None
-
         # direction to which the object is moving
         self.dirX = None
         self.dirY = None
@@ -76,6 +75,52 @@ class Item:
         # update the centroid
         self._update_centroid()
 
+    # ---------------------------------------------------------------------------------
+    # Updates this item according to the information given by the tracker
+    # ---------------------------------------------------------------------------------
+
+    def tracker_update(self, frame_number, confidence, startX, startY, endX, endY):
+        
+        # update the dlib tracker
+        self.confidence = confidence
+
+        # updating the bbox also updates the centroid information used
+        # bellow
+        self._update_bbox(startX, startY, endX, endY)
+
+        (self.dirX, self.dirY) = ("", "")
+
+        # If the centroid moved far enough for the last 10 updates
+        if len(self.centroids) > 10:
+            self.dX = self.centroids[-10][0] - self.centroids[0][0]
+            self.dY = self.centroids[-10][1] - self.centroids[0][1]
+
+            if np.abs(self.dX) > 20:
+                self.dirX = "East" if np.sign(self.dX) == 1 else "West"
+            if np.abs(self.dY) > 20:
+                self.dirY = "North" if np.sign(self.dY) == 1 else "South"
+
+            # handle when both directions are non-empty
+            if self.dirX != "" and self.dirY != "":
+                self.direction = "{}-{}".format(self.dirY, self.dirX)
+
+            # otherwise, only one direction is non-empty
+            else:
+                self.direction = self.dirX if self.dirX != "" else self.dirY
+
+            # if the difference is too small, then set the last_update
+            if np.abs(self.dX) < 20 and np.abs(self.dY) < 20:
+                if self.last_update == 0:
+                    self.last_update = frame_number
+            else:
+                self.last_update = 0
+                
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+    
     # ---------------------------------------------------------------------------------
     # Updates the centroid of this tracked object
     # ---------------------------------------------------------------------------------
@@ -108,5 +153,5 @@ class Item:
         self.endY = endY
 
         # update the centroid
-        self.update_centroid()
+        self._update_centroid()
 

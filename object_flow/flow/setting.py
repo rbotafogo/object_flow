@@ -17,7 +17,8 @@ from object_flow.flow.item import Item
 from object_flow.util.geom import Geom
 
 # =========================================================================================
-# Class Setting is responsible for managing all the items in the camera view
+# Class Setting is responsible for managing all the items in the camera view. This is
+# an auxiliary class for flow_manager.
 # =========================================================================================
 
 class Setting:
@@ -33,8 +34,8 @@ class Setting:
         # id of the next item
         self.next_item_id = 0
         
-        # list of items in this setting
-        self.items = []
+        # dictionary of items in this setting
+        self.items = {}
         
     # ---------------------------------------------------------------------------------
     #
@@ -55,57 +56,21 @@ class Setting:
 
         # convert the bounding boxes to items
         self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
-
-    # ---------------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------------
-
-    def track_items(self):
-        
-        # if we are currently not tracking any objects we should
-        # start tracking them
-        # logging.info("track_items was called")
-        if (len(self.items) == 0):
-            self.tracks_new_items(self.new_inputs)
-            self.items = self.new_inputs
-            return
-
-        # TODO: lots of things....:
-        
-        # match the new items to the already tracked objects using
-        # iou match
-
-        # or using
-        # centroid match
-
-        # then find the elements that did not match and start tracking them
-        # then add to the items list the new items
-        self.items = self.new_inputs
-
-    # ----------------------------------------------------------------------------------
-    # The given items should be tracked. Store in the item the following information:
-    # ----------------------------------------------------------------------------------
-
-    def tracks_new_items(self, items):
-        # logging.info("tracks_all was called with number of items %d", len(items))
-        for item in items:
-            item.first_frame = self.cfg.frame_number
-            
-            # set the id of this item to the next value
-            self.next_item_id += 1
-            item.object_id = self.next_item_id
-
-            # self.tell(tracker, 'start_tracking', self.video_name, self.cfg.file_name,
-            # item.object_id, item.startX, item.startY, item.endX, item.endY)
-            
-    # ---------------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------------
-
-    def init_counters(self, items):
-        for item in items:
+        for item in self.new_inputs:
             self._init_item_counters(item)
 
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def update_item(self, frame_number, item_id, confidence, bounding_box):
+        logging.debug("updating item %d boundign box with confidence %f to: %s",
+                      item_id, confidence, bounding_box)
+        
+        self.items[item_id].tracker_update(
+            frame_number, confidence, bounding_box[0], bounding_box[1],
+            bounding_box[2], bounding_box[3])
+    
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------

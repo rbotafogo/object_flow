@@ -108,12 +108,15 @@ class Tracker(Doer):
 
         video_items = self.videos[video_name]
 
-        bounding_boxes = []
+        detections = {}
         
         for item_id, dlib_tracker in video_items.items():
+            
             confidence = dlib_tracker.update(frame)
             pos = dlib_tracker.get_position()
-            # make sure t
+            
+            # make sure that the values are positive integers in the range (0, 0)
+            # (width, height)
             pl = int(pos.left())
             if pl < 0:
                 pl = 0
@@ -128,14 +131,11 @@ class Tracker(Doer):
                 
             pb = int(pos.bottom())
             if pb > height:
-                pb = height 
-    
-        
-        logging.info('update_tracked_items videos %s', self.videos)
+                pb = height
 
-        # for item_id, item in video_items.items():
-        #     pass
-        return [[0, 0, 0, 0]]
+            detections[item_id] = (confidence, [pl, pt, pr, pb])
+    
+        return detections
 
     # ----------------------------------------------------------------------------------
     #

@@ -222,7 +222,7 @@ class FlowManager(Doer):
         # now manage the tracking of items. This method will match the already tracked
         # items with the detected items
         self._track_items()
-        self._setting.init_counters(self._setting.items)
+        # self._setting.init_counters(self._setting.items.values())
 
         self._next_frame()
             
@@ -230,10 +230,17 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def tracking_done(self, bounding_boxes):
-        # logging.info("tracking done for video camera", self.video_name)
-        pass
-    
+    def tracking_done(self, items_update):
+        # logging.info("number of bounding boxes %d", len(bounding_boxes))
+        if (items_update == None):
+            return
+        
+        for item_id, update in items_update.items():
+            confidence = update[0]
+            bounding_box = update[1]
+            self._setting.update_item(self.cfg.frame_number, item_id, confidence,
+                                      bounding_box)
+            
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
@@ -266,7 +273,7 @@ class FlowManager(Doer):
             self._trackers_broadcast_with_callback(
                 'update_tracked_items', self.video_name, self.mmap_path, self.width,
                 self.height, self.depth, size, callback = 'tracking_done')
-        
+                    
         # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
@@ -315,17 +322,16 @@ class FlowManager(Doer):
     def _tracks_new_items(self, items):
         # logging.info("tracks_all was called with number of items %d", len(items))
         for item in items:
+            # first frame where this item was detected
             item.first_frame = self.cfg.frame_number
             
             # set the id of this item to the next value
             self.next_item_id += 1
             item.item_id = self.next_item_id
+            self._setting.items[self.next_item_id] = item
 
             self._send_unique(item)
 
-            # self.tell(tracker, 'start_tracking', self.video_name, self.cfg.file_name,
-            # item.object_id, item.startX, item.startY, item.endX, item.endY)
-            
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
@@ -337,20 +343,31 @@ class FlowManager(Doer):
         # logging.info("track_items was called")
         if (len(self._setting.items) == 0):
             self._tracks_new_items(self._setting.new_inputs)
-            self._setting.items = self._setting.new_inputs
             return
 
         # TODO: lots of things....:
         
         # match the new items to the already tracked objects using
         # iou match
+        #if self.cfg.data["trackable_objects"]["match"] == "iou_match":
+        #    (unused_rows,
+        #     unused_cols,
+        #     match_rows_cols) = Geom.iou_match(self._setting.items,
+        #                                      new_inputs,
+        #                                       self.cfg.data["tracAkable_objects"]["iou_match"])
 
         # or using
         # centroid match
 
         # then find the elements that did not match and start tracking them
         # then add to the items list the new items
-        self._setting.items = self._setting.new_inputs
+        #for item in self._setting.new_inputs:
+            # set the id of this item to the next value
+        #    self.next_item_id += 1
+        #    item.item_id = self.next_item_id
+        #    self._setting.items[self.next_item_id] = item
+            
+        # self._setting.items = self._setting.new_inputs
 
     # ---------------------------------------------------------------------------------
     # This method notifies all listeners that we have a new frame processed. It sends
@@ -369,7 +386,7 @@ class FlowManager(Doer):
         for name, listener in self._listeners.items():
             # listener: doer's address
             self.post(listener, 'base_image', self._buf_size)
-            self.post(listener, 'overlay_bboxes', self._setting.items)
+            self.post(listener, 'overlay_bboxes', list(self._setting.items.values()))            
             self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
             self.post(listener, 'add_lines', self.cfg.data['counting_lines'])
             self.post(listener, 'display', self._buf_size)
