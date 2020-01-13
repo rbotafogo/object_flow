@@ -97,6 +97,27 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
+    def tracks_list(self, video_name, file_name, width, height, depth, size, items):
+        
+        frame = self._get_frame(video_name, file_name, width, height, depth, size)
+        
+        # gets the correct list of video items.
+        video_items = self.videos.get(video_name, {})
+        
+        for item in items:
+            dlib_tracker = dlib.correlation_tracker()
+            rect = dlib.rectangle(item.startX, item.startY, item.endX, item.endY)
+            dlib_tracker.start_track(frame, rect)
+            
+            # add this dlib tracker to the list of tracked items by this tracker for the
+            # specified video
+            video_items.update({item_id:dlib_tracker})
+            self.videos[video_name] = video_items
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
     def update_tracked_items(self, video_name, file_name, width, height, depth, size):
 
         frame = self._get_frame(video_name, file_name, width, height, depth, size)

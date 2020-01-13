@@ -247,6 +247,9 @@ class FlowManager(Doer):
         # with tracking information. None so far.
         self.num_trackers = len(self.trackers)
 
+        # check for disappeared items and remove them:
+        self._check_disappeared()
+        
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
@@ -277,10 +280,7 @@ class FlowManager(Doer):
                 bounding_box = update[1]
                 exit = self._setting.check_exit(bounding_box)
                 if exit:
-                    item = self._setting.items[item_id]
-                    del self._setting.items[item_id]
-                    self.post(
-                        item.tracker_address, 'stop_tracking', self.video_name, item_id)
+                    self._remove_item(item_id)
                 else:
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
@@ -341,6 +341,35 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
+    def _remove_item(self, item_id):
+        item = self._setting.items[item_id]
+        del self._setting.items[item_id]
+        self.post(
+            item.tracker_address, 'stop_tracking', self.video_name, item_id)
+    
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def _check_disappeared(self):
+
+        delete = []
+        
+        for item_id, item in self._setting.items.items():
+            if (item.last_update != 0 and
+                self.cfg.frame_number > item.last_update +
+                self.cfg.data["trackable_objects"]["disappear"]):
+                item.disappeared = True
+                item.last_frame = self.cfg.frame_number
+                delete.append(item_id)
+
+        for item in delete:
+            self._remove_item(item)
+                
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
     def _send_unique(self, item):
         # TODO: Get the firs tracker... should define a better policy for sending to
         # trackers.  How many itens to track by tracker? Is there any advantage in
@@ -384,7 +413,36 @@ class FlowManager(Doer):
             item.item_id = self.next_item_id
             self._setting.items[self.next_item_id] = item
 
-            self._send_unique(item)
+        # TODO: fix rule
+        tracker = self.trackers['Tracker_0']
+        item.tracker_address = tracker[0]
+        
+        self.post(tracker[0], 'tracks_list', self.video_name, self.mmap_path,
+                  self.width, self.height, self.depth, self._buf_size,
+                  list(items.values()))
+        
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _match_items(self):
+        
+        if self.cfg.data["trackable_objects"]["match"] == "iou_match":
+            (unused_rows,
+             unused_cols,
+             match_rows_cols) = Geom.iou_match(
+                 list(self._setting.items.values()), self._setting.new_inputs,
+                 self.cfg.data["trackable_objects"]["iou_match"])
+        elif self.cfg.data["trackable_objects"]["match"] == "centroid_match":
+            (unused_rows,
+             unused_cols,
+             match_rows_cols) = Geom.centroid_match(
+                 list(self._setting.items.values()), self._setting.new_inputs,
+                 self.cfg.data["trackable_objects"]["centroid_match_max_distance"])
+        else:
+            logging.info("Unknown matching algorithm specified")
+
+        return (unused_rows, unused_cols, match_rows_cols)
 
     # ---------------------------------------------------------------------------------
     #
@@ -394,21 +452,14 @@ class FlowManager(Doer):
         
         # if we are currently not tracking any objects we should
         # start tracking them
-        # logging.info("track_items was called")
         if (len(self._setting.items) == 0):
-            self._tracks_new_items(self._setting.new_inputs)
+            for item in self._setting.new_inputs:
+                self._track_new_item(item)
             return
 
-        # TODO: lots of things....:
-        
-        # match the new items to the already tracked objects using
-        # iou match
-        if self.cfg.data["trackable_objects"]["match"] == "iou_match":
-            (unused_rows,
-             unused_cols,
-             match_rows_cols) = Geom.iou_match(
-                 list(self._setting.items.values()), self._setting.new_inputs,
-                 self.cfg.data["trackable_objects"]["iou_match"])
+        # match the new items to the already tracked objects using the matching
+        # algorithgm in the configuration file
+        (unused_rows, unused_cols, match_rows_cols) = self._match_items()
 
         # or using
         # centroid match
@@ -416,7 +467,7 @@ class FlowManager(Doer):
         # then find the elements that did not match and start tracking them
         # then add to the items list the new items
         for col in unused_cols:
-            self._setting.new_inputs[col]
+            self._track_new_item(self._setting.new_inputs[col])
         
     # ---------------------------------------------------------------------------------
     # This method notifies all listeners that we have a new frame processed. It sends
