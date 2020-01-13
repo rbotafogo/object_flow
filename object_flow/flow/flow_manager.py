@@ -22,6 +22,7 @@ import numpy as np
 
 from object_flow.ipc.doer import Doer
 from object_flow.util.display import Display
+from object_flow.util.geom import Geom
 
 from object_flow.decoder.video_decoder import VideoDecoder
 from object_flow.flow.item import Item
@@ -62,6 +63,7 @@ class FlowManager(Doer):
 
     def __initialize__(self, cfg, trackers, yolo):
         self.cfg = cfg
+        # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
@@ -210,38 +212,6 @@ class FlowManager(Doer):
         self.tell(self.video_name, '_next_frame', group = 'decoders')
         
     # ----------------------------------------------------------------------------------
-    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
-    # registered by method 'process_frame'.
-    # ----------------------------------------------------------------------------------
-
-    def boxes_detected(self, boxes, confidences, classIDs):
-
-        # convert the detected bounding boxes to Items
-        self._setting.detections2items(boxes, confidences, classIDs)
-
-        # now manage the tracking of items. This method will match the already tracked
-        # items with the detected items
-        self._track_items()
-        # self._setting.init_counters(self._setting.items.values())
-
-        self._next_frame()
-            
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def tracking_done(self, items_update):
-        # logging.info("number of bounding boxes %d", len(bounding_boxes))
-        if (items_update == None):
-            return
-        
-        for item_id, update in items_update.items():
-            confidence = update[0]
-            bounding_box = update[1]
-            self._setting.update_item(self.cfg.frame_number, item_id, confidence,
-                                      bounding_box)
-            
-    # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
     # frame it calls this method.  This method checks that the size of the decoded
@@ -264,6 +234,19 @@ class FlowManager(Doer):
         self._total_frames += 1
         self.cfg.frame_number = self._total_frames
 
+        self.tracking_phase()
+                    
+    # ----------------------------------------------------------------------------------
+    # Executes the tracking_phase of the algorithm.  Bascially calls method
+    # update_tracked_items on tall the trackers.
+    # ----------------------------------------------------------------------------------
+
+    def tracking_phase(self):
+
+        # keep reference to the number of trackers that have already replied
+        # with tracking information. None so far.
+        self.num_trackers = len(self.trackers)
+
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
@@ -272,18 +255,73 @@ class FlowManager(Doer):
              self.cfg.data['video_analyser']['track_every_x_frames'] != 0)):
             self._trackers_broadcast_with_callback(
                 'update_tracked_items', self.video_name, self.mmap_path, self.width,
-                self.height, self.depth, size, callback = 'tracking_done')
-                    
+                self.height, self.depth, self._buf_size, callback = 'tracking_done')
+            
+        # should always execute the detection phase. If doing a tracking phase
+        # on the frame, then the call to detection_phase should be done after
+        # all trackers have finished... this is done in the tracking_done method
+        # bellow. If tracking is not done in the frame, then just call the
+        # detection_phase directly
+        else:
+            self.detection_phase()
+
+    # ----------------------------------------------------------------------------------
+    # When tracking is done, the trackers calls back this method with the updated
+    # items information
+    # ----------------------------------------------------------------------------------
+
+    def tracking_done(self, items_update):
+        if not (items_update == None):
+            for item_id, update in items_update.items():
+                confidence = update[0]
+                bounding_box = update[1]
+                exit = self._setting.check_exit(bounding_box)
+                if exit:
+                    item = self._setting.items[item_id]
+                    del self._setting.items[item_id]
+                    self.post(
+                        item.tracker_address, 'stop_tracking', self.video_name, item_id)
+                else:
+                    self._setting.update_item(self.cfg.frame_number, item_id, confidence,
+                                              bounding_box)
+
+        self.num_trackers -= 1
+        # are all trackers done?
+        if self.num_trackers < 1:
+            self.detection_phase()
+            
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def detection_phase(self):
         # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
-                       self.width, self.height, self.depth, size,
+                       self.width, self.height, self.depth, self._buf_size,
                        callback = 'boxes_detected')
         else:
             # This is one problem with callback functions: the '_next_frame' method is
             # called here and also on the 'boxes_detected' callback method. It's
             # a bit confusing.
             self._next_frame()
+    
+    # ----------------------------------------------------------------------------------
+    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
+    # registered by method 'process_frame'.
+    # ----------------------------------------------------------------------------------
+
+    def boxes_detected(self, boxes, confidences, classIDs):
+
+        # convert the detected bounding boxes to Items
+        self._setting.detections2items(boxes, confidences, classIDs)
+
+        # now manage the tracking of items. This method will match the already tracked
+        # items with the detected items
+        self._add_items()
+        # self._setting.init_counters(self._setting.items.values())
+
+        self._next_frame()
             
     # ----------------------------------------------------------------------------------
     # 
@@ -310,11 +348,27 @@ class FlowManager(Doer):
         # check how many items it's already tracking in order to define how many
         # more to give to it?
         tracker = self.trackers['Tracker_0']
+        item.tracker_address = tracker[0]
         
         self.post(tracker[0], 'start_tracking', self.video_name, self.mmap_path,
                   self.width, self.height, self.depth, self._buf_size, item.item_id,
                   item.startX, item.startY, item.endX, item.endY)
     
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _track_new_item(self, item):
+        # first frame where this item was detected
+        item.first_frame = self.cfg.frame_number
+        
+        # set the id of this item to the next value
+        self.next_item_id += 1
+        item.item_id = self.next_item_id
+        self._setting.items[self.next_item_id] = item
+        
+        self._send_unique(item)
+
     # ----------------------------------------------------------------------------------
     # The given items should be tracked. Store in the item the following information:
     # ----------------------------------------------------------------------------------
@@ -336,7 +390,7 @@ class FlowManager(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    def _track_items(self):
+    def _add_items(self):
         
         # if we are currently not tracking any objects we should
         # start tracking them
@@ -349,26 +403,21 @@ class FlowManager(Doer):
         
         # match the new items to the already tracked objects using
         # iou match
-        #if self.cfg.data["trackable_objects"]["match"] == "iou_match":
-        #    (unused_rows,
-        #     unused_cols,
-        #     match_rows_cols) = Geom.iou_match(self._setting.items,
-        #                                      new_inputs,
-        #                                       self.cfg.data["tracAkable_objects"]["iou_match"])
+        if self.cfg.data["trackable_objects"]["match"] == "iou_match":
+            (unused_rows,
+             unused_cols,
+             match_rows_cols) = Geom.iou_match(
+                 list(self._setting.items.values()), self._setting.new_inputs,
+                 self.cfg.data["trackable_objects"]["iou_match"])
 
         # or using
         # centroid match
 
         # then find the elements that did not match and start tracking them
         # then add to the items list the new items
-        #for item in self._setting.new_inputs:
-            # set the id of this item to the next value
-        #    self.next_item_id += 1
-        #    item.item_id = self.next_item_id
-        #    self._setting.items[self.next_item_id] = item
-            
-        # self._setting.items = self._setting.new_inputs
-
+        for col in unused_cols:
+            self._setting.new_inputs[col]
+        
     # ---------------------------------------------------------------------------------
     # This method notifies all listeners that we have a new frame processed. It sends
     # the following messages to the listeners:

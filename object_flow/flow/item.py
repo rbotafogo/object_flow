@@ -55,8 +55,8 @@ class Item:
         # video stream
         self.disappeared = False
 
-        # dlib tracker to track this object
-        self.tracker = None
+        # id of the tracker tracking this item
+        self.tracker_address = None
         
         # direction to which the object is moving
         self.dirX = None

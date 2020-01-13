@@ -60,13 +60,54 @@ class Setting:
             self._init_item_counters(item)
 
     # ---------------------------------------------------------------------------------
+    # checks if the item has crossed an entry_line and is exiting the setting
+    # ---------------------------------------------------------------------------------
+
+    def check_exit(self, bounding_box):
+
+        # for every entry line
+        for key, spec in self.cfg.data["entry_lines"].items():
+            end_points = spec["end_points"]
+            try: 
+                new_top = Geom.point_position(
+                    end_points[0], end_points[1], end_points[2], end_points[3],
+                    bounding_box[0], bounding_box[1])
+            except OverflowError:
+                logging.info(
+                    "check_exit: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                    end_points[0], end_points[1], end_points[2], end_points[3],
+                    bounding_box[0], bounding_box[1], self.video_name)
+                new_top = False
+
+            try:
+                new_bottom = Geom.point_position(
+                    end_points[0], end_points[1], end_points[2], end_points[3],
+                    bounding_box[0], bounding_box[1])                    
+            except OverflowError:
+                logging.info(
+                    "check_exit: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                    end_points[0], end_points[1], end_points[2], end_points[3],
+                    bounding_box[2], bounding_box[3], self.video_name)
+                new_bottom = False
+                
+            # side1 indicates the valid region for entry, that is, the area
+            # in which if the object´s bounding box is completely inside
+            # then it should be seen.
+            # This is not an split object, so we can check either the new_top
+            # or new_bottom.  Accept if they have the same 
+            if ((new_top == new_bottom) and
+                ((not new_top and spec['side1'] == 'Positive') or
+                 (new_top and spec['side1'] == 'Negative'))):
+                return True
+                    
+    # ---------------------------------------------------------------------------------
     # 
     # ---------------------------------------------------------------------------------
 
     def update_item(self, frame_number, item_id, confidence, bounding_box):
         logging.debug("updating item %d boundign box with confidence %f to: %s",
                       item_id, confidence, bounding_box)
-        
+
         self.items[item_id].tracker_update(
             frame_number, confidence, bounding_box[0], bounding_box[1],
             bounding_box[2], bounding_box[3])

@@ -102,7 +102,6 @@ class Tracker(Doer):
         frame = self._get_frame(video_name, file_name, width, height, depth, size)
         
         # get all tracked objects from the given camera
-        # video_items = self.videos[video_name]
         if not (video_name in self.videos.keys()):
             return None
 
@@ -137,6 +136,14 @@ class Tracker(Doer):
     
         return detections
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def stop_tracking(self, video_name, item_id):
+        video_items = self.videos[video_name]
+        del video_items[item_id]
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
