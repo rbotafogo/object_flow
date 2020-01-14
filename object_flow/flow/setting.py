@@ -57,7 +57,9 @@ class Setting:
         # convert the bounding boxes to items
         self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
         for item in self.new_inputs:
-            self._init_item_counters(item)
+            # self._init_item_counters(item)
+            for key in self.cfg.data['counting_lines']:
+                item.init_lines(key, self.cfg.frame_number)
 
     # ---------------------------------------------------------------------------------
     # checks if the item has crossed an entry_line and is exiting the setting
@@ -243,3 +245,66 @@ class Setting:
             item.lines[key]['counted'] = False
             item.lines[key]['top_point'] = (item.startX, item.startY)
             item.lines[key]['bottom_point'] = (item.endX, item.endY)
+
+    # ---------------------------------------------------------------------------------
+    # Count the objects crossing the 'counting lines' given in the configuration
+    # file.
+    # ---------------------------------------------------------------------------------
+
+    def _count(self):
+
+        # for every counting line
+        for key, spec in self.cfg.data["counting_lines"].items():
+            # for every item, see if it has crossed the counting line
+            for item in self.items:
+                obj_line = object.lines[key]
+                end_points = spec["end_points"]
+                try: 
+                    new_top = Geom.point_position(
+                        end_points[0], end_points[1], end_points[2], end_points[3],
+                        object.startX, object.startY)
+                except OverflowError:
+                    logging.info(Util.br_time() +
+                        ", count: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                        end_points[0], end_points[1],
+                        end_points[2], end_points[3],
+                        object.startX, object.startY, self.cfg.analyser_id)
+                    new_top = obj_line['top_line_position']
+
+                try:
+                    new_bottom = Geom.point_position(
+                        end_points[0], end_points[1], end_points[2], end_points[3],
+                        object.endX, object.endY)
+                except OverflowError:
+                    logging.info(Util.br_time() +
+                        ", count: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                        end_points[0], end_points[1],
+                        end_points[2], end_points[3],
+                        object.startX, object.startY, self.cfg.analyser_id)
+                    new_bottom = obj_line["bottom_line_position"]
+
+                if (spec['count_splits'] == 'True' and obj_line['split'] == True):
+                    if (object.dirY == 'South' and
+                        obj_line['top_line_position'] != new_top):
+                        self.top_crossed(object, obj_line, spec, new_top)
+                        obj_line['top_line_position'] = new_top
+                        obj_line["bottom_line_position"] = new_bottom
+
+                # did the bottom line cross the count line...
+                if (obj_line["bottom_line_position"] != new_bottom):
+                    # Has the object just entered the scene? 
+                    if (obj_line['bottom_line_position'] == None):
+                        # counting line splits the new identified object
+                        if new_top != new_bottom:
+                            # print("object: " + str(object.object_id) + " is split")
+                            obj_line['split'] = True
+                    else:
+                        self.bottom_crossed(object, obj_line, spec, new_bottom)
+                        
+                    obj_line['top_line_position'] = new_top
+                    obj_line["bottom_line_position"] = new_bottom
+
+                obj_line['top_point'] = (object.startX, object.startY)
+                obj_line['bottom_point'] = (object.endX, object.endY)
+                                
+            

@@ -71,27 +71,31 @@ class Display(Doer):
     def base_image(self, size):
         if self._stop:
             return
+
+        self.size = size
         
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 
     # ----------------------------------------------------------------------------------
-    # 
+    # overlay the bounding boxes on the frame. If centroids = True then add also the
+    # bounding box centroid to the image
     # ----------------------------------------------------------------------------------
     
-    def overlay_bboxes(self, items):
+    def overlay_bboxes(self, items, centroids = False):
         for item in items:
-            # logging.info((item.startX, item.startY, item.endX, item.endY))
-            logging.info((item.startX, item.startY, item.endX, item.endY))
+            logging.debug((item.startX, item.startY, item.endX, item.endY))
             cv2.rectangle(self.frame, (item.startX, item.startY),
                           (item.endX, item.endY), (0, 250, 0), 2)
+            if centroids:
+                self._add_centroid(item, (0, 244, 0))
     
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def add_lines(self, lines):
+    def add_lines(self, lines, counting = False):
         
         for line_name, spec in lines.items():
             end_points = spec['end_points']
@@ -99,12 +103,15 @@ class Display(Doer):
             second_point = (int(end_points[2]), int(end_points[3]))
 
             cv2.line(self.frame, first_point, second_point, spec['line_color'], 2)
+            
+            if counting:
+                self._add_counters(spec)
 
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
-    def display(self, size):
+    def display(self):
         # logging.debug("%s, %s, %s, display for video %s with size %d",
         #               Util.br_time(), os.getpid(), 'Display', video_name, size)
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
@@ -118,4 +125,67 @@ class Display(Doer):
     def destroy_window(self):
         self._stop = True
         cv2.destroyAllWindows()        
+        
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+    
+    # ---------------------------------------------------------------------------------
+    # draws the bounding box centroid in the given frame with the given color
+    # ---------------------------------------------------------------------------------
+
+    def _add_centroid(self, item, color):
+        
+        text = "{}".format(item.item_id)
+        if (item.cX < 10):
+            bbx = 0
+            item.cX = 5
+        else:
+            bbx = item.cX - 10
+        if (item.cY < 10):
+            bby = 0
+            item.cY = 5
+        else:
+            bby = item.cY - 10
+
+        if (item.cX >= self.width):
+            bbx = self.width - 10
+            item.cX = bbx
+        else:
+            bbx = item.cX - 10
+        if (item.cY >= self.height):
+            bby = self.height - 10
+            item.cY = bby
+        else:
+            bby = item.cY - 10
+            
+        cv2.putText(self.frame, text, (bbx, bby),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 2)
+        cv2.circle(self.frame, (item.cX, item.cY), 4, color, -1)
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _draw_counter(self, direction, value, counter, color):
+        text = direction + ": {}".format(value)
+        
+        cv2.putText(self.frame, text, counter,
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def _add_counters(self, spec):
+        
+        pos1 = (spec["label1_position"][0], spec["label1_position"][1])
+        pos2 = (spec["label2_position"][0], spec["label2_position"][1])
+        
+        self._draw_counter(spec["label1_text"], spec["counter1"], pos1,
+                           spec["label1_color"])
+        self._draw_counter(spec["label2_text"], spec["counter2"], pos2,
+                           spec["label2_color"])
         

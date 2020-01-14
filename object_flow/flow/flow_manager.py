@@ -185,33 +185,13 @@ class FlowManager(Doer):
         self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
         logging.info("mmap file for %s opened", self.video_name)
 
-        self._fix_lines_dimensions()
+        self._fix_dimensions()
         self._setting = Setting(self.cfg)
         
         # now that the mmap file has been initialized, we can call 'start_processing'
         self.post(self.vd, 'start_processing')
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
-        
-    # ----------------------------------------------------------------------------------
-    # This method sends to the decoder the 'next_frame' message for it to
-    # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
-    # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
-    # it needs to to with the frame; 4) flow_manager calls 'next_frame' (this method);
-    # 5) 'next_frame' calls back onto the decoder (step 1 above)
-    # ----------------------------------------------------------------------------------
-
-    def _next_frame(self):
-
-        # notify all the listeners to this flow_manager that we have finished
-        # processing this frame and are going to process the next one.
-        # TODO: Might not be enough time for all listeners to do something with the
-        # frame before we get the next frame. Not a problem right now since we only
-        # have one listener to this object
-        self._notify_listeners()
-        
-        # call the video decoder to process the next frame
-        self.tell(self.video_name, '_next_frame', group = 'decoders')
-        
+                
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
@@ -332,6 +312,26 @@ class FlowManager(Doer):
     # PRIVATE METHODS
             
     # ----------------------------------------------------------------------------------
+    # This method sends to the decoder the 'next_frame' message for it to
+    # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
+    # 2) decoder calls 'process_frame' from flow_manager; 3) flow_manager does whatever
+    # it needs to to with the frame; 4) flow_manager calls 'next_frame' (this method);
+    # 5) 'next_frame' calls back onto the decoder (step 1 above)
+    # ----------------------------------------------------------------------------------
+
+    def _next_frame(self):
+
+        # notify all the listeners to this flow_manager that we have finished
+        # processing this frame and are going to process the next one.
+        # TODO: Might not be enough time for all listeners to do something with the
+        # frame before we get the next frame. Not a problem right now since we only
+        # have one listener to this object
+        self._notify_listeners()
+        
+        # call the video decoder to process the next frame
+        self.tell(self.video_name, '_next_frame', group = 'decoders')
+        
+    # ----------------------------------------------------------------------------------
     # broadcast a message to all the trackers.
     # ----------------------------------------------------------------------------------
 
@@ -373,41 +373,11 @@ class FlowManager(Doer):
         for item in delete:
             self._remove_item(item)
                 
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def _send_unique(self, item):
-        # TODO: Get the firs tracker... should define a better policy for sending to
-        # trackers.  How many itens to track by tracker? Is there any advantage in
-        # querying the tracker before sending data to it? For instance, should we
-        # check how many items it's already tracking in order to define how many
-        # more to give to it?
-        tracker = self.trackers['Tracker_0']
-        item.tracker_address = tracker[0]
-        
-        self.post(tracker[0], 'start_tracking', self.video_name, self.mmap_path,
-                  self.width, self.height, self.depth, self._buf_size, item.item_id,
-                  item.startX, item.startY, item.endX, item.endY)
-    
-    # ---------------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------------
-
-    def _track_new_item(self, item):
-        # first frame where this item was detected
-        item.first_frame = self.cfg.frame_number
-        
-        # set the id of this item to the next value
-        self.next_item_id += 1
-        item.item_id = self.next_item_id
-        self._setting.items[self.next_item_id] = item
-        
-        self._send_unique(item)
-
     # ---------------------------------------------------------------------------------
     # Given a list of items to be tracked, send them for tracking to the multiple
-    # trackers
+    # trackers. This uses a very simple policy: breaks the items in chunks of 5 and
+    # send every 5 items to a randomly selected tracker from the available trackers.
+    # TODO: Try different policies for distributing items to trackers.
     # ---------------------------------------------------------------------------------
 
     def _distribute2trackers(self, items):
@@ -419,7 +389,7 @@ class FlowManager(Doer):
 
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
-            logging.info("Selected tracker is %s", key)
+            logging.debug("Selected tracker is %s", key)
             
             tracker = self.trackers[key]
             
@@ -436,33 +406,11 @@ class FlowManager(Doer):
             self.post(tracker[0], 'tracks_list', self.video_name, self.mmap_path,
                       self.width, self.height, self.depth, self._buf_size, items)
                 
-    # ----------------------------------------------------------------------------------
-    # The given items should be tracked. Store in the item the following information:
-    # ----------------------------------------------------------------------------------
-
-    def _tracks_new_items(self, items):
-        # logging.info("tracks_all was called with number of items %d", len(items))
-        self._distribute2trackers(items)
-
-        tracker = self.trackers['Tracker_0']
-        
-        for item in items:
-            # first frame where this item was detected
-            item.first_frame = self.cfg.frame_number
-            
-            # set the id of this item to the next value
-            self.next_item_id += 1
-            item.item_id = self.next_item_id
-            self._setting.items[self.next_item_id] = item
-            item.tracker_address = tracker[0]
-            
-        # TODO: fix rule
-        
-        self.post(tracker[0], 'tracks_list', self.video_name, self.mmap_path,
-                  self.width, self.height, self.depth, self._buf_size, items)
-        
     # ---------------------------------------------------------------------------------
-    #
+    # Matches the newly detected items with the already tracked items using either
+    # "iou_match" or "centroid_match" algorithm.
+    # match_row_cols are detected items that were already being tracked
+    # unused_cols are new items
     # ---------------------------------------------------------------------------------
 
     def _match_items(self):
@@ -493,7 +441,6 @@ class FlowManager(Doer):
         # if we are currently not tracking any objects we should
         # start tracking them
         if (len(self._setting.items) == 0):
-            # self._tracks_new_items(self._setting.new_inputs)
             self._distribute2trackers(self._setting.new_inputs)
             return
 
@@ -501,16 +448,7 @@ class FlowManager(Doer):
         # algorithgm in the configuration file
         (unused_rows, unused_cols, match_rows_cols) = self._match_items()
 
-        # or using
-        # centroid match
-
-        # then find the elements that did not match and start tracking them
-        # then add to the items list the new items
-        # for col in unused_cols:
-        #     self._track_new_item(self._setting.new_inputs[col])
-
         new_inputs = [self._setting.new_inputs[col] for col in unused_cols]
-        # self._tracks_new_items(new_inputs)
         self._distribute2trackers(new_inputs)
         
     # ---------------------------------------------------------------------------------
@@ -530,19 +468,19 @@ class FlowManager(Doer):
         for name, listener in self._listeners.items():
             # listener: doer's address
             self.post(listener, 'base_image', self._buf_size)
-            self.post(listener, 'overlay_bboxes', list(self._setting.items.values()))            
+            self.post(listener, 'overlay_bboxes', list(self._setting.items.values()),
+                      self.cfg.data['video_processor']['show_id'])
             self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
-            self.post(listener, 'add_lines', self.cfg.data['counting_lines'])
-            self.post(listener, 'display', self._buf_size)
-        
+            self.post(listener, 'add_lines', self.cfg.data['counting_lines'], True)
+            self.post(listener, 'display')
         
     # ----------------------------------------------------------------------------------
-    # Lines configurations (on the configuration file) are done over an image of
-    # a certain dimension.  If we show the image in another dimension, the overlayed
-    # lines need to be converted to the new dimension
+    # Dimension configurations (on the configuration file) are done over an image of
+    # a certain dimension.  If we show the image in another dimension, the dimensions
+    # need to be converted to the new dimension
     # ----------------------------------------------------------------------------------
 
-    def _fix_lines_dimensions(self):
+    def _fix_dimensions(self):
         
         lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
         
@@ -560,6 +498,13 @@ class FlowManager(Doer):
             spec['end_points'] = [int(end_points[0] * kw), int(end_points[1] * kh),
                                   int(end_points[2] * kw), int(end_points[3] * kh)]
 
+            # fix the dimension of the counter's position
+            label1_position = spec['label1_position']
+            label2_position = spec['label2_position']
+            spec['label1_position'] = [int(label1_position[0] * kw), int(label1_position[1] * kh)]
+            spec['label2_position'] = [int(label2_position[0] * kw), int(label2_position[1] * kh)]
+
+        
         self.cfg.data['video_processor']['lines_dimensions'] = [self.width, self.height]
                                   
     # ----------------------------------------------------------------------------------

@@ -30,12 +30,12 @@
       "side1": "Negative",
       "label1_text": "UP",
       "label1_id": "ms1",
-      "label1_color": [10, 10, 10],
-      "label1_position": [10, 305],
+      "label1_color": [100, 10, 100],
+      "label1_position": [30, 305],
       "label2_text": "DOWN",
       "label2_id": "ms2",
-      "label2_color": [10, 10, 10],
-      "label2_position": [10, 330]
+      "label2_color": [100, 10, 100],
+      "label2_position": [30, 330]
     }
     
   },

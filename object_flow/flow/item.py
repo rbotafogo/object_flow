@@ -72,6 +72,10 @@ class Item:
         # string containing the direction of the movement
         self.direction = ""
 
+        # list with all counting lines for this item to be able to know if it has
+        # crossed or not the counting line
+        self.lines = {}
+
         # update the centroid
         self._update_centroid()
 
@@ -115,6 +119,22 @@ class Item:
             else:
                 self.last_update = 0
                 
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def init_lines(self, key, frame_number):
+        
+        self.lines[key] = {}
+        self.lines[key]['top_line_position'] = None
+        self.lines[key]['bottom_line_position'] = None
+        self.lines[key]['position'] = None
+        self.lines[key]['counted_frame'] = frame_number
+        self.lines[key]['split'] = False
+        self.lines[key]['counted'] = False
+        self.lines[key]['top_point'] = (self.startX, self.startY)
+        self.lines[key]['bottom_point'] = (self.endX, self.endY)
+    
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
