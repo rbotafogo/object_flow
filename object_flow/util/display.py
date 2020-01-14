@@ -83,6 +83,7 @@ class Display(Doer):
     def overlay_bboxes(self, items):
         for item in items:
             # logging.info((item.startX, item.startY, item.endX, item.endY))
+            logging.info((item.startX, item.startY, item.endX, item.endY))
             cv2.rectangle(self.frame, (item.startX, item.startY),
                           (item.endX, item.endY), (0, 250, 0), 2)
     
