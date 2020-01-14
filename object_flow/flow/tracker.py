@@ -111,7 +111,7 @@ class Tracker(Doer):
             
             # add this dlib tracker to the list of tracked items by this tracker for the
             # specified video
-            video_items.update({item_id:dlib_tracker})
+            video_items.update({item.item_id:dlib_tracker})
             self.videos[video_name] = video_items
 
     # ----------------------------------------------------------------------------------

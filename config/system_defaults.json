@@ -13,7 +13,7 @@
 	"tf2_weights": "object_flow/nn/resources/checkpoints/yolov3.tf",
 	"confidence": 0.3,
 	"threshold": 0.3,
-	"num_trackers": 2
+	"num_trackers": 5
     }
     
 }

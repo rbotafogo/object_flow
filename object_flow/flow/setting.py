@@ -108,6 +108,10 @@ class Setting:
         logging.debug("updating item %d boundign box with confidence %f to: %s",
                       item_id, confidence, bounding_box)
 
+        # item might have disappeared after tracking started
+        if item_id not in self.items.keys():
+            return
+        
         self.items[item_id].tracker_update(
             frame_number, confidence, bounding_box[0], bounding_box[1],
             bounding_box[2], bounding_box[3])

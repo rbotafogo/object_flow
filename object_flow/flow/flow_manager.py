@@ -19,6 +19,7 @@ import math
 
 import logging
 import numpy as np
+import random
 
 from object_flow.ipc.doer import Doer
 from object_flow.util.display import Display
@@ -274,6 +275,7 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
+        
         if not (items_update == None):
             for item_id, update in items_update.items():
                 confidence = update[0]
@@ -342,6 +344,11 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def _remove_item(self, item_id):
+
+        # The item might have been removed by going out of the entry lines
+        if item_id not in self._setting.items.keys():
+            return
+        
         item = self._setting.items[item_id]
         del self._setting.items[item_id]
         self.post(
@@ -398,12 +405,47 @@ class FlowManager(Doer):
         
         self._send_unique(item)
 
+    # ---------------------------------------------------------------------------------
+    # Given a list of items to be tracked, send them for tracking to the multiple
+    # trackers
+    # ---------------------------------------------------------------------------------
+
+    def _distribute2trackers(self, items):
+
+        size = 5
+        
+        final = [items[i * size:(i + 1) * size] for i in
+                 range((len(items) + size - 1) // size )]
+
+        for chunk in final:
+            key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
+            logging.info("Selected tracker is %s", key)
+            
+            tracker = self.trackers[key]
+            
+            for item in chunk:
+                # first frame where this item was detected
+                item.first_frame = self.cfg.frame_number
+                
+                # set the id of this item to the next value
+                self.next_item_id += 1
+                item.item_id = self.next_item_id
+                self._setting.items[self.next_item_id] = item
+                item.tracker_address = tracker[0]
+
+            self.post(tracker[0], 'tracks_list', self.video_name, self.mmap_path,
+                      self.width, self.height, self.depth, self._buf_size, items)
+                
     # ----------------------------------------------------------------------------------
     # The given items should be tracked. Store in the item the following information:
     # ----------------------------------------------------------------------------------
 
     def _tracks_new_items(self, items):
         # logging.info("tracks_all was called with number of items %d", len(items))
+        self._distribute2trackers(items)
+
+        tracker = self.trackers['Tracker_0']
+        
         for item in items:
             # first frame where this item was detected
             item.first_frame = self.cfg.frame_number
@@ -412,14 +454,12 @@ class FlowManager(Doer):
             self.next_item_id += 1
             item.item_id = self.next_item_id
             self._setting.items[self.next_item_id] = item
-
+            item.tracker_address = tracker[0]
+            
         # TODO: fix rule
-        tracker = self.trackers['Tracker_0']
-        item.tracker_address = tracker[0]
         
         self.post(tracker[0], 'tracks_list', self.video_name, self.mmap_path,
-                  self.width, self.height, self.depth, self._buf_size,
-                  list(items.values()))
+                  self.width, self.height, self.depth, self._buf_size, items)
         
     # ---------------------------------------------------------------------------------
     #
@@ -453,8 +493,8 @@ class FlowManager(Doer):
         # if we are currently not tracking any objects we should
         # start tracking them
         if (len(self._setting.items) == 0):
-            for item in self._setting.new_inputs:
-                self._track_new_item(item)
+            # self._tracks_new_items(self._setting.new_inputs)
+            self._distribute2trackers(self._setting.new_inputs)
             return
 
         # match the new items to the already tracked objects using the matching
@@ -466,8 +506,12 @@ class FlowManager(Doer):
 
         # then find the elements that did not match and start tracking them
         # then add to the items list the new items
-        for col in unused_cols:
-            self._track_new_item(self._setting.new_inputs[col])
+        # for col in unused_cols:
+        #     self._track_new_item(self._setting.new_inputs[col])
+
+        new_inputs = [self._setting.new_inputs[col] for col in unused_cols]
+        # self._tracks_new_items(new_inputs)
+        self._distribute2trackers(new_inputs)
         
     # ---------------------------------------------------------------------------------
     # This method notifies all listeners that we have a new frame processed. It sends
