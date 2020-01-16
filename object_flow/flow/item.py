@@ -120,7 +120,11 @@ class Item:
                 self.last_update = 0
                 
     # ---------------------------------------------------------------------------------
-    #
+    # When an item is created it initializes all the counting lines in the setting.
+    # From an OO perspective, the counting lines should be created in the 'Setting'
+    # class, but for every item we need to have all the counting lines and its
+    # position in relation to the counting lines.  Is is easier to have the data
+    # stored in the Item proper.  But need to be clearly documented.
     # ---------------------------------------------------------------------------------
 
     def init_lines(self, key, frame_number):

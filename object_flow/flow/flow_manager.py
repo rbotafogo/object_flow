@@ -130,9 +130,6 @@ class FlowManager(Doer):
             return
 
         logging.info("stopping playback for video %s", self.video_name)
-        
-        # self.ask(self.video_name, 'remove_listener', self.video_name,
-        #          callback = 'destroy_window', group = 'decoders')
         self.remove_listener(self.video_name)
         self.destroy_window(self.video_name)
         
@@ -216,6 +213,7 @@ class FlowManager(Doer):
         self.cfg.frame_number = self._total_frames
 
         self.tracking_phase()
+        # self.detection_phase()
                     
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -260,7 +258,7 @@ class FlowManager(Doer):
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
-                exit = self._setting.check_exit(bounding_box)
+                exit = self._setting.update(bounding_box)
                 if exit:
                     self._remove_item(item_id)
                 else:
@@ -298,11 +296,11 @@ class FlowManager(Doer):
         # convert the detected bounding boxes to Items
         self._setting.detections2items(boxes, confidences, classIDs)
 
-        # now manage the tracking of items. This method will match the already tracked
-        # items with the detected items
+        # add the newly detected items to the setting. This method will match the
+        # already tracked items with the newly detected ones, adding only the
+        # relevant items
         self._add_items()
-        # self._setting.init_counters(self._setting.items.values())
-
+        
         self._next_frame()
             
     # ----------------------------------------------------------------------------------

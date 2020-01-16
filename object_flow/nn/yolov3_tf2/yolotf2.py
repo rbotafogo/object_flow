@@ -29,6 +29,7 @@ from object_flow.ipc.doer import Doer
 
 from object_flow.nn.yolov3_tf2.models import YoloV3
 from object_flow.nn.yolov3_tf2.dataset import transform_images
+
 # from object_flow.nn.yolov3_tf2.models import YoloV3Tiny
 
 class YoloTf2(Doer):
