@@ -254,15 +254,18 @@ class Setting:
     # the counting line, since the bottom line will not cross the counting line
     # ---------------------------------------------------------------------------------
 
-    def _top_crossed(self, item, item_line, spec, new_top):
+    def _top_crossed(self, item, item_line, spec, new_top, track_id = None):
         top_point = item_line['top_point']
         first_point = spec['first_point']
         second_point = spec['second_point']
 
         try:
-            if (not Geom.intersect(top_point[0], top_point[1], item.startX,
-                                   item.startY, first_point[0], first_point[1],
-                                   second_point[0], second_point[1])):
+            if (not Geom.intersect(
+                    top_point[0], top_point[1], item.startX,
+                    item.startY, first_point[0], first_point[1],
+                    second_point[0], second_point[1])):
+                if (item.item_id == track_id):
+                    logging.info("item %d did not cross over the line", item.item_id)
                 return
         
         except OverflowError:
@@ -271,9 +274,13 @@ class Setting:
                 top_point[0], top_point[1], item.startX,
                 item.startY, first_point[0], first_point[1],
                 second_point[0], second_point[1], self.video_name)
+        
+        if (item.item_id == track_id):
+            logging.debug("should we count this item? %d", item.item_id)
             
         if (self._should_count(item_line)):
             if new_top:
+                logging.debug("counting +1 for item %d", item.item_id)
                 spec[spec["exit_side1"]] += 1
         
     # ---------------------------------------------------------------------------------
@@ -284,8 +291,6 @@ class Setting:
         bottom_point = item_line['bottom_point']
         first_point = spec['first_point']
         second_point = spec['second_point']
-
-        logging.info("checking bottom_crossed for camera %s", self.video_name)
 
         try:
             if (not Geom.intersect(bottom_point[0], bottom_point[1], item.endX,
@@ -314,6 +319,8 @@ class Setting:
 
     def _count(self):
 
+        track_id = None
+        
         # for every counting line
         for key, spec in self.cfg.data["counting_lines"].items():
             # for every item, see if it has crossed the counting line
@@ -324,8 +331,10 @@ class Setting:
                     new_top = Geom.point_position(
                         end_points[0], end_points[1], end_points[2], end_points[3],
                         item.startX, item.startY)
+                    if (item_id == track_id):
+                        logging.debug("item %d new_top is %s in relation to line %s", item_id, new_top, key)
                 except OverflowError:
-                    logging.info(
+                    logging.warning(
                         "count: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                         end_points[0], end_points[1],
                         end_points[2], end_points[3],
@@ -336,8 +345,10 @@ class Setting:
                     new_bottom = Geom.point_position(
                         end_points[0], end_points[1], end_points[2], end_points[3],
                         item.endX, item.endY)
+                    if (item_id == track_id):
+                        logging.debug("item %d new_bottom is %s in relation to line", item_id, new_bottom, key)
                 except OverflowError:
-                    logging.info(
+                    logging.warning(
                         "count: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                         end_points[0], end_points[1],
                         end_points[2], end_points[3],
@@ -345,9 +356,13 @@ class Setting:
                     new_bottom = item_line["bottom_line_position"]
 
                 if (spec['count_splits'] == 'True' and item_line['split'] == True):
+                    if (item_id == track_id):
+                        logging.debug("item %d direction is %s", item_id, item.dirY)
                     if (item.dirY == 'South' and
                         item_line['top_line_position'] != new_top):
-                        self._top_crossed(item, item_line, spec, new_top)
+                        if (item_id == track_id):
+                            logging.info("item %d top has crossed the counting line %s", item_id, key)
+                        self._top_crossed(item, item_line, spec, new_top, track_id)
                         item_line['top_line_position'] = new_top
                         item_line["bottom_line_position"] = new_bottom
 
@@ -360,6 +375,8 @@ class Setting:
                             # print("item: " + str(item.item_id) + " is split")
                             item_line['split'] = True
                     else:
+                        if (item_id == track_id):
+                            logging.info("item %d bottom has crossed the counting line %s", item_id, key)
                         self._bottom_crossed(item, item_line, spec, new_bottom)
                         
                     item_line['top_line_position'] = new_top
