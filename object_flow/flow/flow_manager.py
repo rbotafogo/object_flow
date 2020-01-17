@@ -258,7 +258,11 @@ class FlowManager(Doer):
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
-                exit = self._setting.update(bounding_box)
+                self._setting.update(bounding_box)
+
+                # check and remove all bounding boxes that have exited the setting.
+                # Those that have not exited, should be updated
+                exit = self._setting._check_exit(bounding_box)
                 if exit:
                     self._remove_item(item_id)
                 else:

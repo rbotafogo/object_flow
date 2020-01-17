@@ -9,6 +9,7 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
+import logging
 import numpy as np
 
 from collections import deque
@@ -92,17 +93,17 @@ class Item:
         # bellow
         self._update_bbox(startX, startY, endX, endY)
 
-        (self.dirX, self.dirY) = ("", "")
+        min_distance = 10
 
-        # If the centroid moved far enough for the last 10 updates
         if len(self.centroids) > 10:
             self.dX = self.centroids[-10][0] - self.centroids[0][0]
             self.dY = self.centroids[-10][1] - self.centroids[0][1]
 
-            if np.abs(self.dX) > 20:
-                self.dirX = "East" if np.sign(self.dX) == 1 else "West"
-            if np.abs(self.dY) > 20:
-                self.dirY = "North" if np.sign(self.dY) == 1 else "South"
+            # If the centroid moved far enough for the last 10 updates
+            # if np.abs(self.dX) > min_distance:
+            self.dirX = "East" if np.sign(self.dX) == 1 else "West"
+            #if np.abs(self.dY) > min_distance:
+            self.dirY = "North" if np.sign(self.dY) == 1 else "South"
 
             # handle when both directions are non-empty
             if self.dirX != "" and self.dirY != "":
@@ -113,7 +114,7 @@ class Item:
                 self.direction = self.dirX if self.dirX != "" else self.dirY
 
             # if the difference is too small, then set the last_update
-            if np.abs(self.dX) < 20 and np.abs(self.dY) < 20:
+            if np.abs(self.dX) < min_distance and np.abs(self.dY) < min_distance:
                 if self.last_update == 0:
                     self.last_update = frame_number
             else:

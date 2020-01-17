@@ -9,7 +9,6 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
-import time
 import itertools
 import logging
 
@@ -61,16 +60,8 @@ class Setting:
                 item.init_lines(key, self.cfg.frame_number)
 
     # ---------------------------------------------------------------------------------
-    # does all required updates on the received bounding_box after this bounding_box
-    # has changed position from the tracking algorithm
-    # ---------------------------------------------------------------------------------
-
-    def update(self, bounding_box):
-        self._check_exit(bounding_box)
-        self._count()
-    
-    # ---------------------------------------------------------------------------------
-    # 
+    # After tracking is done, for each tracked item, update_item is called so that
+    # it's bounding_box is adjusted to the tracker's information
     # ---------------------------------------------------------------------------------
 
     def update_item(self, frame_number, item_id, confidence, bounding_box):
@@ -84,6 +75,20 @@ class Setting:
         self.items[item_id].tracker_update(
             frame_number, confidence, bounding_box[0], bounding_box[1],
             bounding_box[2], bounding_box[3])
+    
+    # ---------------------------------------------------------------------------------
+    # does all required updates on the received bounding_box after this bounding_box
+    # has changed position from the tracking algorithm
+    # ---------------------------------------------------------------------------------
+
+    def update(self, bounding_box):
+        # should we remove overlapping bounding boxes? If we do so, then occluded
+        # items will be removed; on the other hand, objects detected twice will be
+        # eliminated
+        # self._drop_overlap()
+
+        # count items that have crossed any counting lines
+        self._count()
     
     # ---------------------------------------------------------------------------------
     #
@@ -137,7 +142,7 @@ class Setting:
                                               end_points[2], end_points[3],
                                               box[0], box[1])
                 except OverflowError:
-                    logging.info("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                    logging.warning("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                                  end_points[0], end_points[1],
                                  end_points[2], end_points[3],
                                  box[0], box[1], self.cfg.analyser_id)
@@ -149,7 +154,7 @@ class Setting:
                                                  box[2], box[3])
                     
                 except OverflowError:
-                    logging.info("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
+                    logging.warning("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                                  end_points[0], end_points[1],
                                  end_points[2], end_points[3],
                                  box[2], box[3],  self.cfg.analyser_id)
@@ -205,10 +210,10 @@ class Setting:
                     end_points[0], end_points[1], end_points[2], end_points[3],
                     bounding_box[0], bounding_box[1])
             except OverflowError:
-                logging.info(
+                logging.warning(
                     "check_exit: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                     end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[0], bounding_box[1], self.video_name)
+                    bounding_box[0], bounding_box[1], self.cfg.video_name)
                 new_top = False
 
             try:
@@ -216,10 +221,10 @@ class Setting:
                     end_points[0], end_points[1], end_points[2], end_points[3],
                     bounding_box[0], bounding_box[1])                    
             except OverflowError:
-                logging.info(
+                logging.warning(
                     "check_exit: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                     end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[2], bounding_box[3], self.video_name)
+                    bounding_box[2], bounding_box[3], self.cfg.video_name)
                 new_bottom = False
                 
             # side1 indicates the valid region for entry, that is, the area
@@ -231,6 +236,8 @@ class Setting:
                 ((not new_top and spec['side1'] == 'Positive') or
                  (new_top and spec['side1'] == 'Negative'))):
                 return True
+
+        return False
                     
     # ---------------------------------------------------------------------------------
     #
@@ -266,11 +273,11 @@ class Setting:
                 return
         
         except OverflowError:
-            logging.info(
+            logging.warning(
                 "top_crossed: overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                 top_point[0], top_point[1], item.startX,
                 item.startY, first_point[0], first_point[1],
-                second_point[0], second_point[1], self.video_name)
+                second_point[0], second_point[1], self.cfg.video_name)
             
         if (self._should_count(item_line)):
             if new_top:
@@ -285,7 +292,7 @@ class Setting:
         first_point = spec['first_point']
         second_point = spec['second_point']
 
-        logging.info("checking bottom_crossed for camera %s", self.video_name)
+        logging.debug("checking bottom_crossed for camera %s", self.cfg.video_name)
 
         try:
             if (not Geom.intersect(bottom_point[0], bottom_point[1], item.endX,
@@ -294,11 +301,11 @@ class Setting:
                 return
             
         except OverflowError:
-            logging.info(
+            logging.warning(
                 "bottom_crossed: overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
                 bottom_point[0], bottom_point[1], item.endX,
                 item.endY, first_point[0], first_point[1],
-                second_point[0], second_point[1], self.video_name)
+                second_point[0], second_point[1], self.cfg.video_name)
 
                     
         if (self._should_count(item_line)):
@@ -308,64 +315,108 @@ class Setting:
                 spec[spec["exit_side1"]] += 1
 
     # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _overflow_warning(self, who):
+        message = "count: " + who + "overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s"
+        logging.warning(
+            message, end_points[0], end_points[1], end_points[2], end_points[3],
+            item.startX, item.startY, self.cfg.video_name)
+        
+    # ---------------------------------------------------------------------------------
+    # returns the position of the top and bottom lines of the bounding box in relation
+    # to a given line. (startX, startY) is checked as top line and (endX, endY) is
+    # considered as the bottom line
+    # ---------------------------------------------------------------------------------
+
+    def _find_positions(self, item, item_line, spec):
+        end_points = spec["end_points"]
+        # find the top position in relation to the given line
+        try: 
+            new_top = Geom.point_position(
+                end_points[0], end_points[1], end_points[2], end_points[3],
+                item.startX, item.startY)
+        # for some reason, with real time cameras, data gets currepted and we
+        # get an overflow error when checking the position of the bounding box
+        # TODO: investigate further
+        except OverflowError:
+            self._overflow_warning('new_top')
+            new_top = item_line['top_line_position']
+        # find the bottom position in relation to the given line
+        try:
+            new_bottom = Geom.point_position(
+                end_points[0], end_points[1], end_points[2], end_points[3],
+                item.endX, item.endY)
+        except OverflowError:
+            self._overflow_warning('new_bottom')
+            new_bottom = item_line["bottom_line_position"]
+
+        return(new_top, new_bottom)
+    
+    # ---------------------------------------------------------------------------------
+    # Checks if the bottom line has crossed the counting line. If this is a new
+    # item, then check to see if this item was split by the counting line. As split
+    # item should be counted, if it is going down the image, when the top line
+    # crosses the counting line
+    # ---------------------------------------------------------------------------------
+
+    def _has_bottom_crossed(self, item, item_line, new_top, new_bottom):
+        line_crossed = False
+                
+        # did the bottom line cross the count line...
+        if (item_line["bottom_line_position"] != new_bottom):
+            line_crossed = True
+            
+            # Has the item just entered the scene?
+            if (item_line['bottom_line_position'] == None):
+                # is this item split by the counting line?
+                if new_top != new_bottom:
+                    item_line['split'] = True
+                
+        return line_crossed
+
+    # ---------------------------------------------------------------------------------
     # Count the items crossing the 'counting lines' given in the configuration
     # file.
     # ---------------------------------------------------------------------------------
 
     def _count(self):
 
+        # this value should be set by a service in flow_manager, through a UI
+        self.track_item = 7
+
         # for every counting line
         for key, spec in self.cfg.data["counting_lines"].items():
             # for every item, see if it has crossed the counting line
+            logging.debug("counting items is respect to line %s", key)
             for item_id, item in self.items.items():
+                logging.debug("checking item %d", item_id)
+                
                 item_line = item.lines[key]
-                end_points = spec["end_points"]
-                try: 
-                    new_top = Geom.point_position(
-                        end_points[0], end_points[1], end_points[2], end_points[3],
-                        item.startX, item.startY)
-                except OverflowError:
-                    logging.info(
-                        "count: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                        end_points[0], end_points[1],
-                        end_points[2], end_points[3],
-                        item.startX, item.startY, self.video_name)
-                    new_top = item_line['top_line_position']
-
-                try:
-                    new_bottom = Geom.point_position(
-                        end_points[0], end_points[1], end_points[2], end_points[3],
-                        item.endX, item.endY)
-                except OverflowError:
-                    logging.info(
-                        "count: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                        end_points[0], end_points[1],
-                        end_points[2], end_points[3],
-                        item.startX, item.startY, self.video_name)
-                    new_bottom = item_line["bottom_line_position"]
-
-                if (spec['count_splits'] == 'True' and item_line['split'] == True):
-                    if (item.dirY == 'South' and
-                        item_line['top_line_position'] != new_top):
-                        self._top_crossed(item, item_line, spec, new_top)
-                        item_line['top_line_position'] = new_top
-                        item_line["bottom_line_position"] = new_bottom
-
-                # did the bottom line cross the count line...
-                if (item_line["bottom_line_position"] != new_bottom):
-                    # Has the item just entered the scene? 
-                    if (item_line['bottom_line_position'] == None):
-                        # counting line splits the new identified item
-                        if new_top != new_bottom:
-                            # print("item: " + str(item.item_id) + " is split")
-                            item_line['split'] = True
-                    else:
-                        self._bottom_crossed(item, item_line, spec, new_bottom)
+                new_top, new_bottom = self._find_positions(item, item_line, spec)
+                if self._has_bottom_crossed(item, item_line, new_top, new_bottom):
+                    # debugging information
+                    if item.item_id == self.track_item:
+                        logging.info("item %d bottom line has crossed line %s", item.item_id,
+                                     key)
+                        if item_line['split'] == True:
+                            logging.info("item %d is a split item in relation to line %s",
+                                         item.item_id, key)
                         
-                    item_line['top_line_position'] = new_top
-                    item_line["bottom_line_position"] = new_bottom
+                    self._bottom_crossed(item, item_line, spec, new_bottom)
 
-                item_line['top_point'] = (item.startX, item.startY)
-                item_line['bottom_point'] = (item.endX, item.endY)
-                                
-            
+                    
+                if item.item_id == self.track_item and item_line['top_line_position'] != new_top:
+                    logging.info(
+                        "frame_number %d: item %d top line has crossed line %s, split is %s, dirY is %s",
+                        self.cfg.frame_number, item.item_id, key, item_line['split'], item.dirY)
+                    
+                # if we should count split items and this is a split item and the item
+                # is going South and the top line has crossed the line, then count it
+                if (spec['count_splits'] == 'True' and item_line['split'] == True and
+                    item.dirY == 'South' and item_line['top_line_position'] != new_top):
+                    self._top_crossed(item, item_line, spec, new_top)
+
+                item.lines[key]['top_line_position'] = new_top
+                item.lines[key]["bottom_line_position"] = new_bottom
