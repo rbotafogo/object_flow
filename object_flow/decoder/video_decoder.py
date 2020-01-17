@@ -65,6 +65,8 @@ class VideoDecoder(Doer):
         self._stream = cv2.VideoCapture(path)
 
         if (not self._stream.isOpened()):
+            logging.warning("Could not open video stream %s on path %s", video_name, path)
+            raise OSError(filename=path)
             return
         
         logging.info("Starting decoding video %s in path %s", self.video_name, path)
