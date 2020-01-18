@@ -121,64 +121,6 @@ class Setting:
                 spec["exit_side1"] = "counter1"
 
     # ---------------------------------------------------------------------------------
-    # Only itens that have crossed the entry_lines (in the right direction) should be
-    # considered for addition to the setting. If a bounding box is split by an entry
-    # line, then it should not be added to the setting, only items that are completely
-    # inside the entry lines should be considered
-    # ---------------------------------------------------------------------------------
-
-    def _validate_entry(self, bboxes):
-
-        valid_boxes = []
-        
-        # for every entry line
-        for box in bboxes:
-            add_box = True
-            
-            for key, spec in self.cfg.data['entry_lines'].items():
-                end_points = spec["end_points"]
-                try: 
-                    top = Geom.point_position(end_points[0], end_points[1],
-                                              end_points[2], end_points[3],
-                                              box[0], box[1])
-                except OverflowError:
-                    logging.warning("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                                 end_points[0], end_points[1],
-                                 end_points[2], end_points[3],
-                                 box[0], box[1], self.cfg.analyser_id)
-                    top = False
-
-                try: 
-                    bottom = Geom.point_position(end_points[0], end_points[1],
-                                                 end_points[2], end_points[3],
-                                                 box[2], box[3])
-                    
-                except OverflowError:
-                    logging.warning("overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                                 end_points[0], end_points[1],
-                                 end_points[2], end_points[3],
-                                 box[2], box[3],  self.cfg.analyser_id)
-                    bottom = False
-                
-                # split object: should not be added to the tracked objects
-                if top != bottom:
-                    add_box = False
-                      
-                # side1 indicates the valid region for entry, that is, the area
-                # in which if the object´s bounding box is completely inside
-                # then it should be seen.
-                # This is not an split object, so we can check either the top
-                # or bottom.  Accept if they are the same 
-                if ((not top and spec['side1'] == 'Positive') or
-                    (top and spec['side1'] == 'Negative')):
-                    add_box = False
-                    
-            if add_box:
-                valid_boxes.append(box)
-                
-        return valid_boxes
-    
-    # ---------------------------------------------------------------------------------
     # Convert every new identified bounding box to an iten and returns the list of
     # new items.  Those items will not necessarily be added to the Setting.  The
     # identified bounding boxes could already be on the Setting or should not yet
@@ -197,44 +139,88 @@ class Setting:
         return new_inputs
 
     # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _overflow_warning(self, where, end_points, p1, p2):
+        message = where + " overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s"
+        logging.warning(
+            message, end_points[0], end_points[1], end_points[2], end_points[3],
+            p1, p2, self.cfg.video_name)
+        
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _position_item_line(self, end_points, pX, pY):
+        try: 
+            position = Geom.point_position(
+                end_points[0], end_points[1], end_points[2], end_points[3],
+                pX, pY)
+        except OverflowError:
+            self._overflow_warning("check_exit: new_top", end_points,
+                                   pX, pY)
+            position = False
+            
+        return position
+
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _positions_box_line(self, box):
+        for key, spec in self.cfg.data["entry_lines"].items():
+            end_points = spec["end_points"]
+            top = self._position_item_line(end_points, box[0], box[1])
+            bottom = self._position_item_line(end_points, box[2], box[3])
+
+            yield (spec, top, bottom)
+    
+    # ---------------------------------------------------------------------------------
+    # Only itens that have crossed the entry_lines (in the right direction) should be
+    # considered for addition to the setting. If a bounding box is split by an entry
+    # line, then it should not be added to the setting, only items that are completely
+    # inside the entry lines should be considered
+    # ---------------------------------------------------------------------------------
+
+    def _validate_entry(self, bboxes):
+
+        valid_boxes = []
+        
+        # for every entry line
+        for box in bboxes:
+            add_box = True
+
+            for spec, top, bottom in self._positions_box_line(box):
+                # split object: should not be added to the tracked objects
+                if top != bottom:
+                    add_box = False
+                # side1 indicates the valid region for entry, that is, the area
+                # in which if the object´s bounding box is completely inside
+                # then it should be seen.
+                # This is not an split object, so we can check either the top
+                # or bottom.  Accept if they are the same 
+                if ((not top and spec['side1'] == 'Positive') or
+                    (top and spec['side1'] == 'Negative')):
+                    add_box = False
+                    
+            if add_box:
+                valid_boxes.append(box)
+                
+        return valid_boxes
+    
+    # ---------------------------------------------------------------------------------
     # checks if the item has crossed an entry_line and is exiting the setting
     # ---------------------------------------------------------------------------------
 
     def _check_exit(self, bounding_box):
 
-        # for every entry line
-        for key, spec in self.cfg.data["entry_lines"].items():
-            end_points = spec["end_points"]
-            try: 
-                new_top = Geom.point_position(
-                    end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[0], bounding_box[1])
-            except OverflowError:
-                logging.warning(
-                    "check_exit: new_top overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                    end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[0], bounding_box[1], self.cfg.video_name)
-                new_top = False
-
-            try:
-                new_bottom = Geom.point_position(
-                    end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[0], bounding_box[1])                    
-            except OverflowError:
-                logging.warning(
-                    "check_exit: new_bottom overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                    end_points[0], end_points[1], end_points[2], end_points[3],
-                    bounding_box[2], bounding_box[3], self.cfg.video_name)
-                new_bottom = False
-                
+        for spec, new_top, new_bottom in self._positions_box_line(bounding_box):
             # side1 indicates the valid region for entry, that is, the area
             # in which if the object´s bounding box is completely inside
             # then it should be seen.
-            # This is not an split object, so we can check either the new_top
-            # or new_bottom.  Accept if they have the same 
-            if ((new_top == new_bottom) and
-                ((not new_top and spec['side1'] == 'Positive') or
-                 (new_top and spec['side1'] == 'Negative'))):
+            # a split object in relation to an entry line should not be allowed
+            if (new_top != new_bottom):
                 return True
 
         return False
@@ -253,8 +239,9 @@ class Setting:
             obj_line['counted'] = True
             obj_line['counted_frame'] = self.cfg.frame_number
             return True
-        return False
         
+        return False
+                
     # ---------------------------------------------------------------------------------
     # Top line of the bounding box has crossed the counting line. This is called
     # for split objects going 'South': we will count them when the top line crosses
@@ -313,16 +300,6 @@ class Setting:
                 spec[spec["enter_side1"]] += 1
             else:
                 spec[spec["exit_side1"]] += 1
-
-    # ---------------------------------------------------------------------------------
-    #
-    # ---------------------------------------------------------------------------------
-
-    def _overflow_warning(self, who):
-        message = "count: " + who + "overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s"
-        logging.warning(
-            message, end_points[0], end_points[1], end_points[2], end_points[3],
-            item.startX, item.startY, self.cfg.video_name)
         
     # ---------------------------------------------------------------------------------
     # returns the position of the top and bottom lines of the bounding box in relation
@@ -330,28 +307,14 @@ class Setting:
     # considered as the bottom line
     # ---------------------------------------------------------------------------------
 
-    def _find_positions(self, item, item_line, spec):
+    def _find_positions(self, item, spec):
+        
         end_points = spec["end_points"]
         # find the top position in relation to the given line
-        try: 
-            new_top = Geom.point_position(
-                end_points[0], end_points[1], end_points[2], end_points[3],
-                item.startX, item.startY)
-        # for some reason, with real time cameras, data gets currepted and we
-        # get an overflow error when checking the position of the bounding box
-        # TODO: investigate further
-        except OverflowError:
-            self._overflow_warning('new_top')
-            new_top = item_line['top_line_position']
+        new_top = self._position_item_line(end_points, item.startX, item.startY)
         # find the bottom position in relation to the given line
-        try:
-            new_bottom = Geom.point_position(
-                end_points[0], end_points[1], end_points[2], end_points[3],
-                item.endX, item.endY)
-        except OverflowError:
-            self._overflow_warning('new_bottom')
-            new_bottom = item_line["bottom_line_position"]
-
+        new_bottom = self._position_item_line(end_points, item.endX, item.endY)
+        
         return(new_top, new_bottom)
     
     # ---------------------------------------------------------------------------------
@@ -368,12 +331,6 @@ class Setting:
         if (item_line["bottom_line_position"] != new_bottom):
             line_crossed = True
             
-            # Has the item just entered the scene?
-            if (item_line['bottom_line_position'] == None):
-                # is this item split by the counting line?
-                if new_top != new_bottom:
-                    item_line['split'] = True
-                
         return line_crossed
 
     # ---------------------------------------------------------------------------------
@@ -384,29 +341,41 @@ class Setting:
     def _count(self):
 
         # this value should be set by a service in flow_manager, through a UI
-        self.track_item = 7
+        self.track_item = 16
 
         # for every counting line
         for key, spec in self.cfg.data["counting_lines"].items():
             # for every item, see if it has crossed the counting line
             logging.debug("counting items is respect to line %s", key)
             for item_id, item in self.items.items():
+                
                 logging.debug("checking item %d", item_id)
                 
                 item_line = item.lines[key]
-                new_top, new_bottom = self._find_positions(item, item_line, spec)
+                new_top, new_bottom = self._find_positions(item, spec)
+
+                # item has just entered the setting, no need to count
+                if (item_line['bottom_line_position'] == None):
+                    if new_top != new_bottom:
+                        item_line['split'] = True
+                    item.lines[key]['top_line_position'] = new_top
+                    item.lines[key]["bottom_line_position"] = new_bottom
+                    return
+                    
                 if self._has_bottom_crossed(item, item_line, new_top, new_bottom):
+                    
                     # debugging information
                     if item.item_id == self.track_item:
-                        logging.info("item %d bottom line has crossed line %s", item.item_id,
-                                     key)
+                        logging.info("frame_number %d: item %d bottom line has crossed line %s",
+                                     self.cfg.frame_number, item.item_id, key)
+                        
                         if item_line['split'] == True:
                             logging.info("item %d is a split item in relation to line %s",
                                          item.item_id, key)
-                        
+                    # end debugging information
+                    
                     self._bottom_crossed(item, item_line, spec, new_bottom)
 
-                    
                 if item.item_id == self.track_item and item_line['top_line_position'] != new_top:
                     logging.info(
                         "frame_number %d: item %d top line has crossed line %s, split is %s, dirY is %s",

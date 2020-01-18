@@ -213,7 +213,6 @@ class FlowManager(Doer):
         self.cfg.frame_number = self._total_frames
 
         self.tracking_phase()
-        # self.detection_phase()
                     
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -270,7 +269,8 @@ class FlowManager(Doer):
                                               bounding_box)
 
         self.num_trackers -= 1
-        # are all trackers done?
+        # are all trackers done? If all done then we call call the
+        # detection phase
         if self.num_trackers < 1:
             self.detection_phase()
             
