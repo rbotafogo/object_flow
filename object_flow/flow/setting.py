@@ -271,6 +271,27 @@ class Setting:
                 spec[spec["exit_side1"]] += 1
         
     # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def _has_top_crossed(self, item, key, spec, new_top):
+        item_line = item.lines[key]
+
+        if (spec['count_splits'] == 'True' and item_line['split'] == True and
+            item.dirY == 'South' and item_line['top_line_position'] != new_top):
+            self._top_crossed(item, item_line, spec, new_top)
+        
+            # debugging information
+            if item.item_id == self.track_item:
+                logging.info("frame_number %d: item %d bottom line has crossed line %s",
+                             self.cfg.frame_number, item.item_id, key)
+                if item_line['split'] == True:
+                    logging.info("item %d is a split item in relation to line %s",
+                                 item.item_id, key)
+            # end debugging information
+
+    
+    # ---------------------------------------------------------------------------------
     # Bottom line of the bounding box has crossed the counting line
     # ---------------------------------------------------------------------------------
 
@@ -316,15 +337,24 @@ class Setting:
     # crosses the counting line
     # ---------------------------------------------------------------------------------
 
-    def _has_bottom_crossed(self, item, item_line, new_top, new_bottom):
-        line_crossed = False
-                
-        # did the bottom line cross the count line...
-        if (item_line["bottom_line_position"] != new_bottom):
-            line_crossed = True
+    def _has_bottom_crossed(self, item, key, spec, new_bottom): 
+        item_line = item.lines[key]
+                        
+        # did the bottom line cross the count line. Bottom has crossed the line
+        # and the direction was set
+        if (item_line["bottom_line_position"] != new_bottom and
+            ((item.dirY != None) or (item.dirX != None))):
+            self._bottom_crossed(item, item_line, spec, new_bottom)
             
-        return line_crossed
-
+            # debugging information
+            if item.item_id == self.track_item:
+                logging.info("frame_number %d: item %d bottom line has crossed line %s",
+                             self.cfg.frame_number, item.item_id, key)
+                if item_line['split'] == True:
+                    logging.info("item %d is a split item in relation to line %s",
+                                 item.item_id, key)
+            # end debugging information
+            
     # ---------------------------------------------------------------------------------
     # returns the position of the top and bottom lines of the bounding box in relation
     # to a given line. (startX, startY) is checked as top line and (endX, endY) is
@@ -356,45 +386,20 @@ class Setting:
             # for every item, see if it has crossed the counting line
             logging.debug("counting items is respect to line %s", key)
             for item_id, item in self.items.items():
-                
                 logging.debug("checking item %d", item_id)
                 
-                item_line = item.lines[key]
                 new_top, new_bottom = self._find_positions(item, spec)
 
-                # item has just entered the setting, no need to count
-                if (item_line['bottom_line_position'] == None):
-                    if new_top != new_bottom:
-                        item_line['split'] = True
-                    item.lines[key]['top_line_position'] = new_top
-                    item.lines[key]["bottom_line_position"] = new_bottom
-                    return
-
-                # bottom line has crossed the counting line
-                if self._has_bottom_crossed(item, item_line, new_top, new_bottom):
-                    # debugging information
-                    if item.item_id == self.track_item:
-                        logging.info("frame_number %d: item %d bottom line has crossed line %s",
-                                     self.cfg.frame_number, item.item_id, key)
-                        
-                        if item_line['split'] == True:
-                            logging.info("item %d is a split item in relation to line %s",
-                                         item.item_id, key)
-                    # end debugging information
-
-                    if ((item.dirY != None) or (item.dirX != None)):
-                        self._bottom_crossed(item, item_line, spec, new_bottom)
-
-                if item.item_id == self.track_item and item_line['top_line_position'] != new_top:
-                    logging.info(
-                        "frame_number %d: item %d top line has crossed line %s, split is %s, dirY is %s",
-                        self.cfg.frame_number, item.item_id, key, item_line['split'], item.dirY)
+                if (item.lines[key]['bottom_line_position'] != None):
+                    # bottom line has crossed the counting line?
+                    self._has_bottom_crossed(item, key, spec, new_bottom)
                     
-                # if we should count split items and this is a split item and the item
-                # is going South and the top line has crossed the line, then count it
-                if (spec['count_splits'] == 'True' and item_line['split'] == True and
-                    item.dirY == 'South' and item_line['top_line_position'] != new_top):
-                    self._top_crossed(item, item_line, spec, new_top)
+                    # top line has crossed the counting line?
+                    self._has_top_crossed(item, key, spec, new_top)
+                else:
+                    if new_top != new_bottom:
+                        item.lines[key]['split'] = True
 
                 item.lines[key]['top_line_position'] = new_top
                 item.lines[key]["bottom_line_position"] = new_bottom
+                
