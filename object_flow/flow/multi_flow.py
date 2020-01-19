@@ -127,6 +127,7 @@ class MultiFlow(Doer):
     def add_camera(self, cfg):
         # create the flow manager and initialize it with video_name and
         # the Yolo neural net
+        cfg.start_time = self.system_cfg.data['system_info']['start_time']
         manager = self.hire(cfg.video_name, FlowManager, cfg, self._doers['trackers'],
                             self._yolo, group = 'flow_manager')
         

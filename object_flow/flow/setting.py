@@ -14,6 +14,7 @@ import logging
 
 from object_flow.flow.item import Item
 from object_flow.util.geom import Geom
+from object_flow.flow.csv import CSV
 
 # =========================================================================================
 # Class Setting is responsible for managing all the items in the camera view. This is
@@ -30,6 +31,8 @@ class Setting:
         self.cfg = cfg
         self._set_counters()
 
+        CSV.initialize(cfg)
+        
         # id of the next item
         self.next_item_id = 0
         
@@ -89,6 +92,7 @@ class Setting:
 
         # count items that have crossed any counting lines
         self._count()
+        CSV.csv_schedule(self.cfg)
     
     # ---------------------------------------------------------------------------------
     #
