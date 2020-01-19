@@ -281,10 +281,18 @@ class Setting:
 
         logging.debug("checking bottom_crossed for camera %s", self.cfg.video_name)
 
+        if item.item_id == self.track_item:
+            logging.info("frame_number %d: item %d counting bottom crossed",
+                         self.cfg.frame_number, item.item_id)
+                        
         try:
             if (not Geom.intersect(bottom_point[0], bottom_point[1], item.endX,
                                    item.endY, first_point[0], first_point[1],
                                    second_point[0], second_point[1])):
+                
+                if item.item_id == self.track_item:
+                    logging.info("frame_number %d: item %d returning without counting",
+                                 self.cfg.frame_number, item.item_id)
                 return
             
         except OverflowError:
@@ -302,22 +310,6 @@ class Setting:
                 spec[spec["exit_side1"]] += 1
         
     # ---------------------------------------------------------------------------------
-    # returns the position of the top and bottom lines of the bounding box in relation
-    # to a given line. (startX, startY) is checked as top line and (endX, endY) is
-    # considered as the bottom line
-    # ---------------------------------------------------------------------------------
-
-    def _find_positions(self, item, spec):
-        
-        end_points = spec["end_points"]
-        # find the top position in relation to the given line
-        new_top = self._position_item_line(end_points, item.startX, item.startY)
-        # find the bottom position in relation to the given line
-        new_bottom = self._position_item_line(end_points, item.endX, item.endY)
-        
-        return(new_top, new_bottom)
-    
-    # ---------------------------------------------------------------------------------
     # Checks if the bottom line has crossed the counting line. If this is a new
     # item, then check to see if this item was split by the counting line. As split
     # item should be counted, if it is going down the image, when the top line
@@ -334,6 +326,22 @@ class Setting:
         return line_crossed
 
     # ---------------------------------------------------------------------------------
+    # returns the position of the top and bottom lines of the bounding box in relation
+    # to a given line. (startX, startY) is checked as top line and (endX, endY) is
+    # considered as the bottom line
+    # ---------------------------------------------------------------------------------
+
+    def _find_positions(self, item, spec):
+        
+        end_points = spec["end_points"]
+        # find the top position in relation to the given line
+        new_top = self._position_item_line(end_points, item.startX, item.startY)
+        # find the bottom position in relation to the given line
+        new_bottom = self._position_item_line(end_points, item.endX, item.endY)
+        
+        return(new_top, new_bottom)
+    
+    # ---------------------------------------------------------------------------------
     # Count the items crossing the 'counting lines' given in the configuration
     # file.
     # ---------------------------------------------------------------------------------
@@ -341,7 +349,7 @@ class Setting:
     def _count(self):
 
         # this value should be set by a service in flow_manager, through a UI
-        self.track_item = 16
+        self.track_item = None
 
         # for every counting line
         for key, spec in self.cfg.data["counting_lines"].items():
@@ -361,9 +369,9 @@ class Setting:
                     item.lines[key]['top_line_position'] = new_top
                     item.lines[key]["bottom_line_position"] = new_bottom
                     return
-                    
+
+                # bottom line has crossed the counting line
                 if self._has_bottom_crossed(item, item_line, new_top, new_bottom):
-                    
                     # debugging information
                     if item.item_id == self.track_item:
                         logging.info("frame_number %d: item %d bottom line has crossed line %s",
@@ -373,8 +381,9 @@ class Setting:
                             logging.info("item %d is a split item in relation to line %s",
                                          item.item_id, key)
                     # end debugging information
-                    
-                    self._bottom_crossed(item, item_line, spec, new_bottom)
+
+                    if ((item.dirY != None) or (item.dirX != None)):
+                        self._bottom_crossed(item, item_line, spec, new_bottom)
 
                 if item.item_id == self.track_item and item_line['top_line_position'] != new_top:
                     logging.info(
