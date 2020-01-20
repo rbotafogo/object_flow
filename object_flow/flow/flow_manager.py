@@ -100,7 +100,8 @@ class FlowManager(Doer):
     def start_playback(self):
 
         display  = self.video_name + '_display'
-        self._dp = self.hire(display, Display, self.video_name, group = 'displayers')
+        self._dp = self.hire(display, Display, self.video_name, self.cfg,
+                             group = 'displayers')
 
         logging.info("starting playback for video %s", self.video_name)
         
@@ -469,9 +470,12 @@ class FlowManager(Doer):
         # buffer size
         for name, listener in self._listeners.items():
             # listener: doer's address
-            self.post(listener, 'base_image', self._buf_size)
-            self.post(listener, 'overlay_bboxes', list(self._setting.items.values()),
-                      self.cfg.data['video_processor']['show_id'])
+            # when sending the base image, send also all the items, so that they
+            # can be used by other methods
+            self.post(listener, 'base_image', self._buf_size,
+                      list(self._setting.items.values()))
+            self.post(listener, 'overlay_bboxes')
+            self.post(listener, 'add_id')
             self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
             self.post(listener, 'add_lines', self.cfg.data['counting_lines'], True)
             self.post(listener, 'display')

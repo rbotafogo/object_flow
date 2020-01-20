@@ -36,8 +36,9 @@ class Display(Doer):
     # @param video_name [String] name of the video camera
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name):
+    def __initialize__(self, video_name, cfg):
         self.video_name = video_name
+        self.cfg = cfg
         self._stop = False
     
     # ----------------------------------------------------------------------------------
@@ -68,11 +69,12 @@ class Display(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def base_image(self, size):
+    def base_image(self, size, items):
         if self._stop:
             return
 
         self.size = size
+        self.items = items
         
         self._buf.seek(0)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
@@ -83,14 +85,54 @@ class Display(Doer):
     # bounding box centroid to the image
     # ----------------------------------------------------------------------------------
     
-    def overlay_bboxes(self, items, centroids = False):
-        for item in items:
+    def overlay_bboxes(self):
+        if self.cfg.data['video_processor']['show_tracking_bbox'] == False:
+            return
+
+        color = self.cfg.data['video_processor']['tracking_bbox_color']
+        for item in self.items:
             logging.debug((item.startX, item.startY, item.endX, item.endY))
             cv2.rectangle(self.frame, (item.startX, item.startY),
-                          (item.endX, item.endY), (0, 250, 0), 2)
-            if centroids:
-                self._add_centroid(item, (0, 244, 0))
+                          (item.endX, item.endY), color, 2)
     
+    # ---------------------------------------------------------------------------------
+    # Add the item id to the image
+    # ---------------------------------------------------------------------------------
+
+    def add_id(self):
+        if self.cfg.data['video_processor']['show_id'] == False:
+            return
+
+        color = self.cfg.data['video_processor']['id_color']
+        
+        for item in self.items:
+            text = "{}".format(item.item_id)
+            if (item.cX < 10):
+                bbx = 0
+                item.cX = 5
+            else:
+                bbx = item.cX - 10
+            if (item.cY < 10):
+                bby = 0
+                item.cY = 5
+            else:
+                bby = item.cY - 10
+
+            if (item.cX >= self.width):
+                bbx = self.width - 10
+                item.cX = bbx
+            else:
+                bbx = item.cX - 10
+            if (item.cY >= self.height):
+                bby = self.height - 10
+                item.cY = bby
+            else:
+                bby = item.cY - 10
+            
+            cv2.putText(self.frame, text, (bbx, bby),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 2)
+            cv2.circle(self.frame, (item.cX, item.cY), 4, color, -1)
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -132,39 +174,6 @@ class Display(Doer):
 
     # PRIVATE METHODS
     
-    # ---------------------------------------------------------------------------------
-    # draws the bounding box centroid in the given frame with the given color
-    # ---------------------------------------------------------------------------------
-
-    def _add_centroid(self, item, color):
-        
-        text = "{}".format(item.item_id)
-        if (item.cX < 10):
-            bbx = 0
-            item.cX = 5
-        else:
-            bbx = item.cX - 10
-        if (item.cY < 10):
-            bby = 0
-            item.cY = 5
-        else:
-            bby = item.cY - 10
-
-        if (item.cX >= self.width):
-            bbx = self.width - 10
-            item.cX = bbx
-        else:
-            bbx = item.cX - 10
-        if (item.cY >= self.height):
-            bby = self.height - 10
-            item.cY = bby
-        else:
-            bby = item.cY - 10
-            
-        cv2.putText(self.frame, text, (bbx, bby),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 2)
-        cv2.circle(self.frame, (item.cX, item.cY), 4, color, -1)
-
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
