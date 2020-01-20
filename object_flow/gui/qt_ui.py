@@ -86,9 +86,9 @@ class CountingGUI(QWidget):
         # if okPressed and text != '':
         #     print(text)
             
-        pbtn = QPushButton('Playback', self)
-        pbtn.resize(qbtn.sizeHint())
-        pbtn.move(50, 150)
+        # pbtn = QPushButton('Playback', self)
+        # pbtn.resize(qbtn.sizeHint())
+        # pbtn.move(50, 150)
 
         sbtn.clicked.connect(self.start_click)
         qbtn.clicked.connect(self.quit_click)
