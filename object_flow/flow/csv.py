@@ -28,6 +28,7 @@ class CSV:
     
     def initialize(cfg):
         now = Util.br_time_raw()
+        logging.info("Current time is %s", str(now))
         
         if (cfg.start_time > now):
             cfg.delta_csv_update = datetime.timedelta(
@@ -36,9 +37,10 @@ class CSV:
           cfg.delta_csv_update = datetime.timedelta(
                 minutes=cfg.minutes)
         
-        logging.info("delta_csv_update is %s", str(cfg.delta_csv_update))
-        
         cfg.last_csv_update = Util.br_time_raw()
+        
+        logging.info("delta_csv_update is %s", str(cfg.delta_csv_update))
+        logging.info("Next update at %s", cfg.last_csv_update + cfg.delta_csv_update)
         
     # ----------------------------------------------------------------------------------
     # delta_time is given in minutes
@@ -48,8 +50,6 @@ class CSV:
         now = Util.br_time_raw()
 
         if (now >= cfg.last_csv_update + cfg.delta_csv_update):
-            # read the global system config file for the next delta.
-            # TODO: This value could be changes on the fly by an operator
             cfg.delta_csv_update = datetime.timedelta(
                 minutes=cfg.system_info['minutes'])
             logging.info("timedelta for next csv update is: %s",

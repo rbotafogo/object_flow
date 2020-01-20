@@ -7,8 +7,8 @@
   
   "video_processor": {
     "record": "True",
-    "record_time": "18:00-18:02",
-    "record_weekday": 0,
+    "record_time": "00:12-00:30",
+    "record_weekday": 1,
     "gamma_filter": 1.5,
     "show_input_bbox": "False",
     "show_tracking_bbox": "True",

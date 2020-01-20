@@ -22,9 +22,9 @@ if __name__ == '__main__':
     import argparse
 
     from _version import __version__
-
-    from object_flow.ipc.board import Board
-    from object_flow.flow.multi_flow import MultiFlow
+    from PyQt5.QtWidgets import QApplication
+    from object_flow.gui.qt_ui import CountingGUI
+    
     from object_flow.util.util import Util
     from object_flow.util.config import Config
 
@@ -96,7 +96,8 @@ if __name__ == '__main__':
     else:
         start_time = Util.round_dt(now, 10)
 
-    logging.info(start_time)
+    print("Start generating csv at %s", str(start_time))
+    cfg.data['system_info']['start_time'] = start_time
     
     if (start_time > now):
         cfg.data['system_info']['delta'] = datetime.timedelta(
@@ -155,35 +156,10 @@ if __name__ == '__main__':
                'loggers' : { '': {'handlers': ['h1', 'h2'], 'level': logging.DEBUG}}
     }
     
-    logcfg = { 'version': 1,
-               'formatters': {
-                   'normal': {
-                       # 'format': "%(asctime)s;%(levelname)s;%(message)s"}},
-                       'format': "%(levelname)-6s;%(asctime)s;%(filename)s;%(funcName)s;%(lineno)d;%(process)d;%(message)s", 'datefmt': '%Y-%m-%d;%H:%M:%S'}
-               },
-               'handlers': {
-                   'h': {'class': 'logging.FileHandler',
-                         'filename': 'log/flow.log',
-                         'formatter': 'normal',
-                         'level': logging.INFO
-                   },
-                   'console': {'class': 'logging.StreamHandler',
-                               'formatter': 'normal',
-                               'stream': 'ext://sys.stdout',
-                               'level': logging.INFO
-                   },
-               },
-               'loggers' : {
-                   '': {'handlers': ['h', 'console'],
-                        'level': logging.DEBUG}}
-    }
+    app = QApplication([])
+    ex = CountingGUI(cfg)
+    sys.exit(app.exec_())
     
-    board = Board(logcfg=logcfg)
-    board.hire('MultiFlow', MultiFlow, cfg)
-
-    time.sleep(30)
-    board.shutdown()
-
 # import ctypes
 # kernel32 = ctypes.windll.kernel32
 
