@@ -145,6 +145,7 @@ class MultiFlow(Doer):
 
     def flow_manager_initialized(self, video_name):
         self.start_playback(video_name)
+        # pass
     
     # ----------------------------------------------------------------------------------
     #
