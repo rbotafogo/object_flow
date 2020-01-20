@@ -7,8 +7,8 @@
   
   "video_processor": {
     "record": "True",
-    "record_time": "18:00-18:02",
-    "record_weekday": 0,
+    "record_time": "00:12-00:30",
+    "record_weekday": 1,
     "gamma_filter": 1.5,
     "show_input_bbox": "False",
     "show_tracking_bbox": "True",
@@ -24,7 +24,7 @@
   "counting_lines": {
     
     "middle_screen": {
-      "end_points": [177, 202, 415, 255],
+      "end_points": [140, 190, 415, 255],
       "count_splits": "True",
       "line_color": [0, 255, 255],
       "side1": "Negative",
@@ -43,7 +43,7 @@
   "entry_lines": {
     
     "top_line": {
-      "end_points": [283, 116, 413, 147],
+      "end_points": [250, 100, 413, 147],
       "line_color": [255, 0, 255],
       "side1": "Positive"
     },

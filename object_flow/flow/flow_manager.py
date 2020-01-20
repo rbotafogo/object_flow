@@ -213,7 +213,6 @@ class FlowManager(Doer):
         self.cfg.frame_number = self._total_frames
 
         self.tracking_phase()
-        # self.detection_phase()
                     
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -258,7 +257,11 @@ class FlowManager(Doer):
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
-                exit = self._setting.update(bounding_box)
+                self._setting.update(bounding_box)
+
+                # check and remove all bounding boxes that have exited the setting.
+                # Those that have not exited, should be updated
+                exit = self._setting._check_exit(bounding_box)
                 if exit:
                     self._remove_item(item_id)
                 else:
@@ -266,7 +269,8 @@ class FlowManager(Doer):
                                               bounding_box)
 
         self.num_trackers -= 1
-        # are all trackers done?
+        # are all trackers done? If all done then we call call the
+        # detection phase
         if self.num_trackers < 1:
             self.detection_phase()
             
