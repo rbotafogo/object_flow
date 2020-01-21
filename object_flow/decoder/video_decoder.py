@@ -54,7 +54,7 @@ class VideoDecoder(Doer):
         # frame_buffer
         self._frame_buffer = collections.deque()
         # if 30 frames per second, then keep 5min of video in buffer
-        self._buffer_max_size = 9000
+        self._buffer_max_size = 500
 
         self._stream = None
         

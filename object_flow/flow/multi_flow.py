@@ -82,6 +82,24 @@ class MultiFlow(Doer):
             # self._test_tracker_communication()
             
     # ----------------------------------------------------------------------------------
+    # send to all doers the 'actor_exit_request'. In principle this should not be
+    # necessary, but in many cases Python processes keep running even after the
+    # main Admin has shutdown
+    # ----------------------------------------------------------------------------------
+
+    def terminate(self):
+        for doer_address in self.all_doers_address():
+            self.send(doer_address, 'actor_exit_request')
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def actor_exit_request(self, message, sender):
+        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
+        self.terminate()
+    
+    # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
