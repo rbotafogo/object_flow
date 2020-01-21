@@ -41,6 +41,17 @@ class Tracker(Doer):
     # ----------------------------------------------------------------------------------
     
     def __init__(self):
+        
+        self.OPENCV_OBJECT_TRACKERS = {
+            "csrt": cv2.TrackerCSRT_create,
+            "kcf": cv2.TrackerKCF_create,
+            "boosting": cv2.TrackerBoosting_create,
+            "mil": cv2.TrackerMIL_create,
+            "tld": cv2.TrackerTLD_create,
+            "medianflow": cv2.TrackerMedianFlow_create,
+            "mosse": cv2.TrackerMOSSE_create
+        }
+        
         # every Doer should call super().__init__() if it has an __init__ method
         super().__init__()
 
@@ -55,10 +66,11 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, id):
+    def __initialize__(self, id, tracker_type = 'dlib'):
         # this tracker id
         self.id = id
-        
+        self.tracker_type = tracker_type
+            
     # ----------------------------------------------------------------------------------
     # Returns the id of this partial tracker
     # ----------------------------------------------------------------------------------
@@ -70,8 +82,6 @@ class Tracker(Doer):
     # Starts a dlib tracker to track the object given by its bounding box. Receives
     # the 'video_analyser' as parameter and will keep track of all objects by camera.
     # _start_tracker is started when the process receives a 'Start' message.
-    # TODO: uses explicitly the dlib tracker.  Should configure so that another tracker
-    # could be used.
     # ----------------------------------------------------------------------------------
 
     def start_tracking(self, video_name, file_name, width, height, depth, size,
@@ -84,17 +94,18 @@ class Tracker(Doer):
         # gets the correct list of video items.
         video_items = self.videos.get(video_name, {})
         
-        dlib_tracker = dlib.correlation_tracker()
-        rect = dlib.rectangle(startX, startY, endX, endY)
-        dlib_tracker.start_track(frame, rect)
+        tracker = self._start_dlib_tracker(
+            frame, item.startX, item.startY, item.endX, item.endY)
         
         # add this dlib tracker to the list of tracked items by this tracker for the
         # specified video
-        video_items.update({item_id:dlib_tracker})
+        video_items.update({item_id:tracker})
         self.videos[video_name] = video_items
         
     # ----------------------------------------------------------------------------------
-    #
+    # Starts tracking a list of items in a video frame.  This is the preferred way of
+    # starting trackers instead of the function above (start_tracking) that only
+    # tracks 1 item in the video.
     # ----------------------------------------------------------------------------------
 
     def tracks_list(self, video_name, file_name, width, height, depth, size, items):
@@ -105,13 +116,11 @@ class Tracker(Doer):
         video_items = self.videos.get(video_name, {})
         
         for item in items:
-            dlib_tracker = dlib.correlation_tracker()
-            rect = dlib.rectangle(item.startX, item.startY, item.endX, item.endY)
-            dlib_tracker.start_track(frame, rect)
-            
             # add this dlib tracker to the list of tracked items by this tracker for the
             # specified video
-            video_items.update({item.item_id:dlib_tracker})
+            tracker = self._start_tracker(
+                frame, item.startX, item.startY, item.endX, item.endY)
+            video_items.update({item.item_id:tracker})
             self.videos[video_name] = video_items
 
     # ----------------------------------------------------------------------------------
@@ -127,34 +136,12 @@ class Tracker(Doer):
             return None
 
         video_items = self.videos[video_name]
-
         detections = {}
         
-        for item_id, dlib_tracker in video_items.items():
+        for item_id, tracker in video_items.items():
+            confidence, pos = self._update_tracker(frame, tracker, width, height)
+            detections[item_id] = (confidence, pos)
             
-            confidence = dlib_tracker.update(frame)
-            pos = dlib_tracker.get_position()
-            
-            # make sure that the values are positive integers in the range (0, 0)
-            # (width, height)
-            pl = int(pos.left())
-            if pl < 0:
-                pl = 0
-                
-            pt = int(pos.top())
-            if pt < 0:
-                pt = 0
-                
-            pr = int(pos.right())
-            if pr > width:
-                pr = width
-                
-            pb = int(pos.bottom())
-            if pb > height:
-                pb = height
-
-            detections[item_id] = (confidence, [pl, pt, pr, pb])
-    
         return detections
 
     # ----------------------------------------------------------------------------------
@@ -174,6 +161,12 @@ class Tracker(Doer):
                      args, kwargs)
         
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -198,3 +191,59 @@ class Tracker(Doer):
         frame = b2.reshape((height, width, depth))
 
         return frame
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _start_tracker(self, frame, startX, startY, endX, endY):
+
+        if self.tracker_type == 'dlib':
+            tracker = dlib.correlation_tracker()
+            rect = dlib.rectangle(startX, startY, endX, endY)
+            tracker.start_track(frame, rect)
+        elif self.tracker_type in self.OPENCV_OBJECT_TRACKERS:
+            tracker = self.OPENCV_OBJECT_TRACKERS[self.tracker_type]()
+            tracker.init(frame, (startX, startY, endX - startX, endY - startY))
+        else:
+            logging.warning("Unknown tracker type: %s", self.tracker_type)
+            # TODO: shutdown the system... no way to recover from that
+        
+        return tracker
+                
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _update_tracker(self, frame, tracker, width, height):
+
+        if self.tracker_type == 'dlib':
+            confidence = tracker.update(frame)
+            position = tracker.get_position()
+            
+            # make sure that the values are positive integers in the range (0, 0)
+            # (width, height)
+            pl = int(position.left())
+            if pl < 0:
+                pl = 0
+                
+            pt = int(position.top())
+            if pt < 0:
+                pt = 0
+                
+            pr = int(position.right())
+            if pr > width:
+                pr = width
+                
+            pb = int(position.bottom())
+            if pb > height:
+                pb = height
+
+            position = [pl, pt, pr, pb]
+        # if not a dlib tracker, it is a cv2 tracker
+        else:
+            confidence, position = tracker.update(frame)
+            position = (position[0], position[1], position[0] + position[2],
+                        position[1] + position[3])
+
+        return (confidence, [int(value) for value in position])

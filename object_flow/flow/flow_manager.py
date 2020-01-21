@@ -385,7 +385,7 @@ class FlowManager(Doer):
 
     def _distribute2trackers(self, items):
 
-        size = 5
+        size = 3
         
         final = [items[i * size:(i + 1) * size] for i in
                  range((len(items) + size - 1) // size )]

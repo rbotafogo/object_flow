@@ -16,6 +16,7 @@
 import os
 import mmap
 import math
+import collections
 
 import cv2
 import logging
@@ -49,6 +50,11 @@ class VideoDecoder(Doer):
         # list of listeners interested to get a message everytime a new frame is
         # loaded
         self._listeners = {}
+
+        # frame_buffer
+        self._frame_buffer = collections.deque()
+        # if 30 frames per second, then keep 5min of video in buffer
+        self._buffer_max_size = 9000
         
     # ----------------------------------------------------------------------------------
     #
@@ -66,7 +72,7 @@ class VideoDecoder(Doer):
 
         if (not self._stream.isOpened()):
             logging.warning("Could not open video stream %s on path %s", video_name, path)
-            raise OSError(filename=path)
+            raise OSError()
             return
         
         logging.info("Starting decoding video %s in path %s", self.video_name, path)
@@ -152,6 +158,29 @@ class VideoDecoder(Doer):
     # PROTECTED METHODS
 
     # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _capture_next_frame(self):
+        # (grabbed, frame) = self._stream.read()
+        grabbed = self._stream.grab()
+        (grabbed, frame) = self._stream.retrieve()
+       
+        if not grabbed:
+            logging.warning("%s: could not grab video stream", self.video_name)
+            logging.warning("%s: checking video stream status", self.video_name)
+            tot = 0
+        else:
+            # resize image
+            frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
+            
+            if self._adjust_gamma:
+                frame = cv2.LUT(frame, self._gamma_table)
+        
+            if len(self._frame_buffer) < self._buffer_max_size:
+                self._frame_buffer.append(frame)
+                
+    # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of
     # the listeners to this decoder and this is how all frames are processed,
@@ -160,6 +189,35 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def _next_frame(self):
+
+        self._capture_next_frame()
+        frame = self._frame_buffer.popleft()
+        
+        # write the frame to the mmap file.  First move the offset to
+        # position 0
+        self._buf.seek(0)
+        tot = self._buf.write(frame)
+        
+        # logging.info(getsizeof(frame))
+        self.frame_number += 1
+        
+        for name, listener in self._listeners.items():
+            # listener[0]: doer's address
+            # listener[1]: doer's method to call
+            self.post(listener[0], listener[1], tot)                
+                
+        self._fps.update()
+        self._capture_next_frame()
+        
+    # ----------------------------------------------------------------------------------
+    # This method is called by the flow_manager to get the next available frame. Only
+    # flow_manager should call this function.  Flow manager is registered as one of
+    # the listeners to this decoder and this is how all frames are processed,
+    # video_decoder _next_frame and flow_manager's _next_frame each call each other
+    # 'recursively'.
+    # ----------------------------------------------------------------------------------
+
+    def _next_frame2(self):
         # logging.debug("%s, %s, %s, %s",
         #               Util.br_time(), self.video_name, os.getpid(),                          
         #               "loading frame for video camera")

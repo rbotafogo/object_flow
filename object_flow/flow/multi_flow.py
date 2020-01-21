@@ -47,17 +47,16 @@ class MultiFlow(Doer):
     
     def __initialize__(self, system_cfg):
         self.system_cfg = system_cfg
-        neural_net = system_cfg.data['neural_net']['neural_net']
         
         # load confidence and threshold from the specific neural net algo
-        confidence = system_cfg.data[neural_net]['confidence']
-        threshold = system_cfg.data[neural_net]['threshold']
+        confidence = system_cfg.data['neural_net']['confidence']
+        threshold = system_cfg.data['neural_net']['threshold']
         
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
                                group = 'DeepLearners')
 
         # read from conf file how many trackers we want and create the trackers
-        self.ntrackers = system_cfg.data[neural_net]['num_trackers']
+        self.ntrackers = system_cfg.data['system_info']['num_trackers']
         self.add_trackers(self.ntrackers)
         
     # ----------------------------------------------------------------------------------
@@ -109,6 +108,7 @@ class MultiFlow(Doer):
     def add_tracker(self):
         self.ntrackers -= 1
         self.hire('Tracker_' + str(self.ntrackers), Tracker, self.ntrackers,
+                  self.system_cfg.data['system_info']['tracker_type'],
                   group = 'trackers')
             
     # ----------------------------------------------------------------------------------
