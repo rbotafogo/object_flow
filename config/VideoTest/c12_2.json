@@ -6,10 +6,6 @@
     },
     
     "neural_net": {
-	"nn_dir": "neural_nets/nn_configs/yolo19",
-	"names": "coco.names",
-	"config_file": "darknet19.cfg",
-	"weights": "darknet19.weights",
 	"confidence": 0.1
     },
     

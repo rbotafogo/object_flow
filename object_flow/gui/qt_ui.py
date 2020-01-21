@@ -12,8 +12,8 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
-from PyQt5.QtWidgets import (QWidget, QToolTip, 
-                             QPushButton, QApplication)
+from PyQt5.QtWidgets import (
+    QWidget, QToolTip, QPushButton, QApplication, QInputDialog, QLineEdit)
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import pyqtSlot
@@ -61,8 +61,8 @@ class CountingGUI(QWidget):
     # ----------------------------------------------------------------------------------
     
     @pyqtSlot()
-    def info_click(self):
-        TrackingServerManager.broadcast(['Info'])
+    def playback_click(self):
+        self.board.tell('MultiFlow', 'start_playback', 'c9')
 
     # ----------------------------------------------------------------------------------
     # 
@@ -80,9 +80,19 @@ class CountingGUI(QWidget):
         qbtn = QPushButton('Quit', self)
         qbtn.resize(qbtn.sizeHint())
         qbtn.move(50, 100)
-        
+
+        # text, okPressed = QInputDialog.getText(
+        #     self, "Playback camera","Camera name:", QLineEdit.Normal, "")
+        # if okPressed and text != '':
+        #     print(text)
+            
+        # pbtn = QPushButton('Playback', self)
+        # pbtn.resize(qbtn.sizeHint())
+        # pbtn.move(50, 150)
+
         sbtn.clicked.connect(self.start_click)
         qbtn.clicked.connect(self.quit_click)
+        # pbtn.clicked.connect(self.playback_click)
         
         self.setGeometry(300, 300, 300, 200)
         self.setWindowTitle('Object Flow - Command Pannel')    

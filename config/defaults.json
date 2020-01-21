@@ -6,9 +6,11 @@
     "record_weekday": 3,
     "gamma_filter": 1.0,
     "interactive": "False",
+    "show_id": "True",
+    "id_color": [0, 244, 0],
     "show_input_bbox": "False",
     "show_tracking_bbox": "False",
-    "show_id": "True",
+    "tracking_bbox_color": [0, 250, 0],
     "num_frame_output": 22500,
     "lines_dimensions": [416, 416]
   },
