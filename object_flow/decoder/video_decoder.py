@@ -55,12 +55,48 @@ class VideoDecoder(Doer):
         self._frame_buffer = collections.deque()
         # if 30 frames per second, then keep 5min of video in buffer
         self._buffer_max_size = 9000
+
+        self._stream = None
         
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     def __initialize__(self, video_name, path, width = 500):
+        self.path = path
+        self.video_name = video_name
+        self.scaled_width = width
+
+        # TODO: filter initialization should be done in another way... This does not
+        # allow for channing filters which would be ideal
+        self._adjust_gamma = False
+        
+        # open the video file
+        self._open()
+        
+        # open a file for storing the frames
+        self.file_name = "log/mmap_" + self.video_name
+        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
+        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
+        
+        # It seems that there is no way to share memory between processes in
+        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
+        # the file. I had hoped that we could share memory.  In Linux, documentation
+        # says that memory sharing is possible
+        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
+                              access = mmap.ACCESS_WRITE)
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def __initialize2__(self, video_name, path, width = 500):
         self.path = path
         self.video_name = video_name
 
@@ -168,8 +204,7 @@ class VideoDecoder(Doer):
        
         if not grabbed:
             logging.warning("%s: could not grab video stream", self.video_name)
-            logging.warning("%s: checking video stream status", self.video_name)
-            tot = 0
+            self._open()
         else:
             # resize image
             frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
@@ -210,50 +245,6 @@ class VideoDecoder(Doer):
         self._capture_next_frame()
         
     # ----------------------------------------------------------------------------------
-    # This method is called by the flow_manager to get the next available frame. Only
-    # flow_manager should call this function.  Flow manager is registered as one of
-    # the listeners to this decoder and this is how all frames are processed,
-    # video_decoder _next_frame and flow_manager's _next_frame each call each other
-    # 'recursively'.
-    # ----------------------------------------------------------------------------------
-
-    def _next_frame2(self):
-        # logging.debug("%s, %s, %s, %s",
-        #               Util.br_time(), self.video_name, os.getpid(),                          
-        #               "loading frame for video camera")
-        
-        # (grabbed, frame) = self._stream.read()
-        grabbed = self._stream.grab()
-        (grabbed, frame) = self._stream.retrieve()
-       
-        if not grabbed:
-            logging.warning("%s: could not grab video stream", self.video_name)
-            logging.warning("%s: checking video stream status", self.video_name)
-            tot = 0
-            self._reopen()
-        else:
-            # resize image
-            frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
-            
-            if self._adjust_gamma:
-                frame = cv2.LUT(frame, self._gamma_table)
-        
-            # write the frame to the mmap file.  First move the offset to
-            # position 0
-            self._buf.seek(0)
-            tot = self._buf.write(frame)
-        
-            # logging.info(getsizeof(frame))
-            self.frame_number += 1
-            
-        for name, listener in self._listeners.items():
-            # listener[0]: doer's address
-            # listener[1]: doer's method to call
-            self.post(listener[0], listener[1], tot)                
-                
-        self._fps.update()
-        
-    # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
@@ -285,41 +276,30 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _reopen(self):
-        self._stream.release()
-        logging.info("%s: trying to reopen video stream", self.video_name)
-        
+    def _open(self):
+        # already opened, but failed for some reason.  Close it and open again
+        if self._stream != None and self._stream.isOpened():
+            self._stream.release()
+            
         self._stream = cv2.VideoCapture(self.path)
-    
-        if not self._stream.isOpened():
-            logging.warning("%s: Could not open stream", self.video_name)
-            self.send(self.myAddress, ActorExitRequest)            
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-    
-    def _open(self, path, reopen = False):
 
-        if reopen and self._stream.isOpened():
-            self._not_grabbed += 1
-            
-            if self._not_grabbed > 20:
-                logging.info("%s: Shutting down video stream: too many failures", 
-                             self.video_name)
-                self.__stopped = True
-            else:
-                self._stream.release()
-            
-        self._stream = cv2.VideoCapture(path)
-        
         if not self._stream.isOpened():
-            logging.info("%s: Could not open stream", self.video_name)
-            # self.__stopped = True
+            logging.warning("Could not open video stream %s on path %s", video_name, self.path)
         else:
-            self._not_grabbed = 0
+            logging.info("Starting decoding video %s in path %s", self.video_name, self.path)
             
-
+            # Read all the video properties        
+            self._read_properties()
+            
+            # Scale the image
+            scale_percent = (self.scaled_width * 100) / self.width
+            self.width = int(self.width * scale_percent / 100)
+            self.height = int(self.height * scale_percent / 100)
+            self.dim = (self.width, self.height)
+            
+            logging.info("%s: width: %d, height: %d, fps: %f", self.video_name, self.width,
+                         self.height, self.fps)
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
