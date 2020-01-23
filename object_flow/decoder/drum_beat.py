@@ -86,5 +86,5 @@ class DrumBeat(Doer):
             # listener: doer's address
             # when sending the base image, send also all the items, so that they
             # can be used by other methods
-            self.post(listener, '_capture_next_frame')
+            self.post(listener, 'capture_next_frame')
             

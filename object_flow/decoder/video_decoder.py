@@ -17,6 +17,7 @@ import os
 import mmap
 import math
 import collections
+from urllib.parse import urlparse
 
 import cv2
 import logging
@@ -52,7 +53,8 @@ class VideoDecoder(Doer):
 
         # frame_buffer
         self._frame_buffer = collections.deque()
-        # if 30 frames per second, then keep 5min of video in buffer
+        
+        # Maximum size of the frame buffer
         self._buffer_max_size = 500
 
         self._stream = None
@@ -96,6 +98,12 @@ class VideoDecoder(Doer):
                   self.myAddress)
         
     # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # SERVICES
+
+    # ----------------------------------------------------------------------------------
     # Adds a new listener to this decoder. When a new listener is added it can receive
     # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
@@ -127,7 +135,13 @@ class VideoDecoder(Doer):
     def add_filter(self, filter_name, *args, **kwargs):
         method = getattr(self, filter_name)
         method(*args, **kwargs)
-    
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PROTECTED METHODS
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -141,13 +155,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    # PROTECTED METHODS
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _capture_next_frame(self):
+    def capture_next_frame(self):
         # (grabbed, frame) = self._stream.read()
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
@@ -169,6 +177,12 @@ class VideoDecoder(Doer):
                 self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # PRIVATE METHODS
+
+    # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of
     # the listeners to this decoder and this is how all frames are processed,
@@ -179,7 +193,7 @@ class VideoDecoder(Doer):
     def _next_frame(self):
 
         if (len(self._frame_buffer) == 0):
-            self._capture_next_frame()
+            self.capture_next_frame()
             
         frame = self._frame_buffer.popleft()
         
@@ -197,7 +211,6 @@ class VideoDecoder(Doer):
             self.post(listener[0], listener[1], tot)                
                 
         self._fps.update()
-        # self._capture_next_frame()
         
     # ----------------------------------------------------------------------------------
     #
