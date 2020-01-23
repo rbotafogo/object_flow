@@ -165,7 +165,7 @@ class VideoDecoder(Doer):
             if len(self._frame_buffer) < self._buffer_max_size:
                 self._frame_buffer.append(frame)
             else:
-                logging.warning("%s - frame buffer oveflow", self.video_name)
+                # logging.warning("%s - frame buffer oveflow", self.video_name)
                 self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
