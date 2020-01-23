@@ -62,20 +62,21 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo):
+    def __initialize__(self, cfg, trackers, yolo, drum_beat_address):
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
         self._yolo = yolo
+        self._drum_beat_address = drum_beat_address
         
         logging.info("initializing flow_manager %s in path %s", self.video_name,
                      self.path)
 
         # hire a new video decoder named 'self.video_name'
-        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name, self.path,
-                                group = 'decoders')
+        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
+                            self.path, self._drum_beat_address, group = 'decoders')
         
     # ----------------------------------------------------------------------------------
     #
@@ -87,6 +88,24 @@ class FlowManager(Doer):
             self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
                        self.myAddress, 'process_frame', callback = 'initialize_mmap')
             
+    # ----------------------------------------------------------------------------------
+    # send to all doers the 'actor_exit_request'. In principle this should not be
+    # necessary, but in many cases Python processes keep running even after the
+    # main Admin has shutdown
+    # ----------------------------------------------------------------------------------
+
+    def terminate(self):
+        for doer_address in self.all_doers_address():
+            self.send(doer_address, 'actor_exit_request')
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def actor_exit_request(self, message, sender):
+        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
+        self.terminate()
+    
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------

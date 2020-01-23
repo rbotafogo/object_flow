@@ -21,6 +21,7 @@ from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
 from object_flow.util.config import Config
 from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
+from object_flow.decoder.drum_beat import DrumBeat
 from object_flow.flow.flow_manager import FlowManager
 from object_flow.flow.tracker import Tracker
 
@@ -51,9 +52,13 @@ class MultiFlow(Doer):
         # load confidence and threshold from the specific neural net algo
         confidence = system_cfg.data['neural_net']['confidence']
         threshold = system_cfg.data['neural_net']['threshold']
-        
+
+        # start the yolo object detection process
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
                                group = 'DeepLearners')
+
+        # start the drum_beat process
+        self._drum_beat = self.hire('DrumBeat', DrumBeat, group = 'drum_beat')
 
         # read from conf file how many trackers we want and create the trackers
         self.ntrackers = system_cfg.data['system_info']['num_trackers']
@@ -80,7 +85,27 @@ class MultiFlow(Doer):
         if hiree_group == 'flow_manager':
             logging.info("New flow_manager %s hired", hiree_name)
             # self._test_tracker_communication()
+        if hiree_group == 'drum_beat':
+            logging.info("Drum beat hired")
             
+    # ----------------------------------------------------------------------------------
+    # send to all doers the 'actor_exit_request'. In principle this should not be
+    # necessary, but in many cases Python processes keep running even after the
+    # main Admin has shutdown
+    # ----------------------------------------------------------------------------------
+
+    def terminate(self):
+        for doer_address in self.all_doers_address():
+            self.send(doer_address, 'actor_exit_request')
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def actor_exit_request(self, message, sender):
+        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
+        self.terminate()
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -130,7 +155,7 @@ class MultiFlow(Doer):
         cfg.start_time = self.system_cfg.data['system_info']['start_time']
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
         manager = self.hire(cfg.video_name, FlowManager, cfg, self._doers['trackers'],
-                            self._yolo, group = 'flow_manager')
+                            self._yolo, self._drum_beat, group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
     #

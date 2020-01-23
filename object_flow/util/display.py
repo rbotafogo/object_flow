@@ -157,6 +157,9 @@ class Display(Doer):
         # logging.debug("%s, %s, %s, display for video %s with size %d",
         #               Util.br_time(), os.getpid(), 'Display', video_name, size)
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
+        cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
+                             self._read_input, self.video_name)
+        
         cv2.waitKey(25)
 
     # ----------------------------------------------------------------------------------
@@ -198,3 +201,33 @@ class Display(Doer):
         self._draw_counter(spec["label2_text"], spec["counter2"], pos2,
                            spec["label2_color"])
         
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _read_input(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            refPt = (x, y)
+            logging.info("Camera %s: %s", param, str(self._fix_dimensions(refPt)))
+
+    # ----------------------------------------------------------------------------------
+    # Dimension configurations (on the configuration file) are done over an image of
+    # a certain dimension.  If we show the image in another dimension, the dimensions
+    # need to be converted to the new dimension
+    # ----------------------------------------------------------------------------------
+
+    def _fix_dimensions(self, point):
+
+        x = point[0]
+        y = point[1]
+        
+        lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
+        
+        # Constants needed to resize the identified bboxes to the original frame size
+        kw = 416/self.width
+        kh = 416/self.height
+
+        xprime = x * kw
+        yprime = y * kh
+        
+        return (int(xprime), int(yprime))

@@ -24,11 +24,10 @@ import numpy as np
 from imutils.video import FPS
 import imutils
 
-from datetime import timedelta
-# from sys import getsizeof
-
 from object_flow.ipc.doer import Doer
 
+# from datetime import timedelta
+# from sys import getsizeof
 # CHECK_PERIOD = timedelta(milliseconds=25)
 
 #==========================================================================================
@@ -54,7 +53,7 @@ class VideoDecoder(Doer):
         # frame_buffer
         self._frame_buffer = collections.deque()
         # if 30 frames per second, then keep 5min of video in buffer
-        self._buffer_max_size = 9000
+        self._buffer_max_size = 500
 
         self._stream = None
         
@@ -62,9 +61,10 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, path, width = 500):
+    def __initialize__(self, video_name, path, drum_beat_address, width = 500):
         self.path = path
         self.video_name = video_name
+        self._drum_beat_address = drum_beat_address
         self.scaled_width = width
 
         # TODO: filter initialization should be done in another way... This does not
@@ -91,59 +91,9 @@ class VideoDecoder(Doer):
         # says that memory sharing is possible
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
                               access = mmap.ACCESS_WRITE)
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
 
-    def __initialize2__(self, video_name, path, width = 500):
-        self.path = path
-        self.video_name = video_name
-
-        # TODO: filter initialization should be done in another way... This does not
-        # allow for channing filters which would be ideal
-        self._adjust_gamma = False
-                
-        self._stream = cv2.VideoCapture(path)
-
-        if (not self._stream.isOpened()):
-            logging.warning("Could not open video stream %s on path %s", video_name, path)
-            raise OSError()
-            return
-        
-        logging.info("Starting decoding video %s in path %s", self.video_name, path)
-        
-        self._stream = cv2.VideoCapture(path)
-        
-        # Read all the video properties        
-        self._read_properties()
-
-        # Scale the image
-        scale_percent = (width * 100) / self.width
-        self.width = int(self.width * scale_percent / 100)
-        self.height = int(self.height * scale_percent / 100)
-        self.dim = (self.width, self.height)
-        
-        logging.info("%s: width: %d, height: %d, fps: %f", self.video_name, self.width,
-                     self.height, self.fps)
-        
-        # open a file for storing the frames
-        self.file_name = "log/mmap_" + self.video_name
-        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
-        os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        
-        # It seems that there is no way to share memory between processes in
-        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
-        # the file. I had hoped that we could share memory.  In Linux, documentation
-        # says that memory sharing is possible
-        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
-                              access = mmap.ACCESS_WRITE)
+        self.post(self._drum_beat_address, 'add_listener', self.video_name,
+                  self.myAddress)
         
     # ----------------------------------------------------------------------------------
     # Adds a new listener to this decoder. When a new listener is added it can receive
@@ -214,7 +164,10 @@ class VideoDecoder(Doer):
         
             if len(self._frame_buffer) < self._buffer_max_size:
                 self._frame_buffer.append(frame)
-                
+            else:
+                logging.warning("%s - frame buffer oveflow", self.video_name)
+                self._del_buffer_every(5)
+
     # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of
@@ -225,7 +178,9 @@ class VideoDecoder(Doer):
 
     def _next_frame(self):
 
-        self._capture_next_frame()
+        if (len(self._frame_buffer) == 0):
+            self._capture_next_frame()
+            
         frame = self._frame_buffer.popleft()
         
         # write the frame to the mmap file.  First move the offset to
@@ -242,7 +197,7 @@ class VideoDecoder(Doer):
             self.post(listener[0], listener[1], tot)                
                 
         self._fps.update()
-        self._capture_next_frame()
+        # self._capture_next_frame()
         
     # ----------------------------------------------------------------------------------
     #
@@ -272,6 +227,15 @@ class VideoDecoder(Doer):
         self._next_frame()
         self.wakeupAfter(CHECK_PERIOD)
         
+    # ----------------------------------------------------------------------------------
+    # Deletes every 'n' frames from the buffer, so that we degrade gracefully the
+    # quality
+    # ----------------------------------------------------------------------------------
+
+    def _del_buffer_every(self, n):
+        for i in range(len(self._frame_buffer) -1, 1, -n):
+            del self._frame_buffer[i]
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

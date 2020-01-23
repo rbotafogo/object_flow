@@ -52,6 +52,7 @@ class CountingGUI(QWidget):
     
     @pyqtSlot()
     def quit_click(self):
+        self.board.tell('MultiFlow', 'terminate')
         self.board.shutdown()
         QApplication.instance().quit()
         
