@@ -247,13 +247,17 @@ class FlowManager(Doer):
 
         # check for disappeared items and remove them:
         self._check_disappeared()
+
+        # now drop overlaped items
+        # logging.info(self._setting.find_overlap())
+        self._remove_items(self._setting.find_overlap())
         
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
         if (self.cfg.data['video_analyser']['track_every_x_frames'] == 1 or
             (self.cfg.frame_number %
-             self.cfg.data['video_analyser']['track_every_x_frames'] != 0)):
+             self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
             self._trackers_broadcast_with_callback(
                 'update_tracked_items', self.video_name, self.mmap_path, self.width,
                 self.height, self.depth, self._buf_size, callback = 'tracking_done')
@@ -380,6 +384,14 @@ class FlowManager(Doer):
     # 
     # ---------------------------------------------------------------------------------
 
+    def _remove_items(self, items):
+        for item in items:
+            self._remove_item(item)
+        
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
     def _check_disappeared(self):
 
         delete = []
@@ -392,8 +404,7 @@ class FlowManager(Doer):
                 item.last_frame = self.cfg.frame_number
                 delete.append(item_id)
 
-        for item in delete:
-            self._remove_item(item)
+        self._remove_items(delete)
                 
     # ---------------------------------------------------------------------------------
     # Given a list of items to be tracked, send them for tracking to the multiple

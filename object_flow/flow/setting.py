@@ -80,6 +80,58 @@ class Setting:
             bounding_box[2], bounding_box[3])
     
     # ---------------------------------------------------------------------------------
+    # Check if two trackable objects have an iou grater than a given value. If they
+    # have, return the index of the trackable object that overlaps the given object
+    # ---------------------------------------------------------------------------------
+
+    def _has_overlap(self, item, min_index):
+
+        keys = list(self.items.keys())
+        
+        for i in range(min_index, len(keys)):
+            ti = self.items[keys[i]]
+            try: 
+                iou = Geom.iou(item.startX, item.startY, item.endX, item.endY,
+                               ti.startX, ti.startY, ti.endX, ti.endY,)
+            except OverflowError:
+                logging.info("%s: has_overlap overflow: (%d, %d, %d, %d)-(%d, %d, %d, %d)",
+                             self.video_name, 
+                             item.startX, item.startY, item.endX, item.endY,
+                             ti.startX, ti.startY, ti.endX, ti.endY)
+                iou = 0
+            
+            if (iou > self.cfg.data['trackable_objects']['drop_overlap'] and
+                  item.direction == ti.direction):
+                return keys[i]
+            
+        return -1
+    
+    # ---------------------------------------------------------------------------------
+    # Checks all tracked objects and drop those that have similar bounding boxes.
+    # Tracked objects and input objects can be the same, but be seen as different
+    # since matching by iou has lots of false positive.
+    # ---------------------------------------------------------------------------------
+
+    def find_overlap(self):
+
+        overlapped = []
+        
+        begin = 0
+        keys = list(self.items.keys())
+        while begin < len(keys):
+            # If two tracked objects overlap then mark the last one to be removed, if they
+            # are both going the same direction. If they are going different directions,
+            # they are probably not the same object.  Method __has_overlap does this
+            # check
+            overlap = self._has_overlap(self.items[keys[begin]], begin + 1)
+            if (overlap > 0):
+                overlapped.append(overlap)
+                
+            begin += 1
+
+        return overlapped
+    
+    # ---------------------------------------------------------------------------------
     # does all required updates on the received bounding_box after this bounding_box
     # has changed position from the tracking algorithm
     # ---------------------------------------------------------------------------------
