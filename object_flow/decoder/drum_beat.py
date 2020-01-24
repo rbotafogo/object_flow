@@ -44,7 +44,8 @@ class DrumBeat(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self):
+    def __initialize__(self, video_name):
+        self.video_name = video_name
         self.wakeup()
 
     # ----------------------------------------------------------------------------------
@@ -52,7 +53,8 @@ class DrumBeat(Doer):
     # ----------------------------------------------------------------------------------
 
     def add_listener(self, name, address):
-        logging.info("adding listener to drum beater with name %s", name)
+        logging.info("%s: adding listener to drum beater with name %s",
+                     self.video_name, name)
         self._listeners[name] = address
     
     # ----------------------------------------------------------------------------------
@@ -60,7 +62,8 @@ class DrumBeat(Doer):
     # ----------------------------------------------------------------------------------
 
     def remove_listener(self, name):
-        logging.info("listener %s removed from drum beater", name)
+        logging.info("%s: listener %s removed from drum beater",
+                     self.video_name, name)
         del self._listeners[name]
         
     # ----------------------------------------------------------------------------------
@@ -78,8 +81,8 @@ class DrumBeat(Doer):
     def inc_check_period(self, milli):
         inc = timedelta(milliseconds=milli)
         self.check_period += inc
-        logging.info("drum beat check period is now %s milliseconds",
-                     str(self.check_period))
+        logging.info("%s: drum beat check period is now %s milliseconds",
+                     self.video_name, str(self.check_period))
         
     # ----------------------------------------------------------------------------------
     # decrements the check_period by 'mili' milliseconds.  
@@ -88,8 +91,8 @@ class DrumBeat(Doer):
     def dec_check_period(self, milli):
         inc = timedelta(milliseconds=milli)
         self.check_period -= inc
-        logging.info("drum beat check period is now %s milliseconds",
-                     str(self.check_period))
+        logging.info("%s: drum beat check period is now %s milliseconds",
+                     self.video_name, str(self.check_period))
         
     # ----------------------------------------------------------------------------------
     #

@@ -62,21 +62,20 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo, drum_beat_address):
+    def __initialize__(self, cfg, trackers, yolo):
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
         self._yolo = yolo
-        self._drum_beat_address = drum_beat_address
         
         logging.info("initializing flow_manager %s in path %s", self.video_name,
                      self.path)
 
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
-                            self.path, self._drum_beat_address, group = 'decoders')
+                            self.path, group = 'decoders')
         
     # ----------------------------------------------------------------------------------
     #

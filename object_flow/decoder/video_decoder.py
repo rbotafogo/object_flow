@@ -26,6 +26,7 @@ from imutils.video import FPS
 import imutils
 
 from object_flow.ipc.doer import Doer
+from object_flow.decoder.drum_beat import DrumBeat
 
 # from datetime import timedelta
 # from sys import getsizeof
@@ -57,6 +58,9 @@ class VideoDecoder(Doer):
         # Maximum size of the frame buffer
         self._buffer_max_size = 500
         self._first_measure = 0
+        # do not drop any frames yet
+        self._drop_frames = False
+        self._drop_frames_by = 8
 
         self._stream = None
         
@@ -64,11 +68,14 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, path, drum_beat_address, width = 500):
+    def __initialize__(self, video_name, path, width = 500):
         self.path = path
         self.video_name = video_name
-        self._drum_beat_address = drum_beat_address
         self.scaled_width = width
+
+        # start the drum_beat process
+        self._drum_beat_address = self.hire('DrumBeat', DrumBeat, self.video_name,
+                                            group = 'drum_beat')
 
         # TODO: filter initialization should be done in another way... This does not
         # allow for channing filters which would be ideal
@@ -98,6 +105,14 @@ class VideoDecoder(Doer):
         self.post(self._drum_beat_address, 'add_listener', self.video_name,
                   self.myAddress)
         
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def __hired__(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'drum_beat':
+            logging.info("%s: Drum beat hired", self.video_name)
+            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -160,6 +175,7 @@ class VideoDecoder(Doer):
         # (grabbed, frame) = self._stream.read()
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
+        self.frame_number += 1
        
         if not grabbed:
             logging.warning("%s: could not grab video stream", self.video_name)
@@ -170,23 +186,19 @@ class VideoDecoder(Doer):
             
             if self._adjust_gamma:
                 frame = cv2.LUT(frame, self._gamma_table)
-        
+
+            self._manage_buffer()
+            
+            # buffer not full yet... add frame to buffer
             if len(self._frame_buffer) < self._buffer_max_size:
-                self._frame_buffer.append(frame)
-                # consuming the buffer to fast? We've already consumed half of the
-                # buffer size... reduce the increment the drum beat
-                if (len(self._frame_buffer) >
-                    (self._buffer_max_size - self._first_measure) / 2):
-                    self.post(self._drum_beat_address, 'inc_check_period', 30)
-                    self._first_measure = len(self._frame_buffer)
-                # consuming the buffer to slowly? We can decrement the drum beat
-                if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
-                    self.post(self._drum_beat_address, 'dec_check_period', 30)
-                    self._first_measure = len(self._frame_buffer)
+                if self._drop_frames and self.frame_number % self._drop_frames != 0:
+                    self._frame_buffer.append(frame)
+                else:
+                    self._frame_buffer.append(frame)    
+            # buffer is full
             else:
                 logging.warning("%s - frame buffer oveflow", self.video_name)
-                if self.live_cam == False:
-                    self.post(self._drum_beat_address, 'inc_check_period', 30)
+                # reduce the size of the buffer gracefully accross the whole buffer
                 self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
@@ -195,6 +207,44 @@ class VideoDecoder(Doer):
 
     # PRIVATE METHODS
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _manage_buffer(self):
+        
+        # if not live cam, fix drum beat based on the size of the buffer
+        if self.live_cam == False:
+            # consuming the buffer to fast? We've already consumed half of the
+            # buffer size... reduce the increment the drum beat
+            if (len(self._frame_buffer) >
+                (self._buffer_max_size - self._first_measure) / 2):
+                self.post(self._drum_beat_address, 'inc_check_period', 30)
+                self._first_measure = len(self._frame_buffer)
+            # consuming the buffer to slowly? We can decrement the drum beat
+            if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
+                self.post(self._drum_beat_address, 'dec_check_period', 30)
+                self._first_measure = len(self._frame_buffer)
+        # live cam, need to drop frames gracefully, since we cannot slow down
+        # the camera feed
+        else:
+            # consuming the buffer to fast? We've already consumed half of the
+            # buffer size... start dropping frames
+            if (len(self._frame_buffer) >
+                (self._buffer_max_size - self._first_measure) / 2):
+                self._drop_frames = True
+                if self._drop_frames_by > 3):
+                    self._drop_frames_by -= 1
+                self._del_buffer_every(self._drop_frames)
+                logging.info("%s: increase dropping frames rate to %d", self._drop_frames)
+            # consuming the buffer to slowly? throw away less frames
+            if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
+                if (self._drop_frames_by < 8):
+                    self._drop_frames_by += 1
+                else:
+                    self._drop_frames = False
+                logging.info("%s: decrese dropping frames rate to %d", self._drop_frames)
+                    
     # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of
