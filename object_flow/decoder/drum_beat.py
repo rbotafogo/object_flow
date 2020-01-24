@@ -18,7 +18,7 @@ from datetime import timedelta
 
 from object_flow.ipc.doer import Doer
 
-CHECK_PERIOD = timedelta(milliseconds=30)
+# CHECK_PERIOD = timedelta(milliseconds=30)
 
 #==========================================================================================
 #
@@ -36,6 +36,9 @@ class DrumBeat(Doer):
         # list of listeners interested to get a message everytime a new frame is
         # loaded
         self._listeners = {}
+
+        # drum beat period
+        self.check_period = timedelta(milliseconds=30)
         
     # ----------------------------------------------------------------------------------
     # 
@@ -66,8 +69,28 @@ class DrumBeat(Doer):
 
     def wakeup(self):
         self._notify_listeners()
-        self.wakeupAfter(CHECK_PERIOD)
+        self.wakeupAfter(self.check_period)
     
+    # ----------------------------------------------------------------------------------
+    # increments the check_period by 'mili' milliseconds.  
+    # ----------------------------------------------------------------------------------
+
+    def inc_check_period(self, milli):
+        inc = timedelta(milliseconds=milli)
+        self.check_period += inc
+        logging.info("drum beat check period is now %s milliseconds",
+                     str(self.check_period))
+        
+    # ----------------------------------------------------------------------------------
+    # decrements the check_period by 'mili' milliseconds.  
+    # ----------------------------------------------------------------------------------
+
+    def dec_check_period(self, milli):
+        inc = timedelta(milliseconds=milli)
+        self.check_period -= inc
+        logging.info("drum beat check period is now %s milliseconds",
+                     str(self.check_period))
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

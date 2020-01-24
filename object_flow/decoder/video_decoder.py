@@ -56,6 +56,7 @@ class VideoDecoder(Doer):
         
         # Maximum size of the frame buffer
         self._buffer_max_size = 500
+        self._first_measure = 0
 
         self._stream = None
         
@@ -172,8 +173,20 @@ class VideoDecoder(Doer):
         
             if len(self._frame_buffer) < self._buffer_max_size:
                 self._frame_buffer.append(frame)
+                # consuming the buffer to fast? We've already consumed half of the
+                # buffer size... reduce the increment the drum beat
+                if (len(self._frame_buffer) >
+                    (self._buffer_max_size - self._first_measure) / 2):
+                    self.post(self._drum_beat_address, 'inc_check_period', 30)
+                    self._first_measure = len(self._frame_buffer)
+                # consuming the buffer to slowly? We can decrement the drum beat
+                if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
+                    self.post(self._drum_beat_address, 'dec_check_period', 30)
+                    self._first_measure = len(self._frame_buffer)
             else:
-                # logging.warning("%s - frame buffer oveflow", self.video_name)
+                logging.warning("%s - frame buffer oveflow", self.video_name)
+                if self.live_cam == False:
+                    self.post(self._drum_beat_address, 'inc_check_period', 30)
                 self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
@@ -257,6 +270,15 @@ class VideoDecoder(Doer):
         # already opened, but failed for some reason.  Close it and open again
         if self._stream != None and self._stream.isOpened():
             self._stream.release()
+
+        # check if the path has a schema such as 'rtsp', if if does, this is a
+        # live_cam and we cannot reduce the drum_beat.  If not a live_cam, the
+        # we should reduce the drum_beat to match the processing speed.
+        url_parse = urlparse(self.path)
+        if (url_parse.scheme == ''):
+            self.live_cam = False
+        else:
+            self.live_cam = True
             
         self._stream = cv2.VideoCapture(self.path)
 
