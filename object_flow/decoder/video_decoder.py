@@ -236,14 +236,16 @@ class VideoDecoder(Doer):
                 if self._drop_frames_by > 3:
                     self._drop_frames_by -= 1
                 self._del_buffer_every(self._drop_frames)
-                logging.info("%s: increase dropping frames rate to %d", self._drop_frames)
+                logging.info("%s: increase dropping frames rate to %d", self.video_name,
+                             self._drop_frames)
             # consuming the buffer to slowly? throw away less frames
             if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
                 if (self._drop_frames_by < 8):
                     self._drop_frames_by += 1
                 else:
                     self._drop_frames = False
-                logging.info("%s: decrese dropping frames rate to %d", self._drop_frames)
+                logging.info("%s: decrese dropping frames rate to %d", self.video_name,
+                             self._drop_frames)
                     
     # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
