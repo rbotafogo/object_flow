@@ -233,7 +233,7 @@ class VideoDecoder(Doer):
             if (len(self._frame_buffer) >
                 (self._buffer_max_size - self._first_measure) / 2):
                 self._drop_frames = True
-                if self._drop_frames_by > 3):
+                if self._drop_frames_by > 3:
                     self._drop_frames_by -= 1
                 self._del_buffer_every(self._drop_frames)
                 logging.info("%s: increase dropping frames rate to %d", self._drop_frames)
