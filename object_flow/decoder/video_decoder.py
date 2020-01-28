@@ -165,10 +165,12 @@ class VideoDecoder(Doer):
     def start_processing(self):
         # start the frames per second throughput estimator
         self._fps = FPS().start()
-        self._next_frame()
+        self.next_frame()
         
     # ----------------------------------------------------------------------------------
-    #
+    # This method is called by drum_beat.  DrumBeat conducts the capturing of frames.
+    # When working with video files, DrumBeat will delay frame capturing to the
+    # processing rate. With life files, DrumBeat will beat at 30 frames per second.
     # ----------------------------------------------------------------------------------
 
     def capture_next_frame(self):
@@ -192,9 +194,9 @@ class VideoDecoder(Doer):
             # buffer not full yet... add frame to buffer
             if len(self._frame_buffer) < self._buffer_max_size:
                 if self._drop_frames and self.frame_number % self._drop_frames != 0:
-                    self._frame_buffer.append(frame)
+                    self._frame_buffer.append((self.frame_number, frame))
                 else:
-                    self._frame_buffer.append(frame)    
+                    self._frame_buffer.append((self.frame_number, frame))
             # buffer is full
             else:
                 pass
@@ -202,6 +204,33 @@ class VideoDecoder(Doer):
                 # reduce the size of the buffer gracefully accross the whole buffer
                 # self._del_buffer_every(5)
 
+    # ----------------------------------------------------------------------------------
+    # This method is called by the flow_manager to get the next available frame. Only
+    # flow_manager should call this function.  Flow manager is registered as one of
+    # the listeners to this decoder and this is how all frames are processed,
+    # video_decoder next_frame and flow_manager's _next_frame each call each other
+    # 'recursively'.
+    # ----------------------------------------------------------------------------------
+
+    def next_frame(self):
+
+        if (len(self._frame_buffer) == 0):
+            self.capture_next_frame()
+            
+        frame_number, frame = self._frame_buffer.popleft()
+        
+        # write the frame to the mmap file.  First move the offset to
+        # position 0
+        self._buf.seek(0)
+        tot = self._buf.write(frame)
+        
+        for name, listener in self._listeners.items():
+            # listener[0]: doer's address
+            # listener[1]: doer's method to call
+            self.post(listener[0], listener[1], tot, frame_number)  
+                
+        self._fps.update()
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -255,36 +284,6 @@ class VideoDecoder(Doer):
         else:
             self._drop_frames = True
             self._drop_frames_by = 2
-        
-    # ----------------------------------------------------------------------------------
-    # This method is called by the flow_manager to get the next available frame. Only
-    # flow_manager should call this function.  Flow manager is registered as one of
-    # the listeners to this decoder and this is how all frames are processed,
-    # video_decoder _next_frame and flow_manager's _next_frame each call each other
-    # 'recursively'.
-    # ----------------------------------------------------------------------------------
-
-    def _next_frame(self):
-
-        if (len(self._frame_buffer) == 0):
-            self.capture_next_frame()
-            
-        frame = self._frame_buffer.popleft()
-        
-        # write the frame to the mmap file.  First move the offset to
-        # position 0
-        self._buf.seek(0)
-        tot = self._buf.write(frame)
-        
-        # logging.info(getsizeof(frame))
-        self.frame_number += 1
-        
-        for name, listener in self._listeners.items():
-            # listener[0]: doer's address
-            # listener[1]: doer's method to call
-            self.post(listener[0], listener[1], tot)                
-                
-        self._fps.update()
         
     # ----------------------------------------------------------------------------------
     #

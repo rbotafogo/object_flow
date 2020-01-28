@@ -219,7 +219,7 @@ class FlowManager(Doer):
     # finished.
     # ----------------------------------------------------------------------------------
 
-    def process_frame(self, size):
+    def process_frame(self, size, frame_number):
 
         # There was an error reading the last frame, so just move on to the next
         # frame
@@ -228,8 +228,13 @@ class FlowManager(Doer):
             return
 
         self._buf_size = size
+        # total number of frames process by flow_manager.  This is not necessarily
+        # equal to frame_number, as the video decoder might have dropped frames
+        # when processing is not fast enought
         self._total_frames += 1
-        self.cfg.frame_number = self._total_frames
+        # frame number from the video_decoder
+        self.cfg.frame_number = frame_number
+        logging.warning("frame_number %d", frame_number)
 
         self.tracking_phase()
                     
@@ -354,7 +359,7 @@ class FlowManager(Doer):
         self._notify_listeners()
         
         # call the video decoder to process the next frame
-        self.tell(self.video_name, '_next_frame', group = 'decoders')
+        self.tell(self.video_name, 'next_frame', group = 'decoders')
         
     # ----------------------------------------------------------------------------------
     # broadcast a message to all the trackers.
