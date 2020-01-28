@@ -19,7 +19,7 @@
     "comment": "When identification of objects is easy, then augmenting the 'skip_detection_frames' is good as we reduce the number of matches between new objects and tracked object.  It also is more efficient.",
     "comment": "Run detection every 20 frames.",
     "skip_detection_frames": 20,
-    "track_every_x_frames": 2
+    "track_every_x_frames": 10
   },
   
   "trackable_objects": {

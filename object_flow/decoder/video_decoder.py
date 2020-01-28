@@ -197,9 +197,10 @@ class VideoDecoder(Doer):
                     self._frame_buffer.append(frame)    
             # buffer is full
             else:
-                logging.warning("%s - frame buffer oveflow", self.video_name)
+                pass
+                # logging.warning("%s - frame buffer overflow", self.video_name)
                 # reduce the size of the buffer gracefully accross the whole buffer
-                self._del_buffer_every(5)
+                # self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
     #
@@ -207,6 +208,30 @@ class VideoDecoder(Doer):
 
     # PRIVATE METHODS
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _live_cam(self):
+        # consuming the buffer to fast? We've already consumed half of the
+        # buffer size... start dropping frames
+        if (len(self._frame_buffer) >
+            (self._buffer_max_size - self._first_measure) / 2):
+            self._drop_frames = True
+            if self._drop_frames_by > 3:
+                self._drop_frames_by -= 1
+                self._del_buffer_every(self._drop_frames)
+                logging.info("%s: increase dropping frames rate to %d", self.video_name,
+                             self._drop_frames)
+        # consuming the buffer to slowly? throw away less frames
+        if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
+            if (self._drop_frames_by < 8):
+                self._drop_frames_by += 1
+            else:
+                self._drop_frames = False
+                logging.info("%s: decrese dropping frames rate to %d", self.video_name,
+                             self._drop_frames)
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -228,25 +253,9 @@ class VideoDecoder(Doer):
         # live cam, need to drop frames gracefully, since we cannot slow down
         # the camera feed
         else:
-            # consuming the buffer to fast? We've already consumed half of the
-            # buffer size... start dropping frames
-            if (len(self._frame_buffer) >
-                (self._buffer_max_size - self._first_measure) / 2):
-                self._drop_frames = True
-                if self._drop_frames_by > 3:
-                    self._drop_frames_by -= 1
-                self._del_buffer_every(self._drop_frames)
-                logging.info("%s: increase dropping frames rate to %d", self.video_name,
-                             self._drop_frames)
-            # consuming the buffer to slowly? throw away less frames
-            if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
-                if (self._drop_frames_by < 8):
-                    self._drop_frames_by += 1
-                else:
-                    self._drop_frames = False
-                logging.info("%s: decrese dropping frames rate to %d", self.video_name,
-                             self._drop_frames)
-                    
+            self._drop_frames = True
+            self._drop_frames_by = 2
+        
     # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of

@@ -55,7 +55,7 @@ class Setting:
         # Checks if the item should be added/removed from the Setting.  Items should
         # only be in the Setting if they are inside the entry lines.
         bboxes = self._validate_entry(bboxes)
-
+        
         # convert the bounding boxes to items
         self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
         for item in self.new_inputs:
@@ -188,8 +188,8 @@ class Setting:
         new_inputs = []
         
         for (i, bbox) in enumerate(bboxes):
-            item = Item(bbox[0], bbox[1], bbox[2], bbox[3], class_ids[i],
-                        confidences[i])
+            item = Item(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]),
+                        class_ids[i], confidences[i])
             new_inputs.append(item)
 
         return new_inputs

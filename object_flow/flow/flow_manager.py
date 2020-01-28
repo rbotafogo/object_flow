@@ -421,7 +421,7 @@ class FlowManager(Doer):
 
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
-            logging.debug("Selected tracker is %s", key)
+            logging.info("%s: Selected tracker is %s", self.video_name, key)
             
             tracker = self.trackers[key]
             
@@ -494,7 +494,8 @@ class FlowManager(Doer):
     # ---------------------------------------------------------------------------------
 
     def _notify_listeners(self):
-        
+        # return
+    
         # notify every listener that we have a new frame and give it the
         # buffer size
         for name, listener in self._listeners.items():
