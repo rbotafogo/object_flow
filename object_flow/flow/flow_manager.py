@@ -17,6 +17,7 @@ import os
 import mmap
 import math
 import time
+import collections
 
 import logging
 import numpy as np
@@ -56,6 +57,12 @@ class FlowManager(Doer):
         # loaded
         self._listeners = {}
 
+        # frame_buffer
+        self._frame_buffer = collections.deque()
+        
+        # Maximum size of the frame buffer
+        self._buffer_max_size = 500
+        
         self.playback = False
         self.playback_started = False
         
@@ -232,10 +239,12 @@ class FlowManager(Doer):
             return
 
         self._buf_size = size
+        
         # total number of frames process by flow_manager.  This is not necessarily
         # equal to frame_number, as the video decoder might have dropped frames
         # when processing is not fast enought
         self._total_frames += 1
+        
         # frame number from the video_decoder
         self.cfg.frame_number = frame_number
 

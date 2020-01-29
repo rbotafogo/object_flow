@@ -59,11 +59,7 @@ class VideoDecoder(Doer):
         
         # Maximum size of the frame buffer
         self._buffer_max_size = 500
-        self._first_measure = 0
-        # do not drop any frames yet
-        self._drop_frames = False
-        self._drop_frames_by = 8
-
+        
         self._stream = None
         
     # ----------------------------------------------------------------------------------
@@ -194,7 +190,7 @@ class VideoDecoder(Doer):
             if self._adjust_gamma:
                 frame = cv2.LUT(frame, self._gamma_table)
 
-            self._manage_buffer()
+            # self._manage_buffer()
 
             if self.frame_number % 100 == 0:
                 now = time.perf_counter()
@@ -205,10 +201,7 @@ class VideoDecoder(Doer):
 
             # buffer not full yet... add frame to buffer
             if len(self._frame_buffer) < self._buffer_max_size:
-                if self._drop_frames and self.frame_number % self._drop_frames != 0:
-                    self._frame_buffer.append((self.frame_number, frame))
-                else:
-                    self._frame_buffer.append((self.frame_number, frame))
+                self._frame_buffer.append((self.frame_number, frame))
             # buffer is full
             else:
                 pass
@@ -272,30 +265,6 @@ class VideoDecoder(Doer):
                 self._drop_frames = False
                 logging.info("%s: decrese dropping frames rate to %d", self.video_name,
                              self._drop_frames)
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _manage_buffer(self):
-        
-        # if not live cam, fix drum beat based on the size of the buffer
-        if self.live_cam == False:
-            # consuming the buffer to fast? We've already consumed half of the
-            # buffer size... reduce the increment the drum beat
-            if (len(self._frame_buffer) >
-                (self._buffer_max_size - self._first_measure) / 2):
-                self.post(self._drum_beat_address, 'inc_check_period', 30)
-                self._first_measure = len(self._frame_buffer)
-            # consuming the buffer to slowly? We can decrement the drum beat
-            if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
-                self.post(self._drum_beat_address, 'dec_check_period', 30)
-                self._first_measure = len(self._frame_buffer)
-        # live cam, need to drop frames gracefully, since we cannot slow down
-        # the camera feed
-        else:
-            self._drop_frames = True
-            self._drop_frames_by = 2
         
     # ----------------------------------------------------------------------------------
     #
