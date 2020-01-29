@@ -27,9 +27,6 @@ import numpy as np
 from imutils.video import FPS
 import imutils
 
-from object_flow.ipc.doer import Doer
-from object_flow.decoder.drum_beat import DrumBeat
-
 # from datetime import timedelta
 # from sys import getsizeof
 # CHECK_PERIOD = timedelta(milliseconds=25)
@@ -38,17 +35,25 @@ from object_flow.decoder.drum_beat import DrumBeat
 #
 #==========================================================================================
 
-class VideoDecoder(Doer):
+class VideoDecoder:
 
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def __init__(self):
+    def __init__(self, video_name, path, width=500):
         super().__init__()
+
+        self.path = path
+        self.video_name = video_name
+        self.scaled_width = width
         
+        # open a file for storing the frames
+        self.file_name = "log/mmap_" + self.video_name
+        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+
+        # number of frames read
         self.frame_number = 0
-        self._not_grabbed = 0
         
         # list of listeners interested to get a message everytime a new frame is
         # loaded
@@ -56,38 +61,22 @@ class VideoDecoder(Doer):
 
         # frame_buffer
         self._frame_buffer = collections.deque()
-        
         # Maximum size of the frame buffer
-        self._buffer_max_size = 500
+        self._buffer_max_size = 1000
+        
+        # initialize the time counter
+        self.init_time = time.perf_counter()
         
         self._stream = None
         
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def __initialize__(self, video_name, path, width = 500):
-        self.path = path
-        self.video_name = video_name
-        self.scaled_width = width
-        self.init_time = time.perf_counter()
-
-        # start the drum_beat process
-        self._drum_beat_address = self.hire(
-            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=30),
-            group = 'drum_beat')
-
         # TODO: filter initialization should be done in another way... This does not
         # allow for channing filters which would be ideal
         self._adjust_gamma = False
         
-        # open the video file
+        # open the video file.  This will read and resize the image creating variables
+        # self.width, self.height and self.depth
         self._open()
-        
-        # open a file for storing the frames
-        self.file_name = "log/mmap_" + self.video_name
-        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        
+                        
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
@@ -101,18 +90,7 @@ class VideoDecoder(Doer):
         # says that memory sharing is possible
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
                               access = mmap.ACCESS_WRITE)
-
-        self.post(self._drum_beat_address, 'add_listener', self.video_name,
-                  self.myAddress)
         
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def __hired__(self, hiree_name, hiree_group, hiree_address):
-        if hiree_group == 'drum_beat':
-            logging.info("%s: Drum beat hired", self.video_name)
-            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -158,16 +136,6 @@ class VideoDecoder(Doer):
 
     # PROTECTED METHODS
 
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def start_processing(self):
-        # start the frames per second throughput estimator
-        self._fps = FPS().start()
-        self.init_time = time.perf_counter()
-        self.next_frame()
-        
     # ----------------------------------------------------------------------------------
     # This method is called by drum_beat.  DrumBeat conducts the capturing of frames.
     # When working with video files, DrumBeat will delay frame capturing to the
@@ -217,9 +185,9 @@ class VideoDecoder(Doer):
     # 'recursively'.
     # ----------------------------------------------------------------------------------
 
-    def next_frame(self):
+    def provide_next_frame(self):
 
-        if (len(self._frame_buffer) == 0):
+        if len(self._frame_buffer) < 1:
             self.capture_next_frame()
             
         frame_number, frame = self._frame_buffer.popleft()
@@ -227,14 +195,10 @@ class VideoDecoder(Doer):
         # write the frame to the mmap file.  First move the offset to
         # position 0
         self._buf.seek(0)
-        tot = self._buf.write(frame)
+        self._size = self._buf.write(frame)
+
+        return frame_number
         
-        for name, listener in self._listeners.items():
-            # listener[0]: doer's address
-            # listener[1]: doer's method to call
-            self.post(listener[0], listener[1], tot, frame_number)  
-                
-        self._fps.update()
         
     # ----------------------------------------------------------------------------------
     #
@@ -242,6 +206,13 @@ class VideoDecoder(Doer):
 
     # PRIVATE METHODS
 
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _manage_buffer(self):
+        pass
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -283,17 +254,6 @@ class VideoDecoder(Doer):
         self._gamma_table = np.array([((i / 255.0) ** invGamma) * 255
                                       for i in np.arange(0, 256)]).astype("uint8")
 
-    
-    # ----------------------------------------------------------------------------------
-    # When using self.wakeupAfter the process does not receive any other messages.
-    # This is not a good solution, at least not in Windows.  Haven't checked it in
-    # Linux
-    # ----------------------------------------------------------------------------------
-
-    def _wakeup(self):
-        self._next_frame()
-        self.wakeupAfter(CHECK_PERIOD)
-        
     # ----------------------------------------------------------------------------------
     # Deletes every 'n' frames from the buffer, so that we degrade gracefully the
     # quality
