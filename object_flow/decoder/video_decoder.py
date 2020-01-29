@@ -18,6 +18,8 @@ import mmap
 import math
 import collections
 from urllib.parse import urlparse
+import time
+from datetime import timedelta
 
 import cv2
 import logging
@@ -72,10 +74,12 @@ class VideoDecoder(Doer):
         self.path = path
         self.video_name = video_name
         self.scaled_width = width
+        self.init_time = time.perf_counter()
 
         # start the drum_beat process
-        self._drum_beat_address = self.hire('DrumBeat', DrumBeat, self.video_name,
-                                            group = 'drum_beat')
+        self._drum_beat_address = self.hire(
+            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=30),
+            group = 'drum_beat')
 
         # TODO: filter initialization should be done in another way... This does not
         # allow for channing filters which would be ideal
@@ -165,6 +169,7 @@ class VideoDecoder(Doer):
     def start_processing(self):
         # start the frames per second throughput estimator
         self._fps = FPS().start()
+        self.init_time = time.perf_counter()
         self.next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -190,7 +195,14 @@ class VideoDecoder(Doer):
                 frame = cv2.LUT(frame, self._gamma_table)
 
             self._manage_buffer()
-            
+
+            if self.frame_number % 100 == 0:
+                now = time.perf_counter()
+                logging.info("%s: buffer size is %d", self.video_name, len(self._frame_buffer))
+                logging.info("%s: average time video capture per frame for the last 100 frames is: %f",
+                             self.video_name, (now - self.init_time) / 100)
+                self.init_time = now
+
             # buffer not full yet... add frame to buffer
             if len(self._frame_buffer) < self._buffer_max_size:
                 if self._drop_frames and self.frame_number % self._drop_frames != 0:

@@ -37,15 +37,14 @@ class DrumBeat(Doer):
         # loaded
         self._listeners = {}
 
-        # drum beat period
-        self.check_period = timedelta(milliseconds=30)
-        
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name):
+    def __initialize__(self, video_name, speed):
         self.video_name = video_name
+        self.check_period = speed
+        
         self.wakeup()
 
     # ----------------------------------------------------------------------------------
