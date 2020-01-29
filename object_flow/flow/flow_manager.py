@@ -16,6 +16,7 @@
 import os
 import mmap
 import math
+import time
 
 import logging
 import numpy as np
@@ -221,6 +222,9 @@ class FlowManager(Doer):
 
     def process_frame(self, size, frame_number):
 
+        now = time.perf_counter()
+        self.proc_time = now
+        
         # There was an error reading the last frame, so just move on to the next
         # frame
         if size < (self.height * self.width * self.depth):
@@ -234,7 +238,6 @@ class FlowManager(Doer):
         self._total_frames += 1
         # frame number from the video_decoder
         self.cfg.frame_number = frame_number
-        logging.warning("frame_number %d", frame_number)
 
         self.tracking_phase()
                     
@@ -245,6 +248,8 @@ class FlowManager(Doer):
 
     def tracking_phase(self):
 
+        self.track_time = time.perf_counter()
+        
         # keep reference to the number of trackers that have already replied
         # with tracking information. None so far.
         self.num_trackers = len(self.trackers)
@@ -297,9 +302,13 @@ class FlowManager(Doer):
                                               bounding_box)
 
         self.num_trackers -= 1
-        # are all trackers done? If all done then we call call the
+        # are all trackers done? If all done then we can call the
         # detection phase
         if self.num_trackers < 1:
+            if self._total_frames % 100 == 0:
+                logging.info("%s: average tracking time per frame for the last 100 frames is: %f",
+                             self.video_name, (time.perf_counter() - self.track_time) / 100)
+
             self.detection_phase()
             
     # ----------------------------------------------------------------------------------
@@ -309,6 +318,7 @@ class FlowManager(Doer):
     def detection_phase(self):
         # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
+            self.detect_time = time.perf_counter()
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.mmap_path,
                        self.width, self.height, self.depth, self._buf_size,
                        callback = 'boxes_detected')
@@ -332,7 +342,10 @@ class FlowManager(Doer):
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
-        
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average detection time per frame for the last 100 frames is: %f",
+                         self.video_name, (time.perf_counter() - self.detect_time) / 100)
+
         self._next_frame()
             
     # ----------------------------------------------------------------------------------
@@ -358,6 +371,12 @@ class FlowManager(Doer):
         # have one listener to this object
         self._notify_listeners()
         
+        # this is the time between the call to process_frame and _next_frame
+        if self._total_frames % 100 == 0:
+            now = time.perf_counter()
+            logging.info("%s: average processing time for the last 100 frames is %f",
+                         self.video_name, (now - self.proc_time)/100)
+       
         # call the video decoder to process the next frame
         self.tell(self.video_name, 'next_frame', group = 'decoders')
         
@@ -426,7 +445,7 @@ class FlowManager(Doer):
 
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
-            logging.info("%s: Selected tracker is %s", self.video_name, key)
+            # logging.info("%s: Selected tracker is %s", self.video_name, key)
             
             tracker = self.trackers[key]
             
