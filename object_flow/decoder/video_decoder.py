@@ -27,6 +27,9 @@ import numpy as np
 from imutils.video import FPS
 import imutils
 
+from object_flow.ipc.doer import Doer
+from object_flow.decoder.drum_beat import DrumBeat
+
 # from datetime import timedelta
 # from sys import getsizeof
 # CHECK_PERIOD = timedelta(milliseconds=25)
@@ -35,22 +38,14 @@ import imutils
 #
 #==========================================================================================
 
-class VideoDecoder:
+class VideoDecoder(Doer):
 
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def __init__(self, video_name, path, width=500):
+    def __init__(self):
         super().__init__()
-
-        self.path = path
-        self.video_name = video_name
-        self.scaled_width = width
-        
-        # open a file for storing the frames
-        self.file_name = "log/mmap_" + self.video_name
-        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
 
         # number of frames read
         self.frame_number = 0
@@ -61,20 +56,35 @@ class VideoDecoder:
 
         # frame_buffer
         self._frame_buffer = collections.deque()
+        
         # Maximum size of the frame buffer
         self._buffer_max_size = 1000
         self._drop_frames = False
-        
-        # initialize the time counter
-        self.init_time = time.perf_counter()
-        
+                
         self._stream = None
         self._capture_average = None
         
         # TODO: filter initialization should be done in another way... This does not
         # allow for channing filters which would be ideal
         self._adjust_gamma = False
+                
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def __initialize__(self, video_name, path, width=500):
         
+        self.path = path
+        self.video_name = video_name
+        self.scaled_width = width
+        
+        # open a file for storing the frames
+        self.file_name = "log/mmap_" + self.video_name
+        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        
+        # initialize the time counter
+        self.init_time = time.perf_counter()
+
         # open the video file.  This will read and resize the image creating variables
         # self.width, self.height and self.depth
         self._open()
@@ -93,6 +103,24 @@ class VideoDecoder:
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
                               access = mmap.ACCESS_WRITE)
         
+        # start the drum_beat process
+        self._drum_beat_address = self.hire(
+            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=30),
+            group = 'drum_beat')
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def __hired__(self, hiree_name, hiree_group, hiree_address):
+        if hiree_group == 'drum_beat':
+            logging.info("%s: Drum beat hired", self.video_name)
+
+            # starts the drum_beat.  DrumBeat call 'capture_next_frame' for
+            # every listener
+            self.post(self._drum_beat_address, 'add_listener', self.video_name,
+                      self.myAddress)
+            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -206,9 +234,9 @@ class VideoDecoder:
         # write the frame to the mmap file.  First move the offset to
         # position 0
         self._buf.seek(0)
-        self._size = self._buf.write(frame)
+        size = self._buf.write(frame)
 
-        return frame_number
+        return frame_number, size
         
     # ----------------------------------------------------------------------------------
     #

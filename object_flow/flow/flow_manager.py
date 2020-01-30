@@ -31,7 +31,6 @@ from object_flow.util.geom import Geom
 from object_flow.decoder.video_decoder import VideoDecoder
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
-from object_flow.decoder.drum_beat import DrumBeat
 
 #==========================================================================================
 # FlowManager manages the process of decoding, detection and tracking for one video
@@ -78,22 +77,12 @@ class FlowManager(Doer):
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
 
-        self._decoder = VideoDecoder(self.video_name, self.path)
+        # self._decoder = VideoDecoder(self.video_name, self.path)
 
-        self._fix_dimensions()
-        self._setting = Setting(self.cfg)
-        
-        # notify the parent that this flow_manager is ready to process
-        self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
-        
-        self.proc_time = time.perf_counter()
-        self._average = None
-        
-        # start the drum_beat process
-        self._drum_beat_address = self.hire(
-            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=30),
-            group = 'drum_beat')
-        
+        # hire a new video decoder named 'self.video_name'
+        self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
+                            self.path, group = 'decoders')
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -101,15 +90,14 @@ class FlowManager(Doer):
     def __hired__(self, hiree_name, hiree_group, hiree_address):
         if hiree_group == 'display':
             logging.info("%s: display hired", self.video_name)
-        if hiree_group == 'drum_beat':
-            logging.info("%s: Drum beat hired", self.video_name)
+        if hiree_group == 'decoders':
+            logging.info("%s: decoder created", self.video_name)
+            #  add myself as a listener to the video_decoder, by calling add_listener
+            # The return value of add_listener will be send do the initialize_mmap
+            # function
+            self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
+                       self.myAddress, 'process_frame', callback = 'initialize_mmap')
 
-            # drum_beat calls 'capture_next_frame' for every listener
-            self.post(self._drum_beat_address, 'add_listener', self.video_name,
-                      self.myAddress)
-
-            self.process_frame()
-            
     # ----------------------------------------------------------------------------------
     # send to all doers the 'actor_exit_request'. In principle this should not be
     # necessary, but in many cases Python processes keep running even after the
@@ -147,8 +135,8 @@ class FlowManager(Doer):
         logging.info("%s: starting playback", self.video_name)
         
         # initialize the display
-        self.phone(self._dp, 'initialize_mmap', self._decoder.file_name,
-                   self._decoder.width, self._decoder.height, self._decoder.depth,
+        self.phone(self._dp, 'initialize_mmap', self.file_name,
+                   self.width, self.height, self.depth,
                    callback = '_add_listener')
                 
     # ----------------------------------------------------------------------------------
@@ -188,8 +176,8 @@ class FlowManager(Doer):
         logging.info("%s: adding listener to flow_manager with name %s", self.video_name,
                      name)
         self._listeners[name] = address
-        return (self._decoder.file_name, self._decoder.width, self._decoder.height,
-                self._decoder.depth)
+        return (self.file_name, self.width, self.height,
+                self.depth)
     
     # ----------------------------------------------------------------------------------
     # Removes the listener
@@ -206,15 +194,65 @@ class FlowManager(Doer):
     # CALLBACK METHODS
     
     # ----------------------------------------------------------------------------------
-    # VideoDecoder is a helper class.  Unfortunately there is no way for a helper
-    # class to create new Doers, send message, etc. so it has to be done through the
-    # principal class.  Callback methods need to be captured here and forwarde to
-    # the helper.
+    # Callback method: when it becomes a listener to the video
+    # decoder.  Only after the video decoder is initialize that we have information
+    # about the width, height and depth of the video being decoded. 
     # ----------------------------------------------------------------------------------
 
-    def capture_next_frame(self):
-        self._decoder.capture_next_frame()
+    def initialize_mmap(self, mmap_path, width, height, depth):    
+        self.file_name = mmap_path
+        self.width = width
+        self.height = height
+        self.depth = depth
         
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        fd = os.open(mmap_path, os.O_RDONLY)
+        self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        logging.info("mmap file for %s opened", self.video_name)
+
+        self._fix_dimensions()
+        self._setting = Setting(self.cfg)
+        
+        # now that the mmap file has been initialized, we can call 'start_processing'
+        # self.post(self.vd, 'start_processing')
+        self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
+
+        self.proc_time = time.perf_counter()
+        self._average = None
+
+        # start an endless loop... process_frame calls many functions that end up
+        # calling _next_frame, that call back process_frame
+        self.process_frame()
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _continue_process(self, frame_number, size):
+
+        self._size = size
+        
+        # There was an error reading the last frame, so just move on to the next
+        # frame
+        if size < (self.height * self.width * self.depth):
+            self.process_frame()
+            return
+
+        self._buf_size = size
+        
+        self.cfg.frame_number = frame_number
+        # total number of frames process by flow_manager.  This is not necessarily
+        # equal to frame_number, as the video decoder might have dropped frames
+        # when processing is not fast enought
+        self._total_frames += 1
+        
+        # start the tracking phase
+        self.tracking_phase()
+                    
     # ----------------------------------------------------------------------------------
     # This is the main loop for the flow_manager. This method is registered as a
     # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
@@ -229,16 +267,12 @@ class FlowManager(Doer):
     def process_frame(self):
 
         # frame number from the video_decoder
-        self.cfg.frame_number = self._decoder.provide_next_frame(self._average)
-        
-        # total number of frames process by flow_manager.  This is not necessarily
-        # equal to frame_number, as the video decoder might have dropped frames
-        # when processing is not fast enought
-        self._total_frames += 1
+        # self.cfg.frame_number = self.provide_next_frame(self._average)
 
-        # start the tracking phase
-        self.tracking_phase()
-                    
+        # call the video decoder to provide the next frame on the mmap_file
+        self.phone(self.vd, 'provide_next_frame', self._average,
+                   callback = '_continue_process')
+        
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
     # update_tracked_items on tall the trackers.
@@ -264,9 +298,9 @@ class FlowManager(Doer):
             (self.cfg.frame_number %
              self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
             self._trackers_broadcast_with_callback(
-                'update_tracked_items', self.video_name, self._decoder.file_name,
-                self._decoder.width, self._decoder.height, self._decoder.depth,
-                self._decoder._size, callback = 'tracking_done')
+                'update_tracked_items', self.video_name, self.file_name,
+                self.width, self.height, self.depth,
+                self._size, callback = 'tracking_done')
             
         # should always execute the detection phase. If doing a tracking phase
         # on the frame, then the call to detection_phase should be done after
@@ -311,9 +345,9 @@ class FlowManager(Doer):
     def detection_phase(self):
         # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
-            self.phone(self._yolo, 'find_bboxes', self.video_name, self._decoder.file_name,
-                       self._decoder.width, self._decoder.height, self._decoder.depth,
-                       self._decoder._size, callback = 'boxes_detected')
+            self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
+                       self.width, self.height, self.depth,
+                       self._size, callback = 'boxes_detected')
         else:
             # This is one problem with callback functions: the '_next_frame' method is
             # called here and also on the 'boxes_detected' callback method. It's
@@ -451,8 +485,8 @@ class FlowManager(Doer):
                 item.tracker_address = tracker[0]
 
             self.post(tracker[0], 'tracks_list', self.video_name,
-                      self._decoder.file_name, self._decoder.width, self._decoder.height,
-                      self._decoder.depth, self._decoder._size, items)
+                      self.file_name, self.width, self.height,
+                      self.depth, self._size, items)
                 
     # ---------------------------------------------------------------------------------
     # Matches the newly detected items with the already tracked items using either
@@ -517,7 +551,7 @@ class FlowManager(Doer):
             # listener: doer's address
             # when sending the base image, send also all the items, so that they
             # can be used by other methods
-            self.post(listener, 'base_image', self._decoder._size,
+            self.post(listener, 'base_image', self._size,
                       list(self._setting.items.values()))
             self.post(listener, 'overlay_bboxes')
             self.post(listener, 'add_id')
@@ -536,8 +570,8 @@ class FlowManager(Doer):
         lines_dimensions = self.cfg.data['video_processor']['lines_dimensions']
         
         # Constants needed to resize the identified bboxes to the original frame size
-        kw = self._decoder.width/lines_dimensions[0]
-        kh = self._decoder.height/lines_dimensions[1]
+        kw = self.width/lines_dimensions[0]
+        kh = self.height/lines_dimensions[1]
 
         for line_name, spec in self.cfg.data['entry_lines'].items():
             end_points = spec['end_points']
@@ -558,8 +592,8 @@ class FlowManager(Doer):
                                        int(label2_position[1] * kh)]
 
         
-        self.cfg.data['video_processor']['lines_dimensions'] = [self._decoder.width,
-                                                                self._decoder.height]
+        self.cfg.data['video_processor']['lines_dimensions'] = [self.width,
+                                                                self.height]
                                   
     # ----------------------------------------------------------------------------------
     #
