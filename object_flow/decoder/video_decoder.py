@@ -63,11 +63,13 @@ class VideoDecoder:
         self._frame_buffer = collections.deque()
         # Maximum size of the frame buffer
         self._buffer_max_size = 1000
+        self._drop_frames = False
         
         # initialize the time counter
         self.init_time = time.perf_counter()
         
         self._stream = None
+        self._capture_average = None
         
         # TODO: filter initialization should be done in another way... This does not
         # allow for channing filters which would be ideal
@@ -162,14 +164,21 @@ class VideoDecoder:
 
             if self.frame_number % 100 == 0:
                 now = time.perf_counter()
-                logging.info("%s: buffer size is %d", self.video_name, len(self._frame_buffer))
-                logging.info("%s: average time video capture per frame for the last 100 frames is: %f",
-                             self.video_name, (now - self.init_time) / 100)
+                self._capture_average = (now - self.init_time) / 100
+                logging.debug("%s: buffer size is %d", self.video_name, len(self._frame_buffer))
+                logging.debug("%s: average time video capture per frame for the last 100 frames is: %f",
+                             self.video_name, self._capture_average)
                 self.init_time = now
 
             # buffer not full yet... add frame to buffer
-            if len(self._frame_buffer) < self._buffer_max_size:
-                self._frame_buffer.append((self.frame_number, frame))
+            if (len(self._frame_buffer) < self._buffer_max_size):
+                if (self._drop_frames):
+                    if ((self.frame_number % self._drop_by) != 0):
+                        logging.debug("%s: adding frame %d", self.video_name,
+                                     self.frame_number)
+                        self._frame_buffer.append((self.frame_number, frame))
+                else:
+                    self._frame_buffer.append((self.frame_number, frame))
             # buffer is full
             else:
                 pass
@@ -185,11 +194,13 @@ class VideoDecoder:
     # 'recursively'.
     # ----------------------------------------------------------------------------------
 
-    def provide_next_frame(self):
+    def provide_next_frame(self, processing_average):
 
         if len(self._frame_buffer) < 1:
             self.capture_next_frame()
-            
+
+        self._manage_buffer(processing_average)
+        
         frame_number, frame = self._frame_buffer.popleft()
         
         # write the frame to the mmap file.  First move the offset to
@@ -198,7 +209,6 @@ class VideoDecoder:
         self._size = self._buf.write(frame)
 
         return frame_number
-        
         
     # ----------------------------------------------------------------------------------
     #
@@ -210,9 +220,15 @@ class VideoDecoder:
     #
     # ----------------------------------------------------------------------------------
 
-    def _manage_buffer(self):
-        pass
-    
+    def _manage_buffer(self, processing_average):
+        if (processing_average != None and self._capture_average != None):
+            per_diff = int(math.ceil(processing_average / self._capture_average))
+            logging.warning("%s: speed difference is %d", self.video_name,
+                            per_diff)
+            if per_diff > 2:
+                self._drop_frames = True
+                self._drop_by = per_diff
+                
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

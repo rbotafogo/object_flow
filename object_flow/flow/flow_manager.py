@@ -87,8 +87,7 @@ class FlowManager(Doer):
         self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
         
         self.proc_time = time.perf_counter()
-        self.track_time = time.perf_counter()
-        self.detect_time = time.perf_counter()
+        self._average = None
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(
@@ -230,7 +229,7 @@ class FlowManager(Doer):
     def process_frame(self):
 
         # frame number from the video_decoder
-        self.cfg.frame_number = self._decoder.provide_next_frame()
+        self.cfg.frame_number = self._decoder.provide_next_frame(self._average)
         
         # total number of frames process by flow_manager.  This is not necessarily
         # equal to frame_number, as the video decoder might have dropped frames
@@ -303,12 +302,6 @@ class FlowManager(Doer):
         # are all trackers done? If all done then we can call the
         # detection phase
         if self.num_trackers < 1:
-            if self._total_frames % 100 == 0:
-                now = time.perf_counter()
-                logging.info("%s: average tracking time per frame for the last 100 frames is: %f",
-                             self.video_name, (now - self.track_time) / 100)
-                self.track_time = now
-
             self.detection_phase()
             
     # ----------------------------------------------------------------------------------
@@ -341,12 +334,6 @@ class FlowManager(Doer):
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
-        if self._total_frames % 100 == 0:
-            now = time.perf_counter()
-            logging.info("%s: average detection time per frame for the last 100 frames is: %f",
-                         self.video_name, (now - self.detect_time) / 100)
-            self.detect_time = now
-
         self._next_frame()
             
     # ----------------------------------------------------------------------------------
@@ -375,8 +362,9 @@ class FlowManager(Doer):
         # this is the time between the call to process_frame and _next_frame
         if self._total_frames % 100 == 0:
             now = time.perf_counter()
+            self._average = (now - self.proc_time) / 100
             logging.info("%s: average processing time for the last 100 frames is %f",
-                         self.video_name, (now - self.proc_time)/100)
+                         self.video_name, self._average)
             self.proc_time = time.perf_counter()
        
         # call the video decoder to process the next frame
