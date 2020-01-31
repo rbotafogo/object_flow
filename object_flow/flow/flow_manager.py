@@ -60,7 +60,11 @@ class FlowManager(Doer):
 
         self.playback = False
         self.playback_started = False
-        
+
+        self._time_ckd = 0
+        self._time_tracking = 0
+        self._time_detection = 0
+                
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -77,8 +81,6 @@ class FlowManager(Doer):
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
 
-        # self._decoder = VideoDecoder(self.video_name, self.path)
-
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, group = 'decoders')
@@ -92,11 +94,7 @@ class FlowManager(Doer):
             logging.info("%s: display hired", self.video_name)
         if hiree_group == 'decoders':
             logging.info("%s: decoder created", self.video_name)
-            #  add myself as a listener to the video_decoder, by calling add_listener
-            # The return value of add_listener will be send do the initialize_mmap
-            # function
-            self.phone(hiree_address, 'add_listener', self.video_name + '_manager',
-                       self.myAddress, 'process_frame', callback = 'initialize_mmap')
+            self.phone(hiree_address, 'get_image_info', callback = 'initialize_mmap')
 
     # ----------------------------------------------------------------------------------
     # send to all doers the 'actor_exit_request'. In principle this should not be
@@ -226,20 +224,20 @@ class FlowManager(Doer):
 
         # start an endless loop... process_frame calls many functions that end up
         # calling _next_frame, that call back process_frame
-        self.process_frame()
+        self._process_frame()
 
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def _continue_process(self, frame_number, size):
+    def continue_process(self, frame_number, size):
 
         self._size = size
         
         # There was an error reading the last frame, so just move on to the next
         # frame
         if size < (self.height * self.width * self.depth):
-            self.process_frame()
+            self._process_frame()
             return
 
         self._buf_size = size
@@ -251,65 +249,8 @@ class FlowManager(Doer):
         self._total_frames += 1
         
         # start the tracking phase
-        self.tracking_phase()
+        self._tracking_phase()
                     
-    # ----------------------------------------------------------------------------------
-    # This is the main loop for the flow_manager. This method is registered as a
-    # listener to the video_decoder 'doer'.  Whenever the video_decoder reads a new
-    # frame it calls this method.  This method checks that the size of the decoded
-    # video is correct and then reads the frame (from a mmap file). Then, it will
-    # either track the items in the frame or make a new detection.  If it is time
-    # to make new detections, a message is sent to the Neural Network to 'find_bboxes'
-    # with method 'detections' as the callback for when all the detections are
-    # finished.
-    # ----------------------------------------------------------------------------------
-
-    def process_frame(self):
-
-        # frame number from the video_decoder
-        # self.cfg.frame_number = self.provide_next_frame(self._average)
-
-        # call the video decoder to provide the next frame on the mmap_file
-        self.phone(self.vd, 'provide_next_frame', self._average,
-                   callback = '_continue_process')
-        
-    # ----------------------------------------------------------------------------------
-    # Executes the tracking_phase of the algorithm.  Bascially calls method
-    # update_tracked_items on tall the trackers.
-    # ----------------------------------------------------------------------------------
-
-    def tracking_phase(self):
-
-        # keep reference to the number of trackers that have already replied
-        # with tracking information. None so far.
-        self.num_trackers = len(self.trackers)
-
-        # check for disappeared items and remove them:
-        self._check_disappeared()
-
-        # now drop overlaped items
-        # logging.info(self._setting.find_overlap())
-        self._remove_items(self._setting.find_overlap())
-        
-        # do the tracking phase of the algorithm
-        # update tracked items for this video every 'x' frames according to
-        # configuration
-        if (self.cfg.data['video_analyser']['track_every_x_frames'] == 1 or
-            (self.cfg.frame_number %
-             self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
-            self._trackers_broadcast_with_callback(
-                'update_tracked_items', self.video_name, self.file_name,
-                self.width, self.height, self.depth,
-                self._size, callback = 'tracking_done')
-            
-        # should always execute the detection phase. If doing a tracking phase
-        # on the frame, then the call to detection_phase should be done after
-        # all trackers have finished... this is done in the tracking_done method
-        # bellow. If tracking is not done in the frame, then just call the
-        # detection_phase directly
-        else:
-            self.detection_phase()
-
     # ----------------------------------------------------------------------------------
     # When tracking is done, the trackers calls back this method with the updated
     # items information
@@ -332,28 +273,25 @@ class FlowManager(Doer):
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
 
-        self.num_trackers -= 1
         # are all trackers done? If all done then we can call the
         # detection phase
+        self.num_trackers -= 1
         if self.num_trackers < 1:
-            self.detection_phase()
+            # -----------------------------
+            # collecting metric information
+            # -----------------------------
+            # -----------------------------
+            self._time_tracking += self._time_elapsed(self._time_tracking)
+            # collecting metric information
+            if self._total_frames % 100 == 0:
+                logging.info("%s: average time of tracking is %f",
+                             self.video_name, self._time_tracking / 100)
+                self._time_tracking = 0
+            # -----------------------------
             
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def detection_phase(self):
-        # do detection on the frame
-        if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
-            self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
-                       self.width, self.height, self.depth,
-                       self._size, callback = 'boxes_detected')
-        else:
-            # This is one problem with callback functions: the '_next_frame' method is
-            # called here and also on the 'boxes_detected' callback method. It's
-            # a bit confusing.
-            self._next_frame()
-    
+            
+            self._detection_phase()
+            
     # ----------------------------------------------------------------------------------
     # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
     # registered by method 'process_frame'.
@@ -369,13 +307,102 @@ class FlowManager(Doer):
         # relevant items
         self._add_items()
         self._next_frame()
-            
+        
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
     # PRIVATE METHODS
             
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _time_elapsed(self, marker):
+        now = time.perf_counter()
+        elapsed = (now - self.time_metric)
+        self.time_metric = now
+        return elapsed
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _process_frame(self):
+
+        # initialize the time_metric at every new frame
+        self.time_metric = time.perf_counter()
+        
+        # frame number from the video_decoder
+        # self.cfg.frame_number = self.provide_next_frame(self._average)
+
+        # call the video decoder to provide the next frame on the mmap_file
+        self.phone(self.vd, 'provide_next_frame', self._average,
+                   callback = 'continue_process')
+        
+    # ----------------------------------------------------------------------------------
+    # Executes the tracking_phase of the algorithm.  Bascially calls method
+    # update_tracked_items on tall the trackers.
+    # ----------------------------------------------------------------------------------
+
+    def _tracking_phase(self):
+
+        # keep reference to the number of trackers that have already replied
+        # with tracking information. None so far.
+        self.num_trackers = len(self.trackers)
+
+        # check for disappeared items and remove them:
+        self._check_disappeared()
+        
+        # -----------------------------
+        self._time_ckd += self._time_elapsed(self._time_ckd)
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time of _check_disappeared is %f",
+                         self.video_name, self._time_ckd / 100)
+            self._time_ckd = 0
+        # -----------------------------
+            
+        # now drop overlaped items
+        # logging.info(self._setting.find_overlap())
+        self._remove_items(self._setting.find_overlap())
+        
+        # do the tracking phase of the algorithm
+        # update tracked items for this video every 'x' frames according to
+        # configuration
+        if (self.cfg.data['video_analyser']['track_every_x_frames'] == 1 or
+            (self.cfg.frame_number %
+             self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
+            self._trackers_broadcast_with_callback(
+                'update_tracked_items', self.video_name, self.file_name,
+                self.width, self.height, self.depth,
+                self._size, callback = 'tracking_done')
+            
+        # should always execute the detection phase. If doing a tracking phase
+        # on the frame, then the call to detection_phase should be done after
+        # all trackers have finished... this is done in the tracking_done method
+        # bellow. If tracking is not done in the frame, then just call the
+        # detection_phase directly
+        else:
+            logging.info("+++++++++++++++This should not be printed in this config++++++++++")
+            self._detection_phase()
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def _detection_phase(self):
+        # do detection on the frame
+        if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
+            self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
+                       self.width, self.height, self.depth,
+                       self._size, callback = 'boxes_detected')
+        else:
+            # This is one problem with callback functions: the '_next_frame' method is
+            # called here and also on the 'boxes_detected' callback method. It's
+            # a bit confusing.
+            self._next_frame()
+    
     # ----------------------------------------------------------------------------------
     # This method sends to the decoder the 'next_frame' message for it to
     # decode a new frame.  This closes the processing loop: 1) decoder decodes a frame;
@@ -386,6 +413,18 @@ class FlowManager(Doer):
 
     def _next_frame(self):
 
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_detection += self._time_elapsed(self._time_detection)
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time of detection is %f",
+                         self.video_name, self._time_detection / 100)
+            self._time_detection = 0
+        # -----------------------------
+        
         # notify all the listeners to this flow_manager that we have finished
         # processing this frame and are going to process the next one.
         # TODO: Might not be enough time for all listeners to do something with the
@@ -403,7 +442,7 @@ class FlowManager(Doer):
        
         # call the video decoder to process the next frame
         # self.tell(self.video_name, 'next_frame', group = 'decoders')
-        self.process_frame()
+        self._process_frame()
         
     # ----------------------------------------------------------------------------------
     # broadcast a message to all the trackers.
@@ -442,6 +481,9 @@ class FlowManager(Doer):
 
     def _check_disappeared(self):
 
+        if len(self._setting.items) == 0:
+            return
+        
         delete = []
         
         for item_id, item in self._setting.items.items():

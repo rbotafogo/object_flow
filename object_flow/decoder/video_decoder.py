@@ -128,6 +128,13 @@ class VideoDecoder(Doer):
     # SERVICES
 
     # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def get_image_info(self):
+        return (self.file_name, self.width, self.height, self.depth)
+    
+    # ----------------------------------------------------------------------------------
     # Adds a new listener to this decoder. When a new listener is added it can receive
     # use the values of width, height and depth already initialized from the camera
     # ----------------------------------------------------------------------------------
@@ -251,8 +258,8 @@ class VideoDecoder(Doer):
     def _manage_buffer(self, processing_average):
         if (processing_average != None and self._capture_average != None):
             per_diff = int(math.ceil(processing_average / self._capture_average))
-            logging.warning("%s: speed difference is %d", self.video_name,
-                            per_diff)
+            logging.debug("%s: speed difference is %d", self.video_name,
+                          per_diff)
             if per_diff > 2:
                 self._drop_frames = True
                 self._drop_by = per_diff

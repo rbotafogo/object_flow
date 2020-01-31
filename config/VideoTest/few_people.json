@@ -1,0 +1,21 @@
+{
+  
+  "system_info": {
+    "analytics_output_dir": "resources/analytics"
+  },
+  
+  "neural_net": {
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "yolov3_tf2": {
+    "confidence": 0.3,
+    "threshold": 0.3
+  },
+  
+  "video_cameras": {
+    "cam1": "c15_v2.json"
+  }
+  
+}
