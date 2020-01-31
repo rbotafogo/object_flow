@@ -43,7 +43,7 @@ class Setting:
     #
     # ---------------------------------------------------------------------------------
 
-    # PROTECTED METHODS
+    # SERVICES
     
     # ---------------------------------------------------------------------------------
     # Add new detected elements to the setting if they are not already tracked and

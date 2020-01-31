@@ -66,8 +66,11 @@ class FlowManager(Doer):
         self._time_tracking = 0
         self._time_detection = 0
         self._time_notif = 0
+        self._time_findbboxes = 0
+        self._time_detect2box = 0
+        self._time_add_items = 0
         self._total_time = 0
-                
+
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -240,6 +243,7 @@ class FlowManager(Doer):
         # There was an error reading the last frame, so just move on to the next
         # frame
         if size < (self.height * self.width * self.depth):
+            logging.warning("%s: error reading frame - skipping")
             self._process_frame()
             return
 
@@ -284,7 +288,7 @@ class FlowManager(Doer):
             # collecting metric information
             # -----------------------------
             # -----------------------------
-            self._time_tracking += self._time_elapsed(self._time_tracking)
+            self._time_tracking += self._time_elapsed()
             # collecting metric information
             if self._total_frames % 100 == 0:
                 logging.info("%s: average time of tracking is %f",
@@ -302,13 +306,40 @@ class FlowManager(Doer):
 
     def boxes_detected(self, boxes, confidences, classIDs):
 
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_findbboxes += self._time_elapsed()
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time running Yolo is %f",
+                         self.video_name, self._time_findbboxes / 100)
+            self._total_time += self._time_findbboxes
+            self._time_findbboxes = 0
+        # -----------------------------
+        
         # convert the detected bounding boxes to Items
         self._setting.detections2items(boxes, confidences, classIDs)
-
+        
         # add the newly detected items to the setting. This method will match the
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
+        
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_add_items += self._time_elapsed()
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time adding items is %f",
+                         self.video_name, self._time_add_items / 100)
+            self._total_time += self._time_add_items
+            self._time_add_items = 0
+        # -----------------------------
+
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -321,7 +352,7 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _time_elapsed(self, marker):
+    def _time_elapsed(self):
         now = time.perf_counter()
         elapsed = (now - self.time_metric)
         self.time_metric = now
@@ -358,7 +389,7 @@ class FlowManager(Doer):
         self._check_disappeared()
         
         # -----------------------------
-        self._time_ckd += self._time_elapsed(self._time_ckd)
+        self._time_ckd += self._time_elapsed()
         # collecting metric information
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of _check_disappeared is %f",
@@ -372,7 +403,7 @@ class FlowManager(Doer):
         self._remove_items(self._setting.find_overlap())
         
         # -----------------------------
-        self._time_removal += self._time_elapsed(self._time_removal)
+        self._time_removal += self._time_elapsed()
         # collecting metric information
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of removal is %f",
@@ -408,6 +439,8 @@ class FlowManager(Doer):
     def _detection_phase(self):
         # do detection on the frame
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
+            logging.debug("%s: calling Yolo for frame %d", self.video_name,
+                         self._total_frames)
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
                        self.width, self.height, self.depth,
                        self._size, callback = 'boxes_detected')
@@ -431,12 +464,12 @@ class FlowManager(Doer):
         # collecting metric information
         # -----------------------------
         # -----------------------------
-        self._time_detection += self._time_elapsed(self._time_detection)
+        self._time_detection += self._time_elapsed()
         # collecting metric information
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of detection is %f",
                          self.video_name, self._time_detection / 100)
-            self._total_time =+ self._time_detection
+            self._total_time += self._time_detection
             self._time_detection = 0
         # -----------------------------
         
@@ -451,7 +484,7 @@ class FlowManager(Doer):
         # collecting metric information
         # -----------------------------
         # -----------------------------
-        self._time_notif += self._time_elapsed(self._time_notif)
+        self._time_notif += self._time_elapsed()
         # collecting metric information
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of notification is %f",

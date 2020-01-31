@@ -15,10 +15,6 @@
 	"show_tracking_bbox": "False"
     },
 
-    "video_analyser": {
-	"skip_detection_frames": 5
-    },
-
     "trackable_objects": {
 	"iou_match": 0.3,
 	"drop_overlap": 1.0
