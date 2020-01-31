@@ -62,8 +62,11 @@ class FlowManager(Doer):
         self.playback_started = False
 
         self._time_ckd = 0
+        self._time_removal = 0
         self._time_tracking = 0
         self._time_detection = 0
+        self._time_notif = 0
+        self._total_time = 0
                 
     # ----------------------------------------------------------------------------------
     # 
@@ -286,9 +289,9 @@ class FlowManager(Doer):
             if self._total_frames % 100 == 0:
                 logging.info("%s: average time of tracking is %f",
                              self.video_name, self._time_tracking / 100)
+                self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-            
             
             self._detection_phase()
             
@@ -360,6 +363,7 @@ class FlowManager(Doer):
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of _check_disappeared is %f",
                          self.video_name, self._time_ckd / 100)
+            self._total_time += self._time_ckd
             self._time_ckd = 0
         # -----------------------------
             
@@ -367,6 +371,16 @@ class FlowManager(Doer):
         # logging.info(self._setting.find_overlap())
         self._remove_items(self._setting.find_overlap())
         
+        # -----------------------------
+        self._time_removal += self._time_elapsed(self._time_removal)
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time of removal is %f",
+                         self.video_name, self._time_removal / 100)
+            self._total_time += self._time_removal
+            self._time_removal = 0
+        # -----------------------------
+            
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
@@ -422,6 +436,7 @@ class FlowManager(Doer):
         if self._total_frames % 100 == 0:
             logging.info("%s: average time of detection is %f",
                          self.video_name, self._time_detection / 100)
+            self._total_time =+ self._time_detection
             self._time_detection = 0
         # -----------------------------
         
@@ -432,13 +447,35 @@ class FlowManager(Doer):
         # have one listener to this object
         self._notify_listeners()
         
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_notif += self._time_elapsed(self._time_notif)
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time of notification is %f",
+                         self.video_name, self._time_notif / 100)
+            self._total_time += self._time_notif
+            self._time_notif = 0
+            avg_total_time = self._total_time / 100
+
+            logging.info("%s: total average time for the whole process: %f",
+                         self.video_name, avg_total_time)
+
+        # -----------------------------
+
         # this is the time between the call to process_frame and _next_frame
         if self._total_frames % 100 == 0:
             now = time.perf_counter()
             self._average = (now - self.proc_time) / 100
             logging.info("%s: average processing time for the last 100 frames is %f",
                          self.video_name, self._average)
+            logging.info("%s: time not accounted for is %f", self.video_name,
+                         self._average - avg_total_time)
+            self._total_time = 0
             self.proc_time = time.perf_counter()
+            logging.info("===========================")
        
         # call the video decoder to process the next frame
         # self.tell(self.video_name, 'next_frame', group = 'decoders')
