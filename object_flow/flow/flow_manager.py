@@ -656,7 +656,7 @@ class FlowManager(Doer):
     # ---------------------------------------------------------------------------------
 
     def _notify_listeners(self):
-        
+
         # notify every listener that we have a new frame and give it the
         # buffer size
         for name, listener in self._listeners.items():
