@@ -61,6 +61,7 @@ class FlowManager(Doer):
         self.playback = False
         self.playback_started = False
 
+        self._time_load = 0
         self._time_ckd = 0
         self._time_removal = 0
         self._time_tracking = 0
@@ -385,6 +386,16 @@ class FlowManager(Doer):
         # with tracking information. None so far.
         self.num_trackers = len(self.trackers)
 
+        # -----------------------------
+        self._time_load += self._time_elapsed()
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time to load frame is %f",
+                         self.video_name, self._time_load / 100)
+            self._total_time += self._time_load
+            self._time_load = 0
+        # -----------------------------
+            
         # check for disappeared items and remove them:
         self._check_disappeared()
         

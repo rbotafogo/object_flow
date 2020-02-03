@@ -59,6 +59,8 @@ class VideoDecoder(Doer):
         
         # Maximum size of the frame buffer
         self._buffer_max_size = 1000
+        self._buffer_front = -1
+        self._buffer_rear = 0
         self._drop_frames = False
                 
         self._stream = None
@@ -88,12 +90,13 @@ class VideoDecoder(Doer):
         # open the video file.  This will read and resize the image creating variables
         # self.width, self.height and self.depth
         self._open()
+        self._frame_size = self.height * self.width * self.depth
                         
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
         # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        npage = (math.ceil((self.width * self.height * self.depth)/ 4000) + 10) * self._buffer_max_size
         os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
         
         # It seems that there is no way to share memory between processes in
@@ -222,6 +225,42 @@ class VideoDecoder(Doer):
                 # self._del_buffer_every(5)
 
     # ----------------------------------------------------------------------------------
+    # adds a frame to the rear of the mmap file
+    # ----------------------------------------------------------------------------------
+
+    def _add_to_mmap(self):
+
+        # self._buffer_front = -1
+        # self._buffer_rear = 0
+        
+        # if the end of the buffer is reached, then start over
+        if self._buffer_rear == self._buffer_max_size - 1:
+            self._buffer_rear = 0
+        else:
+            self._buffer_rear += 1
+
+        if self._buffer_rear == self._buffer_front:
+            logging.info("%s: mmap file is full - dropping frames", self.video_name)
+        else:
+            # write the frame to the mmap file.  First move the offset to
+            # position 0
+            self._buf.seek(self._buffer_rear * self._frame_size)
+            size = self._buf.write(frame)
+        
+    # ----------------------------------------------------------------------------------
+    # 'remove' frame from mmap file
+    # ----------------------------------------------------------------------------------
+
+    def _next_mmap(self):
+        if self._buffer_front == self._buffer_rear:
+            logging.info("%s: mmap file is empty", self.video_name)
+        else:
+            if self._buffer_front == self._buffer_max_size - 1:
+                self._buffer_front = 0
+            else:
+                self._buffer_front += 1
+            
+    # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
     # flow_manager should call this function.  Flow manager is registered as one of
     # the listeners to this decoder and this is how all frames are processed,
@@ -242,6 +281,11 @@ class VideoDecoder(Doer):
         # position 0
         self._buf.seek(0)
         size = self._buf.write(frame)
+
+        # There was an error reading the last frame, so just move on to the next
+        # frame
+        if size != self._frame_size:
+            logging.warning("%s: error reading frame - skipping")
 
         return frame_number, size
         
