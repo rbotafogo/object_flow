@@ -319,7 +319,7 @@ class VideoDecoder(Doer):
     def _manage_buffer(self, processing_average):
         if (processing_average != None and self._capture_average != None):
             per_diff = int(math.ceil(processing_average / self._capture_average))
-            logging.info("%s: speed difference is %d", self.video_name,
+            logging.debug("%s: speed difference is %d", self.video_name,
                           per_diff)
             if per_diff > 2:
                 self._drop_frames = True
