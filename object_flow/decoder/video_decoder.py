@@ -54,9 +54,6 @@ class VideoDecoder(Doer):
         # loaded
         self._listeners = {}
 
-        # frame_buffer
-        self._frame_buffer = collections.deque()
-        
         # Maximum size of the frame buffer
         self._buffer_max_size = 500
         self._frame_number_buffer = collections.deque()
@@ -97,7 +94,8 @@ class VideoDecoder(Doer):
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
         # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        npage = (math.ceil((self.width * self.height * self.depth)/ 4000) + 10) * self._buffer_max_size
+        npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
+                 self._buffer_max_size)
         os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
         
         # It seems that there is no way to share memory between processes in
@@ -178,45 +176,6 @@ class VideoDecoder(Doer):
     # PROTECTED METHODS
 
     # ----------------------------------------------------------------------------------
-    # adds a frame to the rear of the mmap file
-    # ----------------------------------------------------------------------------------
-
-    def _add_to_mmap(self, frame):
-        
-        next_index = self._buffer_rear + 1
-        if next_index == self._buffer_max_size - 1:
-            next_index = 0
-
-        if next_index == self._buffer_front:
-            logging.warning("%s: mmap buffer is full", self.video_name)
-        else:
-            self._buffer_rear = next_index
-            # write the frame to the mmap file.  First move the offset to
-            # correct position
-            logging.debug("%s: writting to mmap position %d", self.video_name,
-                          self._buffer_rear)
-            self._buf.seek(self._buffer_rear * self._frame_size)
-            size = self._buf.write(frame)
-            self._frame_number_buffer.append((self.frame_number, size))
-            
-    # ----------------------------------------------------------------------------------
-    # 'remove' frame from mmap file
-    # ----------------------------------------------------------------------------------
-
-    def _get_next_mmap(self):
-        if self._buffer_front == self._buffer_rear:
-            logging.info("%s: mmap file is empty", self.video_name)
-            self.capture_next_frame()
-        else:
-            frame_number, size = self._frame_number_buffer.popleft()
-            if self._buffer_front == self._buffer_max_size - 1:
-                self._buffer_front = 0
-            else:
-                self._buffer_front += 1
-
-        return (frame_number, size, self._buffer_front)
-            
-    # ----------------------------------------------------------------------------------
     # This method is called by drum_beat.  DrumBeat conducts the capturing of frames.
     # When working with video files, DrumBeat will delay frame capturing to the
     # processing rate. With life files, DrumBeat will beat at 30 frames per second.
@@ -241,7 +200,7 @@ class VideoDecoder(Doer):
             if self.frame_number % 100 == 0:
                 now = time.perf_counter()
                 self._capture_average = (now - self.init_time) / 100
-                logging.debug("%s: buffer size is %d", self.video_name, len(self._frame_buffer))
+                logging.debug("%s: buffer size is %d", self.video_name, len(self._frame_number_buffer))
                 logging.debug("%s: average time video capture per frame for the last 100 frames is: %f",
                              self.video_name, self._capture_average)
                 self.init_time = now
@@ -278,40 +237,63 @@ class VideoDecoder(Doer):
         return self._get_next_mmap()
         
     # ----------------------------------------------------------------------------------
-    # This method is called by the flow_manager to get the next available frame. Only
-    # flow_manager should call this function.  Flow manager is registered as one of
-    # the listeners to this decoder and this is how all frames are processed,
-    # video_decoder next_frame and flow_manager's _next_frame each call each other
-    # 'recursively'.
-    # ----------------------------------------------------------------------------------
-
-    def provide_next_frame2(self, processing_average):
-
-        if len(self._frame_buffer) < 1:
-            self.capture_next_frame()
-
-        self._manage_buffer(processing_average)
-        
-        frame_number, frame = self._frame_buffer.popleft()
-        
-        # write the frame to the mmap file.  First move the offset to
-        # position 0
-        self._buf.seek(0)
-        size = self._buf.write(frame)
-
-        # There was an error reading the last frame, so just move on to the next
-        # frame
-        if size != self._frame_size:
-            logging.warning("%s: error reading frame - skipping")
-
-        return frame_number, size
-        
-    # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
     # PRIVATE METHODS
 
+    # ----------------------------------------------------------------------------------
+    # adds a frame to the rear of the mmap file
+    # ----------------------------------------------------------------------------------
+
+    def _add_to_mmap(self, frame):
+        
+        next_index = self._buffer_rear + 1
+        if next_index == self._buffer_max_size - 1:
+            next_index = 0
+
+        if next_index == self._buffer_front:
+            logging.warning("%s: mmap buffer is full", self.video_name)
+        else:
+            self._buffer_rear = next_index
+            # write the frame to the mmap file.  First move the offset to
+            # correct position
+            logging.debug("%s: writting to mmap position %d", self.video_name,
+                          self._buffer_rear)
+            self._buf.seek(self._buffer_rear * self._frame_size)
+            size = self._buf.write(frame)
+            self._frame_number_buffer.append((self.frame_number, size))
+            
+    # ----------------------------------------------------------------------------------
+    # 'remove' frame from mmap file
+    # ----------------------------------------------------------------------------------
+
+    def _get_next_mmap(self):
+        if self._buffer_front == self._buffer_rear:
+            logging.info("%s: mmap file is empty", self.video_name)
+        else:
+            if self._buffer_front == self._buffer_max_size - 1:
+                self._buffer_front = 0
+            else:
+                self._buffer_front += 1
+
+    # ----------------------------------------------------------------------------------
+    # 'remove' frame from mmap file
+    # ----------------------------------------------------------------------------------
+
+    def _get_next_mmap2(self):
+        if self._buffer_front == self._buffer_rear:
+            logging.info("%s: mmap file is empty", self.video_name)
+            self.capture_next_frame()
+        else:
+            frame_number, size = self._frame_number_buffer.popleft()
+            if self._buffer_front == self._buffer_max_size - 1:
+                self._buffer_front = 0
+            else:
+                self._buffer_front += 1
+
+        return (frame_number, size, self._buffer_front)
+            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -329,30 +311,6 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _live_cam(self):
-        # consuming the buffer to fast? We've already consumed half of the
-        # buffer size... start dropping frames
-        if (len(self._frame_buffer) >
-            (self._buffer_max_size - self._first_measure) / 2):
-            self._drop_frames = True
-            if self._drop_frames_by > 3:
-                self._drop_frames_by -= 1
-                self._del_buffer_every(self._drop_frames)
-                logging.info("%s: increase dropping frames rate to %d", self.video_name,
-                             self._drop_frames)
-        # consuming the buffer to slowly? throw away less frames
-        if (len(self._frame_buffer) < (self._first_measure - 0) / 2):
-            if (self._drop_frames_by < 8):
-                self._drop_frames_by += 1
-            else:
-                self._drop_frames = False
-                logging.info("%s: decrese dropping frames rate to %d", self.video_name,
-                             self._drop_frames)
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
     # PRIVATE METHODS
 
     # ----------------------------------------------------------------------------------
@@ -366,15 +324,6 @@ class VideoDecoder(Doer):
         self._gamma_table = np.array([((i / 255.0) ** invGamma) * 255
                                       for i in np.arange(0, 256)]).astype("uint8")
 
-    # ----------------------------------------------------------------------------------
-    # Deletes every 'n' frames from the buffer, so that we degrade gracefully the
-    # quality
-    # ----------------------------------------------------------------------------------
-
-    def _del_buffer_every(self, n):
-        for i in range(len(self._frame_buffer) -1, 1, -n):
-            del self._frame_buffer[i]
-    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

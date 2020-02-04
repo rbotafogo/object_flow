@@ -370,6 +370,7 @@ class FlowManager(Doer):
         #            callback = 'continue_process')
         # def continue_process(self, frame_number, size, frame_index):
         self.post(self.vd, '_manage_buffer', self._average)
+        self.post(self.vd, '_get_next_mmap')
         self._frame_size = self.height * self.width * self.depth
         self._index += 1
         if self._index == 499:
