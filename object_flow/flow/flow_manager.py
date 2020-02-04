@@ -369,6 +369,7 @@ class FlowManager(Doer):
         # self.phone(self.vd, 'provide_next_frame', self._average,
         #            callback = 'continue_process')
         # def continue_process(self, frame_number, size, frame_index):
+        self.post(self.vd, '_manage_buffer', self._average)
         self._frame_size = self.height * self.width * self.depth
         self._index += 1
         if self._index == 499:
