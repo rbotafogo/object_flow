@@ -43,7 +43,7 @@ class CountingGUI(QWidget):
     
     @pyqtSlot()
     def start_click(self):        
-        self.board = Board(logcfg=self.logcfg)
+        self.board = Board(proc = 'udp', logcfg=self.logcfg)
         self.board.hire('MultiFlow', MultiFlow, self.cfg)
 
     # ----------------------------------------------------------------------------------
