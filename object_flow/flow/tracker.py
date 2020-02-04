@@ -80,14 +80,16 @@ class Tracker(Doer):
 
     # ----------------------------------------------------------------------------------
     # Starts a dlib tracker to track the object given by its bounding box. Receives
-    # the 'video_analyser' as parameter and will keep track of all objects by camera.
-    # _start_tracker is started when the process receives a 'Start' message.
+    # the 'video_name' as parameter and will keep track of all objects by camera.
+    # ATTENTION: This method is not efficient, since it starts tracking a single
+    # item.  Better to use 'tracks_list' bellow.
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, video_name, file_name, width, height, depth, size,
-                       item_id, startX, startY, endX, endY):
+    def start_tracking(self, video_name, file_name, frame_index, size, width, height,
+                       depth, item_id, startX, startY, endX, endY):
 
-        frame = self._get_frame(video_name, file_name, width, height, depth, size)
+        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+                                depth)
         
         logging.info("started tracking for video %s item_id %d", video_name, item_id)
 
@@ -108,9 +110,11 @@ class Tracker(Doer):
     # tracks 1 item in the video.
     # ----------------------------------------------------------------------------------
 
-    def tracks_list(self, video_name, file_name, width, height, depth, size, items):
+    def tracks_list(self, video_name, file_name, frame_index, size, width, height, depth,
+                    items):
         
-        frame = self._get_frame(video_name, file_name, width, height, depth, size)
+        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+                                depth)
         
         # gets the correct list of video items.
         video_items = self.videos.get(video_name, {})
@@ -127,9 +131,11 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def update_tracked_items(self, video_name, file_name, width, height, depth, size):
+    def update_tracked_items(self, video_name, file_name, frame_index, size, width,
+                             height, depth):
 
-        frame = self._get_frame(video_name, file_name, width, height, depth, size)
+        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+                                depth)
         
         # get all tracked objects from the given camera
         if not (video_name in self.videos.keys()):
@@ -171,7 +177,7 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _get_frame(self, video_name, file_name, width, height, depth, size):
+    def _get_frame(self, video_name, file_name, frame_index, size, width, height, depth):
 
         # open the file descriptor if not already opened
         if not video_name in self._fd:
@@ -182,11 +188,12 @@ class Tracker(Doer):
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = math.ceil((width * height * depth)/ 4000) + 10
+        # npage = math.ceil((width * height * depth)/ 4000) + 10
+        npage = (math.ceil((width * height * depth)/ 4000) + 10) * (frame_index + 1)
         
         self._buf = mmap.mmap(
             self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(0)
+        self._buf.seek(frame_index * size)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))
 

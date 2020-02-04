@@ -61,6 +61,8 @@ class FlowManager(Doer):
         self.playback = False
         self.playback_started = False
 
+        self._index = 0
+        
         self._time_load = 0
         self._time_ckd = 0
         self._time_removal = 0
@@ -214,10 +216,10 @@ class FlowManager(Doer):
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
-        fd = os.open(mmap_path, os.O_RDONLY)
-        self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        logging.info("mmap file for %s opened", self.video_name)
+        # npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        # fd = os.open(mmap_path, os.O_RDONLY)
+        # self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        # logging.info("mmap file for %s opened", self.video_name)
 
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -237,18 +239,10 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def continue_process(self, frame_number, size):
+    def continue_process(self, frame_number, size, frame_index):
 
-        self._size = size
-        
-        # There was an error reading the last frame, so just move on to the next
-        # frame
-        if size < (self.height * self.width * self.depth):
-            logging.warning("%s: error reading frame - skipping")
-            self._process_frame()
-            return
-
-        self._buf_size = size
+        self.size = size
+        self.frame_index = frame_index
         
         self.cfg.frame_number = frame_number
         # total number of frames process by flow_manager.  This is not necessarily
@@ -372,8 +366,14 @@ class FlowManager(Doer):
         # self.cfg.frame_number = self.provide_next_frame(self._average)
 
         # call the video decoder to provide the next frame on the mmap_file
-        self.phone(self.vd, 'provide_next_frame', self._average,
-                   callback = 'continue_process')
+        # self.phone(self.vd, 'provide_next_frame', self._average,
+        #            callback = 'continue_process')
+        # def continue_process(self, frame_number, size, frame_index):
+        self._frame_size = self.height * self.width * self.depth
+        self._index += 1
+        if self._index == 499:
+            self._index = 0
+        self.continue_process(self._total_frames, self._frame_size, self._index)
         
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -431,8 +431,8 @@ class FlowManager(Doer):
              self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
             self._trackers_broadcast_with_callback(
                 'update_tracked_items', self.video_name, self.file_name,
-                self.width, self.height, self.depth,
-                self._size, callback = 'tracking_done')
+                self.frame_index, self.size, self.width, self.height, self.depth,
+                callback = 'tracking_done')
             
         # should always execute the detection phase. If doing a tracking phase
         # on the frame, then the call to detection_phase should be done after
@@ -453,8 +453,8 @@ class FlowManager(Doer):
             logging.debug("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
-                       self.width, self.height, self.depth,
-                       self._size, callback = 'boxes_detected')
+                       self.frame_index, self.size, self.width, self.height, self.depth,
+                       callback = 'boxes_detected')
         else:
             # This is one problem with callback functions: the '_next_frame' method is
             # called here and also on the 'boxes_detected' callback method. It's
@@ -586,10 +586,10 @@ class FlowManager(Doer):
 
     def _distribute2trackers(self, items):
 
-        size = 3
+        chunck_size = 3
         
-        final = [items[i * size:(i + 1) * size] for i in
-                 range((len(items) + size - 1) // size )]
+        final = [items[i * chunck_size:(i + 1) * chunck_size] for i in
+                 range((len(items) + chunck_size - 1) // chunck_size )]
 
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
@@ -608,8 +608,8 @@ class FlowManager(Doer):
                 item.tracker_address = tracker[0]
 
             self.post(tracker[0], 'tracks_list', self.video_name,
-                      self.file_name, self.width, self.height,
-                      self.depth, self._size, items)
+                      self.file_name, self.frame_index, self.size, self.width,
+                      self.height, self.depth, items)
                 
     # ---------------------------------------------------------------------------------
     # Matches the newly detected items with the already tracked items using either
@@ -674,7 +674,7 @@ class FlowManager(Doer):
             # listener: doer's address
             # when sending the base image, send also all the items, so that they
             # can be used by other methods
-            self.post(listener, 'base_image', self._size,
+            self.post(listener, 'base_image', self.frame_index, self.size,
                       list(self._setting.items.values()))
             self.post(listener, 'overlay_bboxes')
             self.post(listener, 'add_id')

@@ -18,8 +18,6 @@ import numpy as np
 from yolov3_tf2.models import YoloV3, YoloV3Tiny
 from yolov3_tf2.utils import load_darknet_weights
 
-from contagem.ui.util import Util
-
 flags.DEFINE_string('weights', './data/yolov3.weights', 'path to weights file')
 flags.DEFINE_string('output', './checkpoints/yolov3.tf', 'path to output')
 flags.DEFINE_boolean('tiny', False, 'yolov3 or yolov3-tiny')
@@ -32,17 +30,13 @@ def main(_argv):
     else:
         yolo = YoloV3(classes=FLAGS.num_classes)
     yolo.summary()
-    logging.info(Util.br_time() + ', model created')
 
     load_darknet_weights(yolo, FLAGS.weights, FLAGS.tiny)
-    logging.info(Util.br_time() + ', weights loaded')
 
     img = np.random.random((1, 320, 320, 3)).astype(np.float32)
     output = yolo(img)
-    logging.info(Util.br_time() + ', sanity check passed')
 
     yolo.save_weights(FLAGS.output)
-    logging.info(Util.br_time() + ', weights saved')
 
 
 if __name__ == '__main__':

@@ -60,7 +60,8 @@ class Display(Doer):
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        # npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
+        npage = (math.ceil((width * height * depth)/ 4000) + 10) * 500
         fd = os.open(mmap_path, os.O_RDONLY)
 
         self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
@@ -69,14 +70,14 @@ class Display(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def base_image(self, size, items):
+    def base_image(self, frame_index, size, items):
         if self._stop:
             return
 
         self.size = size
         self.items = items
         
-        self._buf.seek(0)
+        self._buf.seek(frame_index * size)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 

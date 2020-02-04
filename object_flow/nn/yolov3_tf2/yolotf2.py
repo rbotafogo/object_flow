@@ -87,8 +87,7 @@ class YoloTf2(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    # def find_bboxes(self, frame, width, height):
-    def find_bboxes(self, name, file_name, width, height, depth, size):
+    def find_bboxes(self, name, file_name, frame_index, size, width, height, depth):
 
         # open the file descriptor if not already opened
         if not name in self._fd:
@@ -99,11 +98,12 @@ class YoloTf2(Doer):
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = math.ceil((width * height * depth)/ 4000) + 10
+        # npage = math.ceil((width * height * depth)/ 4000) + 10
+        npage = (math.ceil((width * height * depth)/ 4000) + 10) * (frame_index + 1)
         
         self._buf = mmap.mmap(
             self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(0)
+        self._buf.seek(frame_index * size)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))
 
