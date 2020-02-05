@@ -29,6 +29,7 @@ import dlib
 from object_flow.ipc.doer import Doer
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
+from object_flow.util.mmap_frames import MmapFrames
 
 #==========================================================================================
 # A Tracker tracks itens in a frame
@@ -202,7 +203,41 @@ class Tracker(Doer):
         
         self._buf = mmap.mmap(
             self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(frame_index * (size + 1))
+        self._buf.seek(frame_index * (size + self.header_size))
+        # read the header
+        self._buf.read(self.header_size)
+        # read the frame
+        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
+        frame = b2.reshape((height, width, depth))
+
+        return frame
+    
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _get_frame2(self, video_name, file_name, frame_index, width, height, depth):
+
+        size = width * height * depth
+        
+        # open the file descriptor if not already opened
+        if not video_name in self._fd:
+            self._fd[video_name] = os.open(file_name, os.O_RDONLY)
+
+        # read the image
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        # npage = math.ceil((width * height * depth)/ 4000) + 10
+        npage = (math.ceil((width * height * depth)/ 4000) + 10) * (frame_index + 1)
+        
+        self._buf = mmap.mmap(
+            self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        self._buf.seek(frame_index * (size + self.header_size))
+        # read the header
+        self._buf.read(self.header_size)
+        # read the frame
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))
 

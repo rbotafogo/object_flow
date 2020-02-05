@@ -260,8 +260,8 @@ class VideoDecoder(Doer):
             # correct position
             logging.debug("%s: writting to mmap position %d", self.video_name,
                           self._buffer_rear)
-            self._buf.seek(self._buffer_rear * (self.frame_size + 1))
-            self._buf.write(b'\x01')
+            self._buf.seek(self._buffer_rear * (self.frame_size + self.header_size))
+            self._buf.write(b'\x01\x01\x01\x01')
             size = self._buf.write(frame)
             self._frame_number_buffer.append((self.frame_number, size))
             
@@ -278,23 +278,6 @@ class VideoDecoder(Doer):
             else:
                 self._buffer_front += 1
 
-    # ----------------------------------------------------------------------------------
-    # 'remove' frame from mmap file
-    # ----------------------------------------------------------------------------------
-
-    def _get_next_mmap2(self):
-        if self._buffer_front == self._buffer_rear:
-            logging.info("%s: mmap file is empty", self.video_name)
-            self.capture_next_frame()
-        else:
-            frame_number, size = self._frame_number_buffer.popleft()
-            if self._buffer_front == self._buffer_max_size - 1:
-                self._buffer_front = 0
-            else:
-                self._buffer_front += 1
-
-        return (frame_number, size, self._buffer_front)
-            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

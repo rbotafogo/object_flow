@@ -56,6 +56,7 @@ class MultiFlow(Doer):
 
         # start the yolo object detection process
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
+                               header_size = self.header_size,
                                group = 'DeepLearners')
 
         # read from conf file how many trackers we want and create the trackers

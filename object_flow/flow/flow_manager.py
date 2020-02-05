@@ -16,6 +16,7 @@
 import os
 import mmap
 import math
+
 import time
 import collections
 from datetime import timedelta
@@ -142,6 +143,7 @@ class FlowManager(Doer):
 
         display  = self.video_name + '_display'
         self._dp = self.hire(display, Display, self.video_name, self.cfg,
+                             self.header_size,
                              group = 'displayers')
 
         logging.info("%s: starting playback", self.video_name)

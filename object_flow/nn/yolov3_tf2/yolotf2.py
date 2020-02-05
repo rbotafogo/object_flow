@@ -76,12 +76,13 @@ class YoloTf2(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    def __initialize__(self, confidence, threshold):
+    def __initialize__(self, confidence, threshold, header_size):
         logging.info("Yolo, setting confidence to %f", confidence)
         logging.info("Yolo, setting threshold to %f", threshold)
         
         self.min_confidence = confidence
         self.threshold = threshold
+        self.header_size = header_size
         
     # ---------------------------------------------------------------------------------
     #
@@ -105,7 +106,10 @@ class YoloTf2(Doer):
         
         self._buf = mmap.mmap(
             self._fd[name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(frame_index * (size + 1))
+        self._buf.seek(frame_index * (size + self.header_size))
+        # read the header
+        self._buf.read(self.header_size)
+        # read the frame
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))
 

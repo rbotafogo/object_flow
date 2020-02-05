@@ -12,17 +12,10 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
-import os
-import time
 import cv2
 import logging
-import mmap
-import numpy as np
-import math
 
-from datetime import timedelta
-
-from object_flow.util.util import Util
+from object_flow.util.mmap_frames import MmapFrames
 from object_flow.ipc.doer import Doer
 
 #==========================================================================================
@@ -36,9 +29,10 @@ class Display(Doer):
     # @param video_name [String] name of the video camera
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, cfg):
+    def __initialize__(self, video_name, cfg, header_size):
         self.video_name = video_name
         self.cfg = cfg
+        self.header_size = header_size
         self._stop = False
     
     # ----------------------------------------------------------------------------------
@@ -56,16 +50,9 @@ class Display(Doer):
         self.height = height
         self.depth = depth
         self.frame_size = width * height * depth
-        
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
-        npage = (math.ceil((width * height * depth)/ 4000) + 10) * 500
-        fd = os.open(mmap_path, os.O_RDONLY)
 
-        self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        self._mmap = MmapFrames(mmap_path, width, height, depth)
+        self._mmap.open_read()
         
     # ----------------------------------------------------------------------------------
     # 
@@ -77,12 +64,8 @@ class Display(Doer):
             return
 
         self.items = items
+        header, self.frame = self._mmap.read_data(frame_index)
         
-        self._buf.seek(frame_index * (self.frame_size + 1))
-        self._buf.read(1)
-        b2 = np.frombuffer(self._buf.read(self.frame_size), dtype=np.uint8)
-        self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
-
     # ----------------------------------------------------------------------------------
     # overlay the bounding boxes on the frame. If centroids = True then add also the
     # bounding box centroid to the image
@@ -157,8 +140,6 @@ class Display(Doer):
     # ----------------------------------------------------------------------------------
 
     def display(self):
-        # logging.debug("%s, %s, %s, display for video %s with size %d",
-        #               Util.br_time(), os.getpid(), 'Display', video_name, size)
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
                              self._read_input, self.video_name)
