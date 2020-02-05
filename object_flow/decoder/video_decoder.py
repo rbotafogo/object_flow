@@ -87,7 +87,8 @@ class VideoDecoder(Doer):
         # open the video file.  This will read and resize the image creating variables
         # self.width, self.height and self.depth
         self._open()
-        self._frame_size = self.height * self.width * self.depth
+        self.frame_size = self.height * self.width * self.depth
+        self.header_size = 4
                         
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
@@ -259,7 +260,8 @@ class VideoDecoder(Doer):
             # correct position
             logging.debug("%s: writting to mmap position %d", self.video_name,
                           self._buffer_rear)
-            self._buf.seek(self._buffer_rear * self._frame_size)
+            self._buf.seek(self._buffer_rear * (self.frame_size + 1))
+            self._buf.write(b'\x01')
             size = self._buf.write(frame)
             self._frame_number_buffer.append((self.frame_number, size))
             

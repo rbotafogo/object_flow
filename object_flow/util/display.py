@@ -77,7 +77,8 @@ class Display(Doer):
         self.size = size
         self.items = items
         
-        self._buf.seek(frame_index * size)
+        self._buf.seek(frame_index * (size + 1))
+        self._buf.read(1)
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 

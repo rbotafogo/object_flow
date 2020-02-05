@@ -193,7 +193,7 @@ class Tracker(Doer):
         
         self._buf = mmap.mmap(
             self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(frame_index * size)
+        self._buf.seek(frame_index * (size + 1))
         b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
         frame = b2.reshape((height, width, depth))
 
