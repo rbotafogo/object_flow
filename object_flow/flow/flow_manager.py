@@ -219,6 +219,12 @@ class FlowManager(Doer):
         self.height = height
         self.depth = depth
         self.frame_size = self.height * self.width * self.depth
+
+        self._registered_trackers = len(self.trackers)
+        
+        self._trackers_broadcast_with_callback(
+            'register_video', self.video_name, self.file_name,
+            self.width, self.height, self.depth, callback = 'register_done')
         
         # open the mmap file whith the decoded frame. 
         # number of pages is calculated from the image size
@@ -228,21 +234,28 @@ class FlowManager(Doer):
                  self._buffer_max_size)
         fd = os.open(mmap_path, os.O_RDONLY)
         self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-
+        
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
         
-        # now that the mmap file has been initialized, we can call 'start_processing'
-        # self.post(self.vd, 'start_processing')
-        self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
 
-        self.proc_time = time.perf_counter()
-        self._average = None
-
-        # start an endless loop... process_frame calls many functions that end up
-        # calling _next_frame, that call back process_frame
-        self._process_frame()
-
+    def register_done(self, ret_value):
+        self._registered_trackers -= 1
+        if self._registered_trackers < 1:
+            # now that the mmap file has been initialized, we can call 'start_processing'
+            # self.post(self.vd, 'start_processing')
+            self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
+            
+            self.proc_time = time.perf_counter()
+            self._average = None
+            
+            # start an endless loop... process_frame calls many functions that end up
+            # calling _next_frame, that call back process_frame
+            self._process_frame()
+    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -438,8 +451,7 @@ class FlowManager(Doer):
             (self.cfg.frame_number %
              self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
             self._trackers_broadcast_with_callback(
-                'update_tracked_items', self.video_name, self.file_name,
-                self.frame_index, self.width, self.height, self.depth,
+                'update_tracked_items', self.video_name, self.frame_index,
                 callback = 'tracking_done')
             
         # should always execute the detection phase. If doing a tracking phase
@@ -545,6 +557,14 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
+    def _trackers_broadcast(self, method, *args, **kwargs):
+        for tracker_name, tracker in self.trackers.items():
+            self.post(tracker[0], method, *args, **kwargs)
+        
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
     def _remove_item(self, item_id):
 
         # The item might have been removed by going out of the entry lines
@@ -615,9 +635,11 @@ class FlowManager(Doer):
                 self._setting.items[self.next_item_id] = item
                 item.tracker_address = tracker[0]
 
-            self.post(tracker[0], 'tracks_list', self.video_name,
-                      self.file_name, self.frame_index, self.width,
-                      self.height, self.depth, items)
+            # self.post(tracker[0], 'tracks_list', self.video_name,
+            #           self.file_name, self.frame_index, self.width,
+            #           self.height, self.depth, items)
+            self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,
+                      items)
                 
     # ---------------------------------------------------------------------------------
     # Matches the newly detected items with the already tracked items using either

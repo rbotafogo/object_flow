@@ -62,7 +62,7 @@ class Tracker(Doer):
         
         # file descriptors opened where frames are stored
         self._fd = {}
-        
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -87,30 +87,19 @@ class Tracker(Doer):
         return self.id
 
     # ----------------------------------------------------------------------------------
-    # Starts a dlib tracker to track the object given by its bounding box. Receives
-    # the 'video_name' as parameter and will keep track of all objects by camera.
-    # ATTENTION: This method is not efficient, since it starts tracking a single
-    # item.  Better to use 'tracks_list' bellow.
+    # Registers a video with this tracker
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, video_name, file_name, frame_index, width, height,
-                       depth, item_id, startX, startY, endX, endY):
-
-        frame = self._get_frame(video_name, file_name, frame_index, width, height,
-                                depth)
-        
-        logging.info("started tracking for video %s item_id %d", video_name, item_id)
-
-        # gets the correct list of video items.
-        video_items = self.videos.get(video_name, {})
-        
-        tracker = self._start_dlib_tracker(
-            frame, item.startX, item.startY, item.endX, item.endY)
-        
-        # add this dlib tracker to the list of tracked items by this tracker for the
-        # specified video
-        video_items.update({item_id:tracker})
-        self.videos[video_name] = video_items
+    def register_video(self, video_name, file_name, width, height, depth):
+        self.videos[video_name] = {}
+        self.videos[video_name]['items'] = {}
+        self.videos[video_name]['file_name'] = file_name
+        self.videos[video_name]['width'] = width
+        self.videos[video_name]['height'] = height
+        self.videos[video_name]['depth'] = depth
+        self.videos[video_name]['frame_size'] = width * height * depth
+        self.videos[video_name]['frames'] = MmapFrames(file_name, width, height, depth)
+        self.videos[video_name]['frames'].open_read()
         
     # ----------------------------------------------------------------------------------
     # Starts tracking a list of items in a video frame.  This is the preferred way of
@@ -118,14 +107,12 @@ class Tracker(Doer):
     # tracks 1 item in the video.
     # ----------------------------------------------------------------------------------
 
-    def tracks_list(self, video_name, file_name, frame_index, width, height, depth,
-                    items):
+    def tracks_list(self, video_name, frame_index, items):
         
-        frame = self._get_frame(video_name, file_name, frame_index, width, height,
-                                depth)
+        frame = self._get_frame(video_name, frame_index)
         
         # gets the correct list of video items.
-        video_items = self.videos.get(video_name, {})
+        video_items = self.videos.get(video_name)['items']
         
         for item in items:
             # add this dlib tracker to the list of tracked items by this tracker for the
@@ -133,23 +120,23 @@ class Tracker(Doer):
             tracker = self._start_tracker(
                 frame, item.startX, item.startY, item.endX, item.endY)
             video_items.update({item.item_id:tracker})
-            self.videos[video_name] = video_items
+            
+            self.videos[video_name]['items'] = video_items
 
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
 
-    def update_tracked_items(self, video_name, file_name, frame_index, width,
-                             height, depth):
+    def update_tracked_items(self, video_name, frame_index):
 
-        frame = self._get_frame(video_name, file_name, frame_index, width, height,
-                                depth)
-        
-        # get all tracked objects from the given camera
-        if not (video_name in self.videos.keys()):
+        if len(self.videos[video_name]['items']) == 0:
             return None
-
-        video_items = self.videos[video_name]
+        
+        frame = self._get_frame(video_name, frame_index)
+        width = self.videos[video_name]['width']
+        height = self.videos[video_name]['height']
+        
+        video_items = self.videos[video_name]['items']
         detections = {}
         
         for item_id, tracker in video_items.items():
@@ -163,7 +150,7 @@ class Tracker(Doer):
     # ----------------------------------------------------------------------------------
 
     def stop_tracking(self, video_name, item_id):
-        video_items = self.videos[video_name]
+        video_items = self.videos[video_name]['items']
         del video_items[item_id]
     
     # ----------------------------------------------------------------------------------
@@ -174,7 +161,6 @@ class Tracker(Doer):
         logging.info("Hello from tracker %d with args %s and kwargs %s", self.id,
                      args, kwargs)
         
-
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -185,62 +171,9 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _get_frame(self, video_name, file_name, frame_index, width, height, depth):
+    def _get_frame(self, video_name, frame_index):
 
-        size = width * height * depth
-        
-        # open the file descriptor if not already opened
-        if not video_name in self._fd:
-            self._fd[video_name] = os.open(file_name, os.O_RDONLY)
-
-        # read the image
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # npage = math.ceil((width * height * depth)/ 4000) + 10
-        npage = (math.ceil((width * height * depth)/ 4000) + 10) * (frame_index + 1)
-        
-        self._buf = mmap.mmap(
-            self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(frame_index * (size + self.header_size))
-        # read the header
-        self._buf.read(self.header_size)
-        # read the frame
-        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
-        frame = b2.reshape((height, width, depth))
-
-        return frame
-    
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _get_frame2(self, video_name, file_name, frame_index, width, height, depth):
-
-        size = width * height * depth
-        
-        # open the file descriptor if not already opened
-        if not video_name in self._fd:
-            self._fd[video_name] = os.open(file_name, os.O_RDONLY)
-
-        # read the image
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # npage = math.ceil((width * height * depth)/ 4000) + 10
-        npage = (math.ceil((width * height * depth)/ 4000) + 10) * (frame_index + 1)
-        
-        self._buf = mmap.mmap(
-            self._fd[video_name], mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        self._buf.seek(frame_index * (size + self.header_size))
-        # read the header
-        self._buf.read(self.header_size)
-        # read the frame
-        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
-        frame = b2.reshape((height, width, depth))
-
+        header, frame = self.videos[video_name]['frames'].read_data(frame_index)
         return frame
     
     # ----------------------------------------------------------------------------------
