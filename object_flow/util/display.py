@@ -55,6 +55,7 @@ class Display(Doer):
         self.width = width
         self.height = height
         self.depth = depth
+        self.frame_size = width * height * depth
         
         # open the mmap file whith the decoded frame. 
         # number of pages is calculated from the image size
@@ -70,16 +71,16 @@ class Display(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def base_image(self, frame_index, size, items):
+    def base_image(self, frame_index, items):
+        
         if self._stop:
             return
 
-        self.size = size
         self.items = items
         
-        self._buf.seek(frame_index * (size + 1))
+        self._buf.seek(frame_index * (self.frame_size + 1))
         self._buf.read(1)
-        b2 = np.frombuffer(self._buf.read(size), dtype=np.uint8)
+        b2 = np.frombuffer(self._buf.read(self.frame_size), dtype=np.uint8)
         self.frame = b2.reshape((self.height, self.width, self.depth))  # 480, 704, 3
 
     # ----------------------------------------------------------------------------------

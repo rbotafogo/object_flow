@@ -70,7 +70,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, path, buffer_max_size, width=500):
+    def __initialize__(self, video_name, path, buffer_max_size, header_size, width=500):
         
         self.path = path
         self.video_name = video_name
@@ -88,7 +88,7 @@ class VideoDecoder(Doer):
         # self.width, self.height and self.depth
         self._open()
         self.frame_size = self.height * self.width * self.depth
-        self.header_size = 4
+        self.header_size = header_size
                         
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small

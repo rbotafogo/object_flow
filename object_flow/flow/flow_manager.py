@@ -81,14 +81,15 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo):
+    def __initialize__(self, cfg, trackers, yolo, header_size):
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
+        self._yolo = yolo
+        self.header_size = header_size
         
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
-        self._yolo = yolo
         
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
@@ -96,7 +97,7 @@ class FlowManager(Doer):
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, buffer_max_size = self._buffer_max_size,
-                            group = 'decoders')
+                            header_size = self.header_size, group = 'decoders')
 
     # ----------------------------------------------------------------------------------
     #
@@ -187,8 +188,7 @@ class FlowManager(Doer):
         logging.info("%s: adding listener to flow_manager with name %s", self.video_name,
                      name)
         self._listeners[name] = address
-        return (self.file_name, self.width, self.height,
-                self.depth)
+        return (self.file_name, self.width, self.height, self.depth)
     
     # ----------------------------------------------------------------------------------
     # Removes the listener
@@ -210,7 +210,8 @@ class FlowManager(Doer):
     # about the width, height and depth of the video being decoded. 
     # ----------------------------------------------------------------------------------
 
-    def initialize_mmap(self, mmap_path, width, height, depth):    
+    def initialize_mmap(self, mmap_path, width, height, depth):
+        
         self.file_name = mmap_path
         self.width = width
         self.height = height
@@ -244,9 +245,8 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def continue_process(self, frame_number, size, frame_index):
+    def continue_process(self, frame_number, frame_index):
 
-        self.size = size
         self.frame_index = frame_index
         
         self.cfg.frame_number = frame_number
@@ -379,7 +379,7 @@ class FlowManager(Doer):
         self._index += 1
         if self._index == 499:
             self._index = 0
-        self.continue_process(self._total_frames, self.frame_size, self._index)
+        self.continue_process(self._total_frames, self._index)
         
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -437,7 +437,7 @@ class FlowManager(Doer):
              self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
             self._trackers_broadcast_with_callback(
                 'update_tracked_items', self.video_name, self.file_name,
-                self.frame_index, self.size, self.width, self.height, self.depth,
+                self.frame_index, self.width, self.height, self.depth,
                 callback = 'tracking_done')
             
         # should always execute the detection phase. If doing a tracking phase
@@ -459,7 +459,7 @@ class FlowManager(Doer):
             logging.debug("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
-                       self.frame_index, self.size, self.width, self.height, self.depth,
+                       self.frame_index, self.width, self.height, self.depth,
                        callback = 'boxes_detected')
         else:
             # This is one problem with callback functions: the '_next_frame' method is
@@ -614,7 +614,7 @@ class FlowManager(Doer):
                 item.tracker_address = tracker[0]
 
             self.post(tracker[0], 'tracks_list', self.video_name,
-                      self.file_name, self.frame_index, self.size, self.width,
+                      self.file_name, self.frame_index, self.width,
                       self.height, self.depth, items)
                 
     # ---------------------------------------------------------------------------------
@@ -680,7 +680,7 @@ class FlowManager(Doer):
             # listener: doer's address
             # when sending the base image, send also all the items, so that they
             # can be used by other methods
-            self.post(listener, 'base_image', self.frame_index, self.size,
+            self.post(listener, 'base_image', self.frame_index,
                       list(self._setting.items.values()))
             self.post(listener, 'overlay_bboxes')
             self.post(listener, 'add_id')

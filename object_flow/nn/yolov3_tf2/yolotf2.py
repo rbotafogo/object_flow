@@ -87,8 +87,10 @@ class YoloTf2(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    def find_bboxes(self, name, file_name, frame_index, size, width, height, depth):
+    def find_bboxes(self, name, file_name, frame_index, width, height, depth):
 
+        size = width * height * depth
+        
         # open the file descriptor if not already opened
         if not name in self._fd:
             self._fd[name] = os.open(file_name, os.O_RDONLY)

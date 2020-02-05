@@ -40,6 +40,8 @@ class MultiFlow(Doer):
     def __init__(self):
         super().__init__()
         self.nn_ready = False
+        # size of the header needed in every mmaped file
+        self.header_size = 4
 
     # ----------------------------------------------------------------------------------
     #
@@ -126,8 +128,9 @@ class MultiFlow(Doer):
 
     def add_tracker(self):
         self.ntrackers -= 1
-        self.hire('Tracker_' + str(self.ntrackers), Tracker, self.ntrackers,
-                  self.system_cfg.data['system_info']['tracker_type'],
+        self.hire('Tracker_' + str(self.ntrackers), Tracker, id = self.ntrackers,
+                  header_size = self.header_size,
+                  tracker_type = self.system_cfg.data['system_info']['tracker_type'],
                   group = 'trackers')
             
     # ----------------------------------------------------------------------------------
@@ -149,7 +152,8 @@ class MultiFlow(Doer):
         cfg.start_time = self.system_cfg.data['system_info']['start_time']
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
         manager = self.hire(cfg.video_name, FlowManager, cfg, self._doers['trackers'],
-                            self._yolo, group = 'flow_manager')
+                            self._yolo, header_size = self.header_size,
+                            group = 'flow_manager')
         
     # ----------------------------------------------------------------------------------
     #

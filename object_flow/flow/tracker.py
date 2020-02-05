@@ -66,11 +66,18 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, id, tracker_type = 'dlib'):
+    def __initialize__(self, id, header_size, tracker_type = 'dlib'):
         # this tracker id
         self.id = id
+        self.header_size = header_size
         self.tracker_type = tracker_type
             
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # SERVICES
+    
     # ----------------------------------------------------------------------------------
     # Returns the id of this partial tracker
     # ----------------------------------------------------------------------------------
@@ -85,10 +92,10 @@ class Tracker(Doer):
     # item.  Better to use 'tracks_list' bellow.
     # ----------------------------------------------------------------------------------
 
-    def start_tracking(self, video_name, file_name, frame_index, size, width, height,
+    def start_tracking(self, video_name, file_name, frame_index, width, height,
                        depth, item_id, startX, startY, endX, endY):
 
-        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+        frame = self._get_frame(video_name, file_name, frame_index, width, height,
                                 depth)
         
         logging.info("started tracking for video %s item_id %d", video_name, item_id)
@@ -110,10 +117,10 @@ class Tracker(Doer):
     # tracks 1 item in the video.
     # ----------------------------------------------------------------------------------
 
-    def tracks_list(self, video_name, file_name, frame_index, size, width, height, depth,
+    def tracks_list(self, video_name, file_name, frame_index, width, height, depth,
                     items):
         
-        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+        frame = self._get_frame(video_name, file_name, frame_index, width, height,
                                 depth)
         
         # gets the correct list of video items.
@@ -131,10 +138,10 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def update_tracked_items(self, video_name, file_name, frame_index, size, width,
+    def update_tracked_items(self, video_name, file_name, frame_index, width,
                              height, depth):
 
-        frame = self._get_frame(video_name, file_name, frame_index, size, width, height,
+        frame = self._get_frame(video_name, file_name, frame_index, width, height,
                                 depth)
         
         # get all tracked objects from the given camera
@@ -177,8 +184,10 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _get_frame(self, video_name, file_name, frame_index, size, width, height, depth):
+    def _get_frame(self, video_name, file_name, frame_index, width, height, depth):
 
+        size = width * height * depth
+        
         # open the file descriptor if not already opened
         if not video_name in self._fd:
             self._fd[video_name] = os.open(file_name, os.O_RDONLY)
