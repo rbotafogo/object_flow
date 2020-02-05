@@ -53,6 +53,9 @@ class FlowManager(Doer):
         
         # id of the next item
         self.next_item_id = 0
+
+        # number of frames that can be stored in the mmaped file
+        self._buffer_max_size = 500
         
         # list of listeners interested to get a message everytime a new frame is
         # loaded
@@ -92,7 +95,8 @@ class FlowManager(Doer):
 
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
-                            self.path, group = 'decoders')
+                            self.path, buffer_max_size = self._buffer_max_size,
+                            group = 'decoders')
 
     # ----------------------------------------------------------------------------------
     #
@@ -211,15 +215,16 @@ class FlowManager(Doer):
         self.width = width
         self.height = height
         self.depth = depth
+        self.frame_size = self.height * self.width * self.depth
         
         # open the mmap file whith the decoded frame. 
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        # npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
-        # fd = os.open(mmap_path, os.O_RDONLY)
-        # self._raw_buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        # logging.info("mmap file for %s opened", self.video_name)
+        npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
+                 self._buffer_max_size)
+        fd = os.open(mmap_path, os.O_RDONLY)
+        self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
 
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -371,11 +376,10 @@ class FlowManager(Doer):
         # def continue_process(self, frame_number, size, frame_index):
         self.post(self.vd, '_manage_buffer', self._average)
         self.post(self.vd, '_get_next_mmap')
-        self._frame_size = self.height * self.width * self.depth
         self._index += 1
         if self._index == 499:
             self._index = 0
-        self.continue_process(self._total_frames, self._frame_size, self._index)
+        self.continue_process(self._total_frames, self.frame_size, self._index)
         
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method

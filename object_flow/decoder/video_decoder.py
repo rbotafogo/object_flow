@@ -54,8 +54,6 @@ class VideoDecoder(Doer):
         # loaded
         self._listeners = {}
 
-        # Maximum size of the frame buffer
-        self._buffer_max_size = 500
         self._frame_number_buffer = collections.deque()
         self._buffer_front = 0
         self._buffer_rear = 0
@@ -72,10 +70,11 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, path, width=500):
+    def __initialize__(self, video_name, path, buffer_max_size, width=500):
         
         self.path = path
         self.video_name = video_name
+        self._buffer_max_size = buffer_max_size
         self.scaled_width = width
         
         # open a file for storing the frames
