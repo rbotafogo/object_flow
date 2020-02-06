@@ -40,6 +40,9 @@ class MmapFrames:
         self.page_size = 4000
         self.header_size = 4
 
+        self._buffer_front = 0
+        self._buffer_rear = 0
+        
     # ---------------------------------------------------------------------------------
     # Open mmap file for reading only
     # ---------------------------------------------------------------------------------
@@ -50,10 +53,11 @@ class MmapFrames:
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
-                 self.buffer_max_size)
+        self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
+                       self.buffer_max_size)
         self._fd = os.open(self.mmap_path, os.O_RDONLY)
-        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * self._npage,
+                              access = mmap.ACCESS_READ)
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing
@@ -62,19 +66,84 @@ class MmapFrames:
     def open_write(self):
         
         self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
-                 self.buffer_max_size)
+        self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
+                       self.buffer_max_size)
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
         # says that memory sharing is possible
-        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
+        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * self._npage,
                               access = mmap.ACCESS_WRITE)
     
     # ---------------------------------------------------------------------------------
-    # Write 0 to the whole file
+    # Write 0 to actually mapped file in memory
     # ---------------------------------------------------------------------------------
 
+    def set0(self):
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
+        
+    # ---------------------------------------------------------------------------------
+    # Write the frame header
+    # ---------------------------------------------------------------------------------
+
+    def write_header(self, value):
+        pass
+    
+    # ---------------------------------------------------------------------------------
+    # Write the frame
+    # ---------------------------------------------------------------------------------
+
+    def write_frame(self, frame):
+        next_index = self._buffer_rear + 1
+        if next_index == self.buffer_max_size - 1:
+            next_index = 0
+
+        if next_index == self._buffer_front:
+            logging.warning("%s: mmap buffer is full", self.video_name)
+            return 0
+        else:
+            self._buffer_rear = next_index
+            # write the frame to the mmap file.  First move the offset to
+            # correct position
+            logging.debug("%s: writting to mmap position %d", self.video_name,
+                          self._buffer_rear)
+            self._buf.seek(self._buffer_rear * (self.frame_size + self.header_size))
+            self._buf.write(b'\x01\x01\x01\x01')
+            size = self._buf.write(frame)
+            return size
+    
+    # ---------------------------------------------------------------------------------
+    # Move to next frame
+    # ---------------------------------------------------------------------------------
+
+    def next_frame(self):
+        logging.debug("buffer front: %d, buffer rear: %d", self._buffer_front,
+                      self._buffer_rear)
+        if self._buffer_front == self._buffer_rear:
+            logging.info("%s: mmap file is empty", self.video_name)
+        else:
+            if self._buffer_front == self.buffer_max_size - 1:
+                self._buffer_front = 0
+            else:
+                self._buffer_front += 1
+        
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def is_empty(self):
+        return self._buffer_front == self._buffer_rear
+        
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def is_full(self):
+        next_index = self._buffer_rear + 1
+        if next_index == self.buffer_max_size - 1:
+            next_index = 0
+        
+        return next_index == self._buffer_front
     
     # ---------------------------------------------------------------------------------
     # Closes the mmap object

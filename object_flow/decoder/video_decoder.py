@@ -13,8 +13,6 @@
 ##########################################################################################
 
 # needed to open the mmap file
-import os
-import mmap
 import math
 
 import collections
@@ -53,8 +51,6 @@ class VideoDecoder(Doer):
         self._listeners = {}
 
         self._frame_number_buffer = collections.deque()
-        self._buffer_front = 0
-        self._buffer_rear = 0
         self._drop_frames = False
                 
         self._stream = None
@@ -74,11 +70,7 @@ class VideoDecoder(Doer):
         self.video_name = video_name
         self._buffer_max_size = buffer_max_size
         self.scaled_width = width
-        
-        # open a file for storing the frames
-        self.file_name = "log/mmap_" + self.video_name
-        self._fd = os.open(self.file_name, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        
+                
         # initialize the time counter
         self.init_time = time.perf_counter()
 
@@ -87,21 +79,10 @@ class VideoDecoder(Doer):
         self._open()
         self.frame_size = self.height * self.width * self.depth
         self.header_size = header_size
-                        
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
-                 self._buffer_max_size)
-        os.write(self._fd, b'\x00' * mmap.PAGESIZE * npage)
-        
-        # It seems that there is no way to share memory between processes in
-        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
-        # the file. I had hoped that we could share memory.  In Linux, documentation
-        # says that memory sharing is possible
-        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
-                              access = mmap.ACCESS_WRITE)
+
+        self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
+        self._mmap.open_write()
+        self._mmap.set0()
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(
@@ -198,20 +179,23 @@ class VideoDecoder(Doer):
             if self.frame_number % 100 == 0:
                 now = time.perf_counter()
                 self._capture_average = (now - self.init_time) / 100
-                logging.debug("%s: buffer size is %d", self.video_name, len(self._frame_number_buffer))
-                logging.debug("%s: average time video capture per frame for the last 100 frames is: %f",
-                             self.video_name, self._capture_average)
+                logging.debug(
+                    "%s: buffer size is %d", self.video_name, len(self._frame_number_buffer))
+                logging.debug(
+                    "%s: average time video capture per frame for the last 100 frames is: %f",
+                    self.video_name, self._capture_average)
                 self.init_time = now
 
             # buffer not full yet... add frame to buffer
-            if (len(self._frame_number_buffer) < self._buffer_max_size):
+            # if (len(self._frame_number_buffer) < self._buffer_max_size):
+            if not self._mmap.is_full():
                 if (self._drop_frames):
                     if ((self.frame_number % self._drop_by) != 0):
                         logging.debug("%s: adding frame %d", self.video_name,
                                      self.frame_number)
-                        self._add_to_mmap(frame)
+                        self._mmap.write_frame(frame)
                 else:
-                    self._add_to_mmap(frame)
+                    self._mmap.write_frame(frame)
                 
     # ----------------------------------------------------------------------------------
     # This method is called by the flow_manager to get the next available frame. Only
@@ -224,7 +208,7 @@ class VideoDecoder(Doer):
     def provide_next_frame(self, processing_average):
 
         # if mmap buffer empty, capture the next frame
-        if  self._buffer_front == self._buffer_rear:
+        if  self._mmap.is_empty():
             self.capture_next_frame()
 
         # manage how fast we allow the buffer to grow based on the speed we are
@@ -245,22 +229,7 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def _add_to_mmap(self, frame):
-        
-        next_index = self._buffer_rear + 1
-        if next_index == self._buffer_max_size - 1:
-            next_index = 0
-
-        if next_index == self._buffer_front:
-            logging.warning("%s: mmap buffer is full", self.video_name)
-        else:
-            self._buffer_rear = next_index
-            # write the frame to the mmap file.  First move the offset to
-            # correct position
-            logging.debug("%s: writting to mmap position %d", self.video_name,
-                          self._buffer_rear)
-            self._buf.seek(self._buffer_rear * (self.frame_size + self.header_size))
-            self._buf.write(b'\x01\x01\x01\x01')
-            size = self._buf.write(frame)
+        if self._mmap.write_frame(frame) != 0:
             self._frame_number_buffer.append((self.frame_number, size))
             
     # ----------------------------------------------------------------------------------
@@ -268,14 +237,8 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def _get_next_mmap(self):
-        if self._buffer_front == self._buffer_rear:
-            logging.info("%s: mmap file is empty", self.video_name)
-        else:
-            if self._buffer_front == self._buffer_max_size - 1:
-                self._buffer_front = 0
-            else:
-                self._buffer_front += 1
-
+        self._mmap.next_frame()
+        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
