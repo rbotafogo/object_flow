@@ -12,11 +12,6 @@
 # Written by Rodrigo Botafogo <rodrigo.a.botafogo@gmail.com>, 2019
 ##########################################################################################
 
-# needed to open the mmap file
-import os
-import mmap
-import math
-
 import logging
 import time
 
@@ -60,9 +55,6 @@ class Tracker(Doer):
         # videos and for each video, the list of itens it is tracking
         self.videos = {}
         
-        # file descriptors opened where frames are stored
-        self._fd = {}
-
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -90,15 +82,14 @@ class Tracker(Doer):
     # Registers a video with this tracker
     # ----------------------------------------------------------------------------------
 
-    def register_video(self, video_name, file_name, width, height, depth):
+    def register_video(self, video_name, width, height, depth):
         self.videos[video_name] = {}
         self.videos[video_name]['items'] = {}
-        self.videos[video_name]['file_name'] = file_name
         self.videos[video_name]['width'] = width
         self.videos[video_name]['height'] = height
         self.videos[video_name]['depth'] = depth
         self.videos[video_name]['frame_size'] = width * height * depth
-        self.videos[video_name]['frames'] = MmapFrames(file_name, width, height, depth)
+        self.videos[video_name]['frames'] = MmapFrames(video_name, width, height, depth)
         self.videos[video_name]['frames'].open_read()
         
     # ----------------------------------------------------------------------------------

@@ -27,9 +27,10 @@ class MmapFrames:
     #
     # ---------------------------------------------------------------------------------
 
-    def __init__(self, mmap_path, width, height, depth):
+    def __init__(self, video_name, width, height, depth):
 
-        self.mmap_path = mmap_path
+        self.video_name = video_name
+        self.mmap_path = "log/mmap_" + self.video_name
         self.width = width
         self.height = height
         self.depth = depth
@@ -40,7 +41,7 @@ class MmapFrames:
         self.header_size = 4
 
     # ---------------------------------------------------------------------------------
-    # Open mmap file
+    # Open mmap file for reading only
     # ---------------------------------------------------------------------------------
 
     def open_read(self):
@@ -49,11 +50,38 @@ class MmapFrames:
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        # npage = math.ceil((self.width * self.height * self.depth)/ 4000) + 10
         npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
                  self.buffer_max_size)
         self._fd = os.open(self.mmap_path, os.O_RDONLY)
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        
+    # ---------------------------------------------------------------------------------
+    # Open mmap file for writing
+    # ---------------------------------------------------------------------------------
+
+    def open_write(self):
+        
+        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
+                 self.buffer_max_size)
+        # It seems that there is no way to share memory between processes in
+        # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
+        # the file. I had hoped that we could share memory.  In Linux, documentation
+        # says that memory sharing is possible
+        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * npage,
+                              access = mmap.ACCESS_WRITE)
+    
+    # ---------------------------------------------------------------------------------
+    # Write 0 to the whole file
+    # ---------------------------------------------------------------------------------
+
+    
+    # ---------------------------------------------------------------------------------
+    # Closes the mmap object
+    # ---------------------------------------------------------------------------------
+
+    def close(self):
+        self._buf.close()
         
     # ---------------------------------------------------------------------------------
     # read the header and advance the pointer in the file to the next byte

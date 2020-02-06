@@ -44,14 +44,13 @@ class Display(Doer):
     # @param depth [Integer] depth of the image in the mmap file
     # ----------------------------------------------------------------------------------
 
-    def initialize_mmap(self, mmap_path, width, height, depth):
-        self.mmap_path = mmap_path
+    def initialize_mmap(self, width, height, depth):
         self.width = width
         self.height = height
         self.depth = depth
         self.frame_size = width * height * depth
 
-        self._mmap = MmapFrames(mmap_path, width, height, depth)
+        self._mmap = MmapFrames(self.video_name, width, height, depth)
         self._mmap.open_read()
         
     # ----------------------------------------------------------------------------------
@@ -59,7 +58,6 @@ class Display(Doer):
     # ----------------------------------------------------------------------------------
 
     def base_image(self, frame_index, items):
-        
         if self._stop:
             return
 

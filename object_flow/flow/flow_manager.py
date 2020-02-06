@@ -149,8 +149,7 @@ class FlowManager(Doer):
         logging.info("%s: starting playback", self.video_name)
         
         # initialize the display
-        self.phone(self._dp, 'initialize_mmap', self.file_name,
-                   self.width, self.height, self.depth,
+        self.phone(self._dp, 'initialize_mmap', self.width, self.height, self.depth,
                    callback = '_add_listener')
                 
     # ----------------------------------------------------------------------------------
@@ -190,7 +189,7 @@ class FlowManager(Doer):
         logging.info("%s: adding listener to flow_manager with name %s", self.video_name,
                      name)
         self._listeners[name] = address
-        return (self.file_name, self.width, self.height, self.depth)
+        return (self.width, self.height, self.depth)
     
     # ----------------------------------------------------------------------------------
     # Removes the listener
@@ -212,28 +211,33 @@ class FlowManager(Doer):
     # about the width, height and depth of the video being decoded. 
     # ----------------------------------------------------------------------------------
 
-    def initialize_mmap(self, mmap_path, width, height, depth):
+    def initialize_mmap(self, width, height, depth):
         
-        self.file_name = mmap_path
         self.width = width
         self.height = height
         self.depth = depth
         self.frame_size = self.height * self.width * self.depth
 
         self._registered_trackers = len(self.trackers)
-        
+
+        # register the video with yolo.
+        self.phone(self._yolo, 'register_video', self.video_name,
+                   self.width, self.height, self.depth, callback = 'register_done')
+
+        # register the video with all trackers.  Need to wait for the registration
+        # to be done to continues execution
         self._trackers_broadcast_with_callback(
-            'register_video', self.video_name, self.file_name,
+            'register_video', self.video_name,
             self.width, self.height, self.depth, callback = 'register_done')
         
         # open the mmap file whith the decoded frame. 
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
-                 self._buffer_max_size)
-        fd = os.open(mmap_path, os.O_RDONLY)
-        self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
+        # npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
+        #          self._buffer_max_size)
+        # fd = os.open(mmap_path, os.O_RDONLY)
+        # self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -244,7 +248,9 @@ class FlowManager(Doer):
 
     def register_done(self, ret_value):
         self._registered_trackers -= 1
-        if self._registered_trackers < 1:
+        # waiting for all trackers and also for yolo registration. Waiting for
+        # termination of trackers +1 (yolo) process
+        if self._registered_trackers < 0:
             # now that the mmap file has been initialized, we can call 'start_processing'
             # self.post(self.vd, 'start_processing')
             self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
@@ -472,8 +478,7 @@ class FlowManager(Doer):
         if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
             logging.debug("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
-            self.phone(self._yolo, 'find_bboxes', self.video_name, self.file_name,
-                       self.frame_index, self.width, self.height, self.depth,
+            self.phone(self._yolo, 'find_bboxes', self.video_name, self.frame_index,
                        callback = 'boxes_detected')
         else:
             # This is one problem with callback functions: the '_next_frame' method is
@@ -635,9 +640,6 @@ class FlowManager(Doer):
                 self._setting.items[self.next_item_id] = item
                 item.tracker_address = tracker[0]
 
-            # self.post(tracker[0], 'tracks_list', self.video_name,
-            #           self.file_name, self.frame_index, self.width,
-            #           self.height, self.depth, items)
             self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,
                       items)
                 

@@ -16,6 +16,7 @@
 import os
 import mmap
 import math
+
 import collections
 from urllib.parse import urlparse
 import time
@@ -29,10 +30,7 @@ import imutils
 
 from object_flow.ipc.doer import Doer
 from object_flow.decoder.drum_beat import DrumBeat
-
-# from datetime import timedelta
-# from sys import getsizeof
-# CHECK_PERIOD = timedelta(milliseconds=25)
+from object_flow.util.mmap_frames import MmapFrames
 
 #==========================================================================================
 #
@@ -134,7 +132,7 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def get_image_info(self):
-        return (self.file_name, self.width, self.height, self.depth)
+        return (self.width, self.height, self.depth)
     
     # ----------------------------------------------------------------------------------
     # Adds a new listener to this decoder. When a new listener is added it can receive
@@ -143,7 +141,7 @@ class VideoDecoder(Doer):
 
     def add_listener(self, name, address, callback):
         self._listeners[name] = (address, callback)
-        return (self.file_name, self.width, self.height, self.depth)
+        return (self.width, self.height, self.depth)
     
     # ----------------------------------------------------------------------------------
     # Removes the listener
