@@ -154,14 +154,14 @@ class MmapFrames:
             next_index = 0
 
         # check to see if the frame was already processed
-        val = -1
-        while val != 0:
-            val = int.from_bytes(
-                self.read_header(next_index), byteorder = 'big')
+        # val = -1
+        # while val != 0:
+        #     val = int.from_bytes(
+        #         self.read_header(next_index), byteorder = 'big')
             # if val != 0:
             #     logging.info("Waiting for flow_manager to finish processing the frame")
-            logging.debug("******index %d: buffer value %d ********",
-                          next_index, val)
+        #     logging.debug("******index %d: buffer value %d ********",
+        #                   next_index, val)
             
         self._buffer_rear = next_index
         # write the frame to the mmap file.  First move the offset to

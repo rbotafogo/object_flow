@@ -188,7 +188,7 @@ class VideoDecoder(Doer):
 
             if (self._drop_frames):
                 if ((self.frame_number % self._drop_by) == 0):
-                    logging.info("%s: adding frame %d", self.video_name,
+                    logging.debug("%s: adding frame %d", self.video_name,
                                  self.frame_number)
                     self._mmap.write_frame(frame, self.frame_number)
             else:
@@ -222,7 +222,7 @@ class VideoDecoder(Doer):
     def _manage_buffer(self, processing_average):
         if (processing_average != None and self._capture_average != None):
             per_diff = int(math.ceil(processing_average / self._capture_average))
-            logging.info("%s: speed difference is %d", self.video_name,
+            logging.debug("%s: speed difference is %d", self.video_name,
                           per_diff)
             if per_diff > 2:
                 self._drop_frames = True
