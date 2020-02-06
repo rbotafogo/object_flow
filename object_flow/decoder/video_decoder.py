@@ -186,38 +186,14 @@ class VideoDecoder(Doer):
                     self.video_name, self._capture_average)
                 self.init_time = now
 
-            # buffer not full yet... add frame to buffer
-            # if (len(self._frame_number_buffer) < self._buffer_max_size):
-            if not self._mmap.is_full():
-                if (self._drop_frames):
-                    if ((self.frame_number % self._drop_by) != 0):
-                        logging.debug("%s: adding frame %d", self.video_name,
-                                     self.frame_number)
-                        self._mmap.write_frame(frame)
-                else:
-                    self._mmap.write_frame(frame)
+            if (self._drop_frames):
+                if ((self.frame_number % self._drop_by) == 0):
+                    logging.info("%s: adding frame %d", self.video_name,
+                                 self.frame_number)
+                    self._mmap.write_frame(frame, self.frame_number)
+            else:
+                self._mmap.write_frame(frame, self.frame_number)
                 
-    # ----------------------------------------------------------------------------------
-    # This method is called by the flow_manager to get the next available frame. Only
-    # flow_manager should call this function.  Flow manager is registered as one of
-    # the listeners to this decoder and this is how all frames are processed,
-    # video_decoder next_frame and flow_manager's _next_frame each call each other
-    # 'recursively'.
-    # ----------------------------------------------------------------------------------
-
-    def provide_next_frame(self, processing_average):
-
-        # if mmap buffer empty, capture the next frame
-        if  self._mmap.is_empty():
-            self.capture_next_frame()
-
-        # manage how fast we allow the buffer to grow based on the speed we are
-        # consuming the buffer
-        self._manage_buffer(processing_average)
-
-        # return the frame_number and index of the next frame in the mmap file
-        return self._get_next_mmap()
-        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -246,7 +222,7 @@ class VideoDecoder(Doer):
     def _manage_buffer(self, processing_average):
         if (processing_average != None and self._capture_average != None):
             per_diff = int(math.ceil(processing_average / self._capture_average))
-            logging.debug("%s: speed difference is %d", self.video_name,
+            logging.info("%s: speed difference is %d", self.video_name,
                           per_diff)
             if per_diff > 2:
                 self._drop_frames = True

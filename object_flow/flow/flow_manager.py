@@ -32,6 +32,7 @@ from object_flow.util.geom import Geom
 from object_flow.decoder.video_decoder import VideoDecoder
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
+from object_flow.util.mmap_frames import MmapFrames
 
 #==========================================================================================
 # FlowManager manages the process of decoding, detection and tracking for one video
@@ -65,7 +66,7 @@ class FlowManager(Doer):
         self.playback = False
         self.playback_started = False
 
-        self._index = 0
+        self.frame_index = 0
         
         self._time_load = 0
         self._time_ckd = 0
@@ -91,6 +92,8 @@ class FlowManager(Doer):
         
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
+
+        self._last_detection = -self.cfg.data['video_analyser']['skip_detection_frames']
         
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
@@ -223,24 +226,19 @@ class FlowManager(Doer):
         # register the video with yolo.
         self.phone(self._yolo, 'register_video', self.video_name,
                    self.width, self.height, self.depth, callback = 'register_done')
-
+        
+        # open the mmap file with the decoded frames
+        self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
+        self._mmap.open_write2()
+        
+        self._fix_dimensions()
+        self._setting = Setting(self.cfg)
+        
         # register the video with all trackers.  Need to wait for the registration
         # to be done to continues execution
         self._trackers_broadcast_with_callback(
             'register_video', self.video_name,
             self.width, self.height, self.depth, callback = 'register_done')
-        
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        # npage = ((math.ceil((self.width * self.height * self.depth)/ 4000) + 10) *
-        #          self._buffer_max_size)
-        # fd = os.open(mmap_path, os.O_RDONLY)
-        # self._buf = mmap.mmap(fd, mmap.PAGESIZE * npage, access = mmap.ACCESS_READ)
-        
-        self._fix_dimensions()
-        self._setting = Setting(self.cfg)
         
     # ----------------------------------------------------------------------------------
     # 
@@ -266,11 +264,8 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def continue_process(self, frame_number, frame_index):
+    def continue_process(self):
 
-        self.frame_index = frame_index
-        
-        self.cfg.frame_number = frame_number
         # total number of frames process by flow_manager.  This is not necessarily
         # equal to frame_number, as the video decoder might have dropped frames
         # when processing is not fast enought
@@ -388,19 +383,23 @@ class FlowManager(Doer):
         # initialize the time_metric at every new frame
         self.time_metric = time.perf_counter()
         
-        # frame number from the video_decoder
-        # self.cfg.frame_number = self.provide_next_frame(self._average)
-
-        # call the video decoder to provide the next frame on the mmap_file
-        # self.phone(self.vd, 'provide_next_frame', self._average,
-        #            callback = 'continue_process')
-        # def continue_process(self, frame_number, size, frame_index):
         self.post(self.vd, '_manage_buffer', self._average)
-        self.post(self.vd, '_get_next_mmap')
-        self._index += 1
-        if self._index == 499:
-            self._index = 0
-        self.continue_process(self._total_frames, self._index)
+        self.frame_index += 1
+        if self.frame_index == 499:
+            self.frame_index = 0
+
+        fn = 0
+        while fn == 0:
+            fn = int.from_bytes(
+                self._mmap.read_header(self.frame_index), byteorder = 'big')
+
+        self.cfg.frame_number = fn
+        
+        logging.debug("******index %d: reading frame number %d ********",
+                     self.frame_index, fn)
+                            
+        # self.continue_process(self._total_frames)
+        self.continue_process()
         
     # ----------------------------------------------------------------------------------
     # Executes the tracking_phase of the algorithm.  Bascially calls method
@@ -475,7 +474,9 @@ class FlowManager(Doer):
 
     def _detection_phase(self):
         # do detection on the frame
-        if self._total_frames % self.cfg.data['video_analyser']['skip_detection_frames'] == 0:
+        if (self.cfg.frame_number >
+            self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
+            self._last_detection = self.cfg.frame_number
             logging.debug("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
             self.phone(self._yolo, 'find_bboxes', self.video_name, self.frame_index,
@@ -545,9 +546,11 @@ class FlowManager(Doer):
             self._total_time = 0
             self.proc_time = time.perf_counter()
             logging.info("===========================")
-       
-        # call the video decoder to process the next frame
-        # self.tell(self.video_name, 'next_frame', group = 'decoders')
+
+        # set the header of this frame to 0 indicating that this frame was processed
+        self._mmap.write_header(self.frame_index, 0)
+        
+        # process the next frame
         self._process_frame()
         
     # ----------------------------------------------------------------------------------
