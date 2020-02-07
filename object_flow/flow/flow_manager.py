@@ -280,8 +280,9 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
-        
+
         if not (items_update == None):
+            del_items = []
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
@@ -291,10 +292,12 @@ class FlowManager(Doer):
                 # Those that have not exited, should be updated
                 exit = self._setting._check_exit(bounding_box)
                 if exit:
-                    self._remove_item(item_id)
+                    # self._remove_item(item_id)
+                    del_items.append(item_id)
                 else:
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
+                self._remove_items(del_items)
 
         # are all trackers done? If all done then we can call the
         # detection phase
@@ -569,11 +572,34 @@ class FlowManager(Doer):
         for tracker_name, tracker in self.trackers.items():
             self.post(tracker[0], method, *args, **kwargs)
         
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def _remove_items(self, items_ids):
+        trackers = {}
+        
+        for item_id in items_ids:
+            # The item might have been removed by going out of the entry lines
+            if item_id in self._setting.items.keys():
+                item = self._setting.items[item_id]
+                key = str(item.tracker_address)
+                if key not in trackers:
+                    trackers[key] = {}
+                    trackers[key]['doer_address'] = item.tracker_address
+                    trackers[key]['items_ids'] = []
+                    trackers[key]['items_ids'].append(item_id)
+                del self._setting.items[item_id]
+
+        for key in trackers:
+            self.post(trackers[key]['doer_address'], 'stop_tracking_items',
+                      self.video_name, trackers[key]['items_ids']) 
+                      
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
-    def _remove_item(self, item_id):
+    def _remove_item2(self, item_id):
 
         # The item might have been removed by going out of the entry lines
         if item_id not in self._setting.items.keys():
@@ -588,7 +614,7 @@ class FlowManager(Doer):
     # 
     # ---------------------------------------------------------------------------------
 
-    def _remove_items(self, items):
+    def _remove_items2(self, items):
         for item in items:
             self._remove_item(item)
         

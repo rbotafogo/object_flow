@@ -130,7 +130,6 @@ class MultiFlow(Doer):
     def add_tracker(self):
         self.ntrackers -= 1
         self.hire('Tracker_' + str(self.ntrackers), Tracker, id = self.ntrackers,
-                  header_size = self.header_size,
                   tracker_type = self.system_cfg.data['system_info']['tracker_type'],
                   group = 'trackers')
             

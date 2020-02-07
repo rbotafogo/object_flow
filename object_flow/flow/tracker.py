@@ -59,10 +59,9 @@ class Tracker(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, id, header_size, tracker_type = 'dlib'):
+    def __initialize__(self, id, tracker_type = 'dlib'):
         # this tracker id
         self.id = id
-        self.header_size = header_size
         self.tracker_type = tracker_type
             
     # ----------------------------------------------------------------------------------
@@ -144,6 +143,14 @@ class Tracker(Doer):
         video_items = self.videos[video_name]['items']
         del video_items[item_id]
     
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def stop_tracking_items(self, video_name, items_ids):
+        for item_id in items_ids:
+            del self.videos[video_name]['items'][item_id]
+            
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
