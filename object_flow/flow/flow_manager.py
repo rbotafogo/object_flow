@@ -277,6 +277,25 @@ class FlowManager(Doer):
         self._tracking_phase()
                     
     # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def _check_bbox_int(self, bbox):
+        p0 = bbox[0]
+        p1 = bbox[1]
+        p2 = bbox[2]
+        p3 = bbox[3]
+
+        if not isinstance(p0, int):
+            logging.warning('p0 not int')
+        if not isinstance(p1, int):
+            logging.warning('p1 not int')
+        if not isinstance(p2, int):
+            logging.warning('p2 not int')
+        if not isinstance(p3, int):
+            logging.warning('p3 not int')
+
+    # ----------------------------------------------------------------------------------
     # When tracking is done, the trackers calls back this method with the updated
     # items information
     # ----------------------------------------------------------------------------------
@@ -290,9 +309,11 @@ class FlowManager(Doer):
                 bounding_box = update[1]
                 self._setting.update(bounding_box)
 
+                self._check_bbox_int(bounding_box)
+                
                 # check and remove all bounding boxes that have exited the setting.
                 # Those that have not exited, should be updated
-                exit = self._setting._check_exit(bounding_box)
+                exit = self._setting.check_exit(bounding_box)
                 if exit:
                     # self._remove_item(item_id)
                     del_items.append(item_id)

@@ -43,7 +43,7 @@ class Setting:
     #
     # ---------------------------------------------------------------------------------
 
-    # SERVICES
+    # PROTECTED METHODS
     
     # ---------------------------------------------------------------------------------
     # Add new detected elements to the setting if they are not already tracked and
@@ -78,33 +78,6 @@ class Setting:
         self.items[item_id].tracker_update(
             frame_number, confidence, bounding_box[0], bounding_box[1],
             bounding_box[2], bounding_box[3])
-    
-    # ---------------------------------------------------------------------------------
-    # Check if two trackable objects have an iou grater than a given value. If they
-    # have, return the index of the trackable object that overlaps the given object
-    # ---------------------------------------------------------------------------------
-
-    def _has_overlap(self, item, min_index):
-
-        keys = list(self.items.keys())
-        
-        for i in range(min_index, len(keys)):
-            ti = self.items[keys[i]]
-            try: 
-                iou = Geom.iou(item.startX, item.startY, item.endX, item.endY,
-                               ti.startX, ti.startY, ti.endX, ti.endY,)
-            except OverflowError:
-                logging.info("%s: has_overlap overflow: (%d, %d, %d, %d)-(%d, %d, %d, %d)",
-                             self.video_name, 
-                             item.startX, item.startY, item.endX, item.endY,
-                             ti.startX, ti.startY, ti.endX, ti.endY)
-                iou = 0
-            
-            if (iou > self.cfg.data['trackable_objects']['drop_overlap'] and
-                  item.direction == ti.direction):
-                return keys[i]
-            
-        return -1
     
     # ---------------------------------------------------------------------------------
     # Checks all tracked objects and drop those that have similar bounding boxes.
@@ -147,10 +120,53 @@ class Setting:
         CSV.csv_schedule(self.cfg)
     
     # ---------------------------------------------------------------------------------
+    # checks if the item has crossed an entry_line and is exiting the setting
+    # ---------------------------------------------------------------------------------
+
+    def check_exit(self, bounding_box):
+
+        for spec, new_top, new_bottom in self._positions_box_line(bounding_box):
+            # side1 indicates the valid region for entry, that is, the area
+            # in which if the object´s bounding box is completely inside
+            # then it should be seen.
+            # a split object in relation to an entry line should not be allowed
+            if (new_top != new_bottom):
+                return True
+
+        return False
+                    
+    # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
 
     # PRIVATE METHODS
+    
+    # ---------------------------------------------------------------------------------
+    # Check if two trackable objects have an iou grater than a given value. If they
+    # have, return the index of the trackable object that overlaps the given object
+    # ---------------------------------------------------------------------------------
+
+    def _has_overlap(self, item, min_index):
+
+        keys = list(self.items.keys())
+        
+        for i in range(min_index, len(keys)):
+            ti = self.items[keys[i]]
+            try: 
+                iou = Geom.iou(item.startX, item.startY, item.endX, item.endY,
+                               ti.startX, ti.startY, ti.endX, ti.endY,)
+            except OverflowError:
+                logging.info("%s: has_overlap overflow: (%d, %d, %d, %d)-(%d, %d, %d, %d)",
+                             self.video_name, 
+                             item.startX, item.startY, item.endX, item.endY,
+                             ti.startX, ti.startY, ti.endX, ti.endY)
+                iou = 0
+            
+            if (iou > self.cfg.data['trackable_objects']['drop_overlap'] and
+                  item.direction == ti.direction):
+                return keys[i]
+            
+        return -1
     
     # ----------------------------------------------------------------------------------
     #
@@ -265,22 +281,6 @@ class Setting:
                 
         return valid_boxes
     
-    # ---------------------------------------------------------------------------------
-    # checks if the item has crossed an entry_line and is exiting the setting
-    # ---------------------------------------------------------------------------------
-
-    def _check_exit(self, bounding_box):
-
-        for spec, new_top, new_bottom in self._positions_box_line(bounding_box):
-            # side1 indicates the valid region for entry, that is, the area
-            # in which if the object´s bounding box is completely inside
-            # then it should be seen.
-            # a split object in relation to an entry line should not be allowed
-            if (new_top != new_bottom):
-                return True
-
-        return False
-                    
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
