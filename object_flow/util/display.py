@@ -51,7 +51,7 @@ class Display(Doer):
         self.frame_size = width * height * depth
 
         self._mmap = MmapFrames(self.video_name, width, height, depth)
-        self._mmap.open_read()
+        self._mmap.open_write2()
         
     # ----------------------------------------------------------------------------------
     # 
@@ -137,10 +137,13 @@ class Display(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def display(self):
+    def display(self, frame_index):
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
                              self._read_input, self.video_name)
+        
+        # set the header of this frame to 0 indicating that this frame was processed
+        self._mmap.write_header(frame_index, 0)
         
         cv2.waitKey(25)
 

@@ -231,7 +231,7 @@ class FlowManager(Doer):
         
         # open the mmap file with the decoded frames
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
-        self._mmap.open_write2()
+        self._mmap.open_read()
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -420,8 +420,8 @@ class FlowManager(Doer):
                 self._mmap.read_header(self.frame_index), byteorder = 'big')
 
         # if (self.video_name == 'cshopp1'):
-        #     logging.warning("%s: processing frame number: %d", self.video_name,
-        #                     fn)
+        #     logging.warning("%s: processing index %d with frame number: %d",
+        #                     self.video_name, self.frame_index, fn)
             
         self.cfg.frame_number = fn
         
@@ -578,7 +578,7 @@ class FlowManager(Doer):
             logging.info("===========================")
 
         # set the header of this frame to 0 indicating that this frame was processed
-        self._mmap.write_header(self.frame_index, 0)
+        # self._mmap.write_header(self.frame_index, 0)
         
         # process the next frame
         self._process_frame()
@@ -745,7 +745,7 @@ class FlowManager(Doer):
             self.post(listener, 'add_id')
             self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
             self.post(listener, 'add_lines', self.cfg.data['counting_lines'], True)
-            self.post(listener, 'display')
+            self.post(listener, 'display', self.frame_index)
         
     # ----------------------------------------------------------------------------------
     # Dimension configurations (on the configuration file) are done over an image of

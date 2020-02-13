@@ -158,11 +158,11 @@ class MmapFrames:
         while val != 0:
             val = int.from_bytes(
                 self.read_header(next_index), byteorder = 'big')
-            # if val != 0:
-            #     logging.info("Waiting for flow_manager to finish processing the frame")
-            logging.debug("******index %d: buffer value %d ********",
-                          next_index, val)
-            
+
+        # if (self.video_name == 'cshopp1'):
+        #     logging.debug("******%s: writing index %d: buffer value %d ********",
+        #                   self.video_name, next_index, frame_number)
+        
         self._buffer_rear = next_index
         # write the frame to the mmap file.  First move the offset to
         # correct position
