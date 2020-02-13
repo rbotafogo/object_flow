@@ -177,6 +177,7 @@ class FlowManager(Doer):
             return
 
         logging.info("stopping playback for video %s", self.video_name)
+        
         self.remove_listener(self.video_name)
         self.destroy_window(self.video_name)
         
@@ -388,14 +389,18 @@ class FlowManager(Doer):
         
         self.post(self.vd, '_manage_buffer', self._average)
         self.frame_index += 1
-        if self.frame_index == 499:
+        if self.frame_index == self._buffer_max_size - 1:
             self.frame_index = 0
 
         fn = 0
-        while fn == 0:
+        while fn == 0 or fn < self.cfg.frame_number:
             fn = int.from_bytes(
                 self._mmap.read_header(self.frame_index), byteorder = 'big')
 
+        # if (self.video_name == 'cshopp1'):
+        #     logging.warning("%s: processing frame number: %d", self.video_name,
+        #                     fn)
+            
         self.cfg.frame_number = fn
         
         logging.debug("******index %d: reading frame number %d ********",
