@@ -594,30 +594,7 @@ class FlowManager(Doer):
         for key in trackers:
             self.post(trackers[key]['doer_address'], 'stop_tracking_items',
                       self.video_name, trackers[key]['items_ids']) 
-                      
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def _remove_item2(self, item_id):
-
-        # The item might have been removed by going out of the entry lines
-        if item_id not in self._setting.items.keys():
-            return
-        
-        item = self._setting.items[item_id]
-        del self._setting.items[item_id]
-        self.post(
-            item.tracker_address, 'stop_tracking', self.video_name, item_id)
-    
-    # ---------------------------------------------------------------------------------
-    # 
-    # ---------------------------------------------------------------------------------
-
-    def _remove_items2(self, items):
-        for item in items:
-            self._remove_item(item)
-        
+                              
     # ---------------------------------------------------------------------------------
     # 
     # ---------------------------------------------------------------------------------
@@ -789,3 +766,34 @@ class FlowManager(Doer):
         # Display we have just created above
         self.add_listener(self.video_name, self._dp)
         self.playback_started = True
+
+
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    # DEPRECATED
+    
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def _remove_item2(self, item_id):
+
+        # The item might have been removed by going out of the entry lines
+        if item_id not in self._setting.items.keys():
+            return
+        
+        item = self._setting.items[item_id]
+        del self._setting.items[item_id]
+        self.post(
+            item.tracker_address, 'stop_tracking', self.video_name, item_id)
+    
+    # ---------------------------------------------------------------------------------
+    # 
+    # ---------------------------------------------------------------------------------
+
+    def _remove_items2(self, items):
+        for item in items:
+            self._remove_item(item)
+        

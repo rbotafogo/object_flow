@@ -113,27 +113,22 @@ class YoloTf2(Doer):
         width = self.videos[video_name]['width']
         height = self.videos[video_name]['height']
         
-        # Resize the frame to 416 x 416 as required by Yolo and then convert it
-        # to RGB
-        frame = cv2.resize(frame, (416, 416))
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
         # initialize our lists of detected bounding boxes, confidences,
         # and class IDs, respectively
         boxes = []
         confidences = []
         classIDs = []
     
-        img = frame
-
         # resize the image to 416 x 416 (seems to be the dimention required by yolo)
-        # imge = np.array(img).reshape(-1, 416, 416, 3)
-        imge = tf.expand_dims(img, 0)
-        imge = transform_images(imge, 416)
+        # to RGB
+        frame = cv2.resize(frame, (416, 416))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        imge = transform_images(tf.expand_dims(frame, 0), 416)
 
         bboxes, scores, classes, nums = self.yolo.predict(imge)
         bboxes, objectness, classes, nums = bboxes[0], scores[0], classes[0], nums[0]
-        wh = np.flip(img.shape[0:2])
+
+        wh = np.flip(frame.shape[0:2])
 
         # Constants needed to resize the identified bboxes to the original frame size
         kw = width/416
