@@ -54,7 +54,7 @@ class MmapBboxes:
         # number of pages is calculated from the image size
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
-        self._npage = ((math.ceil(self.bboxes_size / self.page_size) + 10)
+        self._npage = (math.ceil(self.bboxes_size / self.page_size) + 10)
         self._fd = os.open(self.mmap_path, os.O_RDONLY)
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * self._npage,
                               access = mmap.ACCESS_READ)
