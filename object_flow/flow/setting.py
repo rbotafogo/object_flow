@@ -208,14 +208,14 @@ class Setting:
     #
     # ---------------------------------------------------------------------------------
 
-    def _position_item_line(self, end_points, pX, pY):
+    def _position_item_line(self, end_points, pX, pY, pos):
         try: 
             position = Geom.point_position(
                 end_points[0], end_points[1], end_points[2], end_points[3],
                 pX, pY)
         except OverflowError:
-            self._overflow_warning("check_exit: new_top", end_points,
-                                   pX, pY)
+            self._overflow_warning("checking postion relative to line new_" + pos,
+                                   end_points, pX, pY)
             position = False
             
         return position
@@ -227,8 +227,8 @@ class Setting:
     def _positions_box_line(self, box):
         for key, spec in self.cfg.data["entry_lines"].items():
             end_points = spec["end_points"]
-            top = self._position_item_line(end_points, box[0], box[1])
-            bottom = self._position_item_line(end_points, box[2], box[3])
+            top = self._position_item_line(end_points, box[0], box[1], 'top')
+            bottom = self._position_item_line(end_points, box[2], box[3], 'bottom')
 
             yield (spec, top, bottom)
     

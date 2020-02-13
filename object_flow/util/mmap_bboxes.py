@@ -27,8 +27,10 @@ class MmapBboxes:
     #
     # ---------------------------------------------------------------------------------
 
-    def __init__(self):
+    def __init__(self, video_name):
 
+        self.video_name = video_name
+        
         self.mmap_path = "log/mmap_bboxes"
         self.page_size = 4000
         self.header_size = 8

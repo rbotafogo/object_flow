@@ -33,6 +33,7 @@ from object_flow.decoder.video_decoder import VideoDecoder
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
 from object_flow.util.mmap_frames import MmapFrames
+from object_flow.util.mmap_bboxes import MmapBboxes
 
 #==========================================================================================
 # FlowManager manages the process of decoding, detection and tracking for one video
