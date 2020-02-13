@@ -421,9 +421,9 @@ class Setting:
         
         end_points = spec["end_points"]
         # find the top position in relation to the given line
-        new_top = self._position_item_line(end_points, item.startX, item.startY)
+        new_top = self._position_item_line(end_points, item.startX, item.startY, 'top')
         # find the bottom position in relation to the given line
-        new_bottom = self._position_item_line(end_points, item.endX, item.endY)
+        new_bottom = self._position_item_line(end_points, item.endX, item.endY, 'bottom')
         
         return(new_top, new_bottom)
     
