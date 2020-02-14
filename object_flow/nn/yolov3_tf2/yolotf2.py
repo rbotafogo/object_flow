@@ -109,7 +109,7 @@ class YoloTf2(Doer):
 
     def find_bboxes(self, video_name, frame_index):
 
-        header, frame = self.videos[video_name]['frames'].read_data(frame_index)
+        frame_number, frame = self.videos[video_name]['frames'].read_data(frame_index)
         width = self.videos[video_name]['width']
         height = self.videos[video_name]['height']
         

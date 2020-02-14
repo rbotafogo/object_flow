@@ -51,18 +51,19 @@ class Display(Doer):
         self.frame_size = width * height * depth
 
         self._mmap = MmapFrames(self.video_name, width, height, depth)
-        self._mmap.open_write2()
+        self._mmap.open_read()
         
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
-    def base_image(self, frame_index, items):
+    def base_image(self, items):
         if self._stop:
             return
 
         self.items = items
-        header, self.frame = self._mmap.read_data(frame_index)
+        # header, self.frame = self._mmap.read_data(frame_index)
+        header, self.frame = self._mmap.read_last()
         
     # ----------------------------------------------------------------------------------
     # overlay the bounding boxes on the frame. If centroids = True then add also the
@@ -137,13 +138,10 @@ class Display(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def display(self, frame_index):
+    def display(self):
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
                              self._read_input, self.video_name)
-        
-        # set the header of this frame to 0 indicating that this frame was processed
-        self._mmap.write_header(frame_index, 0)
         
         cv2.waitKey(25)
 

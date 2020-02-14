@@ -231,7 +231,7 @@ class FlowManager(Doer):
         
         # open the mmap file with the decoded frames
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
-        self._mmap.open_read()
+        self._mmap.open_write2()
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -416,8 +416,7 @@ class FlowManager(Doer):
 
         fn = 0
         while fn == 0 or fn < self.cfg.frame_number:
-            fn = int.from_bytes(
-                self._mmap.read_header(self.frame_index), byteorder = 'big')
+            fn = self._mmap.read_header(self.frame_index)
 
         # if (self.video_name == 'cshopp1'):
         #     logging.warning("%s: processing index %d with frame number: %d",
@@ -578,7 +577,11 @@ class FlowManager(Doer):
             logging.info("===========================")
 
         # set the header of this frame to 0 indicating that this frame was processed
-        # self._mmap.write_header(self.frame_index, 0)
+        self._mmap.write_header(self.frame_index, 0)
+        # copy the current frame to the last position on the buffer that is never
+        # used. This will be used by the 'display' and other listeners to work
+        # with this frame
+        self._mmap.copy_last(self.frame_index)
         
         # process the next frame
         self._process_frame()
@@ -739,13 +742,12 @@ class FlowManager(Doer):
             # listener: doer's address
             # when sending the base image, send also all the items, so that they
             # can be used by other methods
-            self.post(listener, 'base_image', self.frame_index,
-                      list(self._setting.items.values()))
+            self.post(listener, 'base_image', list(self._setting.items.values()))
             self.post(listener, 'overlay_bboxes')
             self.post(listener, 'add_id')
             self.post(listener, 'add_lines', self.cfg.data['entry_lines'])
             self.post(listener, 'add_lines', self.cfg.data['counting_lines'], True)
-            self.post(listener, 'display', self.frame_index)
+            self.post(listener, 'display')
         
     # ----------------------------------------------------------------------------------
     # Dimension configurations (on the configuration file) are done over an image of

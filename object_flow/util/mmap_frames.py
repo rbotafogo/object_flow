@@ -53,7 +53,7 @@ class MmapFrames:
         # ceil((width x height x 3) / 4k (page size) + k), where k is a small
         # value to make sure that all image overhead are accounted for. 
         self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
-                       self.buffer_max_size)
+                       self.buffer_max_size + 1)
         self._fd = os.open(self.mmap_path, os.O_RDONLY)
         self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * self._npage,
                               access = mmap.ACCESS_READ)
@@ -66,7 +66,7 @@ class MmapFrames:
         
         self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
         self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
-                       self.buffer_max_size)
+                       self.buffer_max_size + 1)
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
@@ -82,7 +82,7 @@ class MmapFrames:
         
         self._fd = os.open(self.mmap_path, os.O_RDWR)
         self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
-                       self.buffer_max_size)
+                       self.buffer_max_size + 1)
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
@@ -117,7 +117,10 @@ class MmapFrames:
 
     def read_header(self, frame_index):
         self.set_pointer(frame_index)
-        return self._buf.read(self.header_size)
+        header = self._buf.read(self.header_size)
+        frame_number = int.from_bytes(header, byteorder = 'big')
+        
+        return frame_number
 
     # ---------------------------------------------------------------------------------
     # reads the header and frame at the given index from the mmap file
@@ -127,10 +130,26 @@ class MmapFrames:
         
         self.set_pointer(frame_index)
         header = self._buf.read(self.header_size)
+        frame_number = int.from_bytes(header, byteorder = 'big')
         b2 = np.frombuffer(self._buf.read(self.frame_size), dtype=np.uint8)
         frame = b2.reshape((self.height, self.width, self.depth))
 
-        return (header, frame)
+        return (frame_number, frame)
+    
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def copy_last(self, frame_index):
+        frame_number, frame = self.read_data(frame_index)
+        self._write_frame(self.buffer_max_size, frame, frame_number)
+        
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def read_last(self):
+        return self.read_data(self.buffer_max_size)
     
     # ---------------------------------------------------------------------------------
     # Write the frame header
@@ -146,6 +165,15 @@ class MmapFrames:
     # Write the frame
     # ---------------------------------------------------------------------------------
 
+    def _write_frame(self, index, frame, frame_number):
+        self.write_header(index, frame_number)
+        size = self._buf.write(frame)
+        return size
+        
+    # ---------------------------------------------------------------------------------
+    # Write the frame
+    # ---------------------------------------------------------------------------------
+
     def write_frame(self, frame, frame_number):
         # fn = frame_number.to_bytes(8, byteorder = 'big')
         
@@ -156,20 +184,17 @@ class MmapFrames:
         # check to see if the frame was already processed
         val = -1
         while val != 0:
-            val = int.from_bytes(
-                self.read_header(next_index), byteorder = 'big')
+            val = self.read_header(next_index)
 
         # if (self.video_name == 'cshopp1'):
         #     logging.debug("******%s: writing index %d: buffer value %d ********",
         #                   self.video_name, next_index, frame_number)
         
         self._buffer_rear = next_index
-        # write the frame to the mmap file.  First move the offset to
-        # correct position
         logging.debug("%s: writting to mmap position %d", self.video_name,
                       self._buffer_rear)
-        # self._buf.seek(self._buffer_rear * (self.frame_size + self.header_size))
-        # self._buf.write(fn)
+        
+        # write the frame to the mmap file.
         self.write_header(next_index, frame_number)
         size = self._buf.write(frame)
         return size
