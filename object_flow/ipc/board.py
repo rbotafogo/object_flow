@@ -36,6 +36,7 @@ class Board(HR):
     
     def __init__(self, proc = 'tcp', logcfg = None):
         super().__init__()
+        
         if proc == 'tcp':
             logging.info("Starting Actor System with mutiplrocTCPBase")
             self._system = ActorSystem('multiprocTCPBase', logDefs=logcfg)
@@ -69,6 +70,9 @@ class Board(HR):
         doer = self._system.createActor(
             klass, target_actor_requirements, global_name, source_hash)
         self._doers[group][name] = doer
+
+        # self.phone(doer, '__set_id__', *args, _name_ = name, _group_ = group,
+        #            **kwargs, callback = '__hired__')
 
         if '__initialize__' in dir(klass):
             method = getattr(klass, '__initialize__')
@@ -134,6 +138,18 @@ class Board(HR):
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
+
+    def all_doers_address(self):
+        for group in self._doers:
+            for doer in self._doers[group].items():
+                yield doer[1]
+            
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
     
     def shutdown(self):
+        for doer_address in self.all_doers_address():
+            self.post(doer_address, 'actor_exit_request', 'exit', doer_address)
+        
         self._system.shutdown()

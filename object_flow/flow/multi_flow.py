@@ -40,6 +40,12 @@ class MultiFlow(Doer):
     def __init__(self):
         super().__init__()
         self.nn_ready = False
+        # TODO: the name should be set by the hiring doer.  In this case the
+        # hiring doer is the Board and all the Board communication (ipc) needs
+        # to be improved
+        self.name = 'MultiFlow'
+        self.group = 'default'
+        
         # size of the header needed in every mmaped file
         self.header_size = 4
 
