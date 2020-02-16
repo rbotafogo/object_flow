@@ -27,8 +27,9 @@ class MmapBboxes:
     #
     # ---------------------------------------------------------------------------------
 
-    def __init__(self, video_name):
+    def __init__(self, video_name, video_id):
 
+        self.video_id = video_id
         self.video_name = video_name
         
         self.mmap_path = "log/mmap_bboxes"
@@ -39,7 +40,6 @@ class MmapBboxes:
         # + 1 int for classID (4 bytes)
         self.bbox_size = 4 * 4 + 1 * 4 + 1 * 4
         self.max_bboxes = 50
-        self.num_videos = 0
 
         # maximum size in bytes of bounding boxes for one video
         self.bboxes_size = self.max_bboxes * self.bbox_size
@@ -56,8 +56,8 @@ class MmapBboxes:
         # value to make sure that all image overhead are accounted for. 
         self._npage = (math.ceil(self.bboxes_size / self.page_size) + 10)
         self._fd = os.open(self.mmap_path, os.O_RDONLY)
-        self._buf = mmap.mmap(self._fd, mmap.PAGESIZE * self._npage,
-                              access = mmap.ACCESS_READ)
+        self._buf = mmap.mmap(self._fd, self.bboxes_size, access = mmap.ACCESS_READ,
+                              offset = self.video_id * self.bboxes_size)
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing
@@ -117,5 +117,3 @@ class MmapBboxes:
         self.write_header(next_index, frame_number)
         size = self._buf.write(frame)
         return size
-    
-        

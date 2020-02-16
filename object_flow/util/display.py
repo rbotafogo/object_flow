@@ -36,23 +36,19 @@ class Display(Doer):
         self._stop = False
     
     # ----------------------------------------------------------------------------------
-    # Callback method needed to initialize the mmap file.  This could be called by
-    # any mmap file generator.
-    # @param mmap_path [String] path of the mmap file
-    # @param width [Integer] width of the image in the mmap file
-    # @param height [Integer] height of the image in the mmap file
-    # @param depth [Integer] depth of the image in the mmap file
+    # 
     # ----------------------------------------------------------------------------------
 
-    def initialize_mmap(self, width, height, depth):
-        self.width = width
-        self.height = height
-        self.depth = depth
-        self.frame_size = width * height * depth
+    def terminate(self):
+        super().terminate()
+        self._mmap.close()
+    
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
 
-        self._mmap = MmapFrames(self.video_name, width, height, depth)
-        self._mmap.open_read()
-        
+    # SERVICES
+    
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -153,6 +149,30 @@ class Display(Doer):
     def destroy_window(self):
         self._stop = True
         cv2.destroyAllWindows()        
+        
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    # CALLBACK METHODS
+    
+    # ----------------------------------------------------------------------------------
+    # Callback method needed to initialize the mmap file.  This could be called by
+    # any mmap file generator.
+    # @param mmap_path [String] path of the mmap file
+    # @param width [Integer] width of the image in the mmap file
+    # @param height [Integer] height of the image in the mmap file
+    # @param depth [Integer] depth of the image in the mmap file
+    # ----------------------------------------------------------------------------------
+
+    def initialize_mmap(self, width, height, depth):
+        self.width = width
+        self.height = height
+        self.depth = depth
+        self.frame_size = width * height * depth
+
+        self._mmap = MmapFrames(self.video_name, width, height, depth)
+        self._mmap.open_read()
         
     # ----------------------------------------------------------------------------------
     # 

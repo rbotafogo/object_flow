@@ -49,6 +49,9 @@ class MultiFlow(Doer):
         # size of the header needed in every mmaped file
         self.header_size = 4
 
+        # if of the flow_manager
+        self._next_flow_id = 0
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -157,9 +160,11 @@ class MultiFlow(Doer):
         # the Yolo neural net
         cfg.start_time = self.system_cfg.data['system_info']['start_time']
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
-        manager = self.hire(cfg.video_name, FlowManager, cfg, self._doers['trackers'],
-                            self._yolo, header_size = self.header_size,
-                            group = 'flow_manager')
+        manager = self.hire(
+            cfg.video_name, FlowManager, cfg, self._doers['trackers'],
+            self._yolo, self._next_flow_id, header_size = self.header_size,
+            group = 'flow_manager')
+        self._next_flow_id += 1
         
     # ----------------------------------------------------------------------------------
     #

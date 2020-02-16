@@ -84,11 +84,13 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo, header_size):
+    def __initialize__(self, cfg, trackers, yolo, flow_id, header_size):
+        
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
         self._yolo = yolo
+        self.flow_id = flow_id
         self.header_size = header_size
         
         self.video_name = cfg.video_name
@@ -124,6 +126,7 @@ class FlowManager(Doer):
     def terminate(self):
         for doer_address in self.all_doers_address():
             self.send(doer_address, 'actor_exit_request')
+        self._mmap.close()
         
     # ----------------------------------------------------------------------------------
     #
@@ -232,6 +235,10 @@ class FlowManager(Doer):
         # open the mmap file with the decoded frames
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
         self._mmap.open_write2()
+
+        # open the mmap file for communicating bounding boxes with yolo
+        self._mmap_bbox = MmapBboxes(self.video_name, self.flow_id)
+        logging.info("%s: mmap_bbox id is %d", self.video_name, self.flow_id)
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
