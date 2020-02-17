@@ -89,9 +89,10 @@ class Tracker(Doer):
     # Registers a video with this tracker
     # ----------------------------------------------------------------------------------
 
-    def register_video(self, video_name, width, height, depth):
+    def register_video(self, video_name, video_id, width, height, depth):
         self.videos[video_name] = {}
         self.videos[video_name]['items'] = {}
+        self.videos[video_name]['video_id'] = video_id
         self.videos[video_name]['width'] = width
         self.videos[video_name]['height'] = height
         self.videos[video_name]['depth'] = depth

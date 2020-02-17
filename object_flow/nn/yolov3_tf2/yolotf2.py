@@ -24,6 +24,7 @@ from object_flow.ipc.doer import Doer
 from object_flow.nn.yolov3_tf2.models import YoloV3
 from object_flow.nn.yolov3_tf2.dataset import transform_images
 from object_flow.util.mmap_frames import MmapFrames
+from object_flow.util.mmap_bboxes import MmapBboxes
 
 # from object_flow.nn.yolov3_tf2.models import YoloV3Tiny
 
@@ -76,13 +77,15 @@ class YoloTf2(Doer):
     #
     # ---------------------------------------------------------------------------------
 
-    def __initialize__(self, confidence, threshold, header_size):
+    def __initialize__(self, confidence, threshold):
         logging.info("Yolo, setting confidence to %f", confidence)
         logging.info("Yolo, setting threshold to %f", threshold)
         
         self.min_confidence = confidence
         self.threshold = threshold
-        self.header_size = header_size
+        
+        # mmap file for writing detected object's bounding boxes
+        self._mmap_bbox = MmapBboxes()
         
     # ----------------------------------------------------------------------------------
     # 
@@ -102,12 +105,14 @@ class YoloTf2(Doer):
     # Registers a video with this tracker
     # ----------------------------------------------------------------------------------
 
-    def register_video(self, video_name, width, height, depth):
+    def register_video(self, video_name, video_id, width, height, depth):
         self.videos[video_name] = {}
+        self.videos[video_name]['video_id'] = video_id
         self.videos[video_name]['width'] = width
         self.videos[video_name]['height'] = height
         self.videos[video_name]['depth'] = depth
         self.videos[video_name]['frame_size'] = width * height * depth
+        # mmap file for accessing video frames
         self.videos[video_name]['frames'] = MmapFrames(video_name, width, height, depth)
         self.videos[video_name]['frames'].open_read()
         
@@ -118,8 +123,11 @@ class YoloTf2(Doer):
     def find_bboxes(self, video_name, frame_index):
 
         frame_number, frame = self.videos[video_name]['frames'].read_data(frame_index)
+        video_id = self.videos[video_name]['video_id']
         width = self.videos[video_name]['width']
         height = self.videos[video_name]['height']
+        
+        self._mmap_bbox.open_write(video_name, video_id)
         
         # initialize our lists of detected bounding boxes, confidences,
         # and class IDs, respectively
@@ -142,6 +150,8 @@ class YoloTf2(Doer):
         kw = width/416
         kh = height/416
         
+        self._mmap_bbox.set_pointer(video_id)
+        
         for i in range(nums):
             # taking only class 0 person... needs to be configurable
             if classes[i] == 0:
@@ -151,9 +161,15 @@ class YoloTf2(Doer):
                     
                     box = [x1y1[0], x1y1[1], x2y2[0], x2y2[1]]
                     box = box * np.array([kw, kh, kw, kh])
+
+                    self._mmap_bbox.write_bbox(video_name,
+                        box.astype(np.int32), objectness[i], classes[i])
+                    
                     boxes.append(box.astype(np.int32))
                     
                     confidences.append(objectness[i])
                     classIDs.append(classes[i])
 
+        self._mmap_bbox.close()
+        
         return boxes, confidences, classIDs

@@ -29,10 +29,9 @@ class Display(Doer):
     # @param video_name [String] name of the video camera
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, cfg, header_size):
+    def __initialize__(self, video_name, cfg):
         self.video_name = video_name
         self.cfg = cfg
-        self.header_size = header_size
         self._stop = False
     
     # ----------------------------------------------------------------------------------

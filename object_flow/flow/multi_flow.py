@@ -46,9 +46,6 @@ class MultiFlow(Doer):
         self.name = 'MultiFlow'
         self.group = 'default'
         
-        # size of the header needed in every mmaped file
-        self.header_size = 4
-
         # if of the flow_manager
         self._next_flow_id = 0
 
@@ -65,7 +62,6 @@ class MultiFlow(Doer):
 
         # start the yolo object detection process
         self._yolo = self.hire('YoloNet', YoloTf2, confidence, threshold,
-                               header_size = self.header_size,
                                group = 'DeepLearners')
 
         # read from conf file how many trackers we want and create the trackers
@@ -162,7 +158,7 @@ class MultiFlow(Doer):
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
         manager = self.hire(
             cfg.video_name, FlowManager, cfg, self._doers['trackers'],
-            self._yolo, self._next_flow_id, header_size = self.header_size,
+            self._yolo, self._next_flow_id,
             group = 'flow_manager')
         self._next_flow_id += 1
         

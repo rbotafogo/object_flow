@@ -59,7 +59,7 @@ class FlowManager(Doer):
 
         # number of frames that can be stored in the mmaped file
         self._buffer_max_size = 500
-        
+
         # list of listeners interested to get a message everytime a new frame is
         # loaded
         self._listeners = {}
@@ -84,14 +84,13 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo, flow_id, header_size):
+    def __initialize__(self, cfg, trackers, yolo, video_id):
         
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
         self.trackers = trackers
         self._yolo = yolo
-        self.flow_id = flow_id
-        self.header_size = header_size
+        self.video_id = video_id
         
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
@@ -104,7 +103,7 @@ class FlowManager(Doer):
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, buffer_max_size = self._buffer_max_size,
-                            header_size = self.header_size, group = 'decoders')
+                            group = 'decoders')
 
     # ----------------------------------------------------------------------------------
     #
@@ -150,7 +149,6 @@ class FlowManager(Doer):
 
         display  = self.video_name + '_display'
         self._dp = self.hire(display, Display, self.video_name, self.cfg,
-                             self.header_size,
                              group = 'displayers')
 
         logging.info("%s: starting playback", self.video_name)
@@ -229,7 +227,7 @@ class FlowManager(Doer):
         self._registered_trackers = len(self.trackers)
 
         # register the video with yolo.
-        self.phone(self._yolo, 'register_video', self.video_name,
+        self.phone(self._yolo, 'register_video', self.video_name, self.video_id,
                    self.width, self.height, self.depth, callback = 'register_done')
         
         # open the mmap file with the decoded frames
@@ -237,8 +235,8 @@ class FlowManager(Doer):
         self._mmap.open_write2()
 
         # open the mmap file for communicating bounding boxes with yolo
-        self._mmap_bbox = MmapBboxes(self.video_name, self.flow_id)
-        logging.info("%s: mmap_bbox id is %d", self.video_name, self.flow_id)
+        self._mmap_bbox = MmapBboxes()
+        # self._mmap_bbox_buf = self._mmap_bbox.open_read()
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -246,7 +244,7 @@ class FlowManager(Doer):
         # register the video with all trackers.  Need to wait for the registration
         # to be done to continues execution
         self._trackers_broadcast_with_callback(
-            'register_video', self.video_name,
+            'register_video', self.video_name, self.video_id,
             self.width, self.height, self.depth, callback = 'register_done')
         
     # ----------------------------------------------------------------------------------

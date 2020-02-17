@@ -64,7 +64,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, video_name, path, buffer_max_size, header_size, width=500):
+    def __initialize__(self, video_name, path, buffer_max_size, width=500):
         
         self.path = path
         self.video_name = video_name
@@ -78,7 +78,6 @@ class VideoDecoder(Doer):
         # self.width, self.height and self.depth
         self._open()
         self.frame_size = self.height * self.width * self.depth
-        self.header_size = header_size
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
         self._mmap.open_write()
