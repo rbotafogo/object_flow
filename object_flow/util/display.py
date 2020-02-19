@@ -135,20 +135,20 @@ class Display(Doer):
     # ----------------------------------------------------------------------------------
 
     def display(self):
-        cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
-        cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
-                             self._read_input, self.video_name)
-        
-        cv2.waitKey(25)
+        # cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
+        # cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
+        #                      self._read_input, self.video_name)
+        #
+        # cv2.waitKey(25)
         # logging.debug("%s, %s, %s, display for video %s with size %d",
         #               Util.br_time(), os.getpid(), 'Display', video_name, size)
-        # if self.writer is None:
-        #     # initialize our video writer
-        #     fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-        #     self.writer = cv2.VideoWriter("resources/output/airport.avi", fourcc, 30,
-        #                              (self.frame.shape[1], self.frame.shape[0]))
-        #
-        # self.writer.write(self.frame)
+        if self.writer is None:
+            # initialize our video writer
+            fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+            self.writer = cv2.VideoWriter(self.cfg.data['io']['record'], fourcc, 30,
+                                     (self.frame.shape[1], self.frame.shape[0]))
+
+        self.writer.write(self.frame)
         # cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         # cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
         #                      self._read_input, self.video_name)
