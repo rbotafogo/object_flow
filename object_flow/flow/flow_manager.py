@@ -20,7 +20,7 @@ import math
 import time
 import collections
 from datetime import timedelta
-
+import cv2
 import logging
 import numpy as np
 import random
@@ -94,12 +94,24 @@ class FlowManager(Doer):
         
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
-
         self._last_detection = -self.cfg.data['video_analyser']['skip_detection_frames']
-        
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
-
+        if self.cfg.is_image == True:
+            writer = None
+            filenum = len([lists for lists in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, lists))])
+            fileid = 1
+            while fileid <= filenum:
+                filename = str(fileid).rjust(6, '0') + ".jpg"
+                frame = cv2.imread(self.path + '/' + filename)
+                if writer is None:
+                    fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+                    writer = cv2.VideoWriter(cfg.data['io']['record'], fourcc, 30,
+                                             (frame.shape[1], frame.shape[0]))
+                writer.write(frame)
+                fileid += 1
+            writer.release()
+            self.path=cfg.data['io']['record']
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, buffer_max_size = self._buffer_max_size,
@@ -413,7 +425,7 @@ class FlowManager(Doer):
 
         # initialize the time_metric at every new frame
         self.time_metric = time.perf_counter()
-        
+
         self.post(self.vd, '_manage_buffer', self._average)
         self.frame_index += 1
         if self.frame_index == self._buffer_max_size - 1:

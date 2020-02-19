@@ -19,7 +19,8 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import pyqtSlot
 
 import logging
-
+import imutils
+import cv2
 from object_flow.ipc.board import Board
 from object_flow.flow.multi_flow import MultiFlow
 

@@ -164,14 +164,12 @@ class VideoDecoder(Doer):
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
         self.frame_number += 1
-       
         if not grabbed:
             logging.warning("%s: could not grab video stream", self.video_name)
             self._open()
         else:
             # resize image
-            frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
-            
+            frame = imutils.resize(frame, width=500)
             if self._adjust_gamma:
                 frame = cv2.LUT(frame, self._gamma_table)
 
@@ -192,7 +190,7 @@ class VideoDecoder(Doer):
                     self._mmap.write_frame(frame, self.frame_number)
             else:
                 self._mmap.write_frame(frame, self.frame_number)
-                
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

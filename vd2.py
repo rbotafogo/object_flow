@@ -70,6 +70,9 @@ if __name__ == '__main__':
     ap.add_argument(
         "-p", "--process",
         help="The neural net processing engine to use, either 'opencv' or 'tf2'")
+
+    ap.add_argument("-i", "--image", type=bool, default=False,
+                    help="set to True if process image, used to calculate metrics")
     
     args = vars(ap.parse_args())
 
@@ -85,6 +88,7 @@ if __name__ == '__main__':
     cfg.data['system_info']['edit'] = (args['edit'] == 'True')
     cfg.data['system_info']['output'] = (args['output'] == 'True')
     cfg.data['system_info']['minutes'] = args['minutes']
+    cfg.is_image=args["image"]
 
     now = Util.br_time_raw()
     

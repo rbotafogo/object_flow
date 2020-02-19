@@ -16,7 +16,6 @@ import os
 import time
 import logging
 # import mmap
-
 from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
 from object_flow.util.config import Config
@@ -55,7 +54,6 @@ class MultiFlow(Doer):
     
     def __initialize__(self, system_cfg):
         self.system_cfg = system_cfg
-        
         # load confidence and threshold from the specific neural net algo
         confidence = system_cfg.data['neural_net']['confidence']
         threshold = system_cfg.data['neural_net']['threshold']
@@ -161,7 +159,6 @@ class MultiFlow(Doer):
             self._yolo, self._next_flow_id,
             group = 'flow_manager')
         self._next_flow_id += 1
-        
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
