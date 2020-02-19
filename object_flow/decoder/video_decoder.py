@@ -52,7 +52,6 @@ class VideoDecoder(Doer):
 
         self._frame_number_buffer = collections.deque()
         self._drop_frames = False
-                
         self._stream = None
         self._capture_average = None
         
@@ -81,7 +80,7 @@ class VideoDecoder(Doer):
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
         self._mmap.open_write()
-        self._mmap.set0()
+        #self._mmap.set0()
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(

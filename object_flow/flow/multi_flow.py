@@ -154,6 +154,7 @@ class MultiFlow(Doer):
         # the Yolo neural net
         cfg.start_time = self.system_cfg.data['system_info']['start_time']
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
+        cfg.is_image=self.system_cfg.is_image
         manager = self.hire(
             cfg.video_name, FlowManager, cfg, self._doers['trackers'],
             self._yolo, self._next_flow_id,
@@ -191,7 +192,7 @@ class MultiFlow(Doer):
             return
         
         videos = self.system_cfg.data['video_cameras']
-        
+
         for j, video in enumerate(videos):
             logging.info("Reading configuration file for video %s", video)
             logging.info("Analytics will be output to: %s",

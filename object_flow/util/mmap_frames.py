@@ -16,7 +16,7 @@
 import os
 import mmap
 import math
-
+import tempfile
 import numpy as np
 
 import logging
@@ -35,7 +35,7 @@ class MmapFrames:
         self.height = height
         self.depth = depth
         self.frame_size = width * height * depth
-        
+        self.temp_file=None
         self.buffer_max_size = 500
         self.page_size = 4000
         self.header_size = 8
@@ -63,10 +63,14 @@ class MmapFrames:
     # ---------------------------------------------------------------------------------
 
     def open_write(self):
-        
-        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
         self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
                        self.buffer_max_size + 1)
+        # self.temp_file=tempfile.NamedTemporaryFile(prefix=self.video_name)
+        # self.temp_file.write(b'\x00' *mmap.PAGESIZE * self._npage)
+        # self.temp_file.flush()
+        # self._fd=self.temp_file.fileno()
+        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        self.set0()
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation

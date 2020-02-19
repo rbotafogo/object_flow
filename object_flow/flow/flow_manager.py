@@ -16,7 +16,7 @@
 import os
 import mmap
 import math
-
+import tempfile
 import time
 import collections
 from datetime import timedelta
@@ -68,7 +68,7 @@ class FlowManager(Doer):
         self.playback_started = False
 
         self.frame_index = 0
-        
+        self.temp_file=None
         self._time_load = 0
         self._time_ckd = 0
         self._time_removal = 0
@@ -91,17 +91,17 @@ class FlowManager(Doer):
         self.trackers = trackers
         self._yolo = yolo
         self.video_id = video_id
-        
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
         self._last_detection = -self.cfg.data['video_analyser']['skip_detection_frames']
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
+
         if self.cfg.is_image == True:
             writer = None
             filenum = len([lists for lists in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, lists))])
             fileid = 1
-            output_path=self.path+'/'+self.video_name+'.mp4'
+            output_path=self.path+'/'+self.video_name+'.avi'
             while fileid <= filenum:
                 filename = str(fileid).rjust(6, '0') + ".jpg"
                 frame = cv2.imread(self.path + '/' + filename)
