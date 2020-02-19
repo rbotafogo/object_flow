@@ -15,7 +15,6 @@
 import os
 import time
 import logging
-# import mmap
 
 from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
@@ -23,6 +22,9 @@ from object_flow.util.config import Config
 from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
 from object_flow.flow.flow_manager import FlowManager
 from object_flow.flow.tracker import Tracker
+
+from object_flow.util.mmap_frames import MmapFrames
+from object_flow.util.mmap_bboxes import MmapBboxes
 
 #==========================================================================================
 # VideoSupervisor supervises as many FlowManagers as there are video cameras.
@@ -48,6 +50,10 @@ class MultiFlow(Doer):
         
         # if of the flow_manager
         self._next_flow_id = 0
+
+        # Create the memory maped file for communicating bounding boxes
+        self._mmap_bbox = MmapBboxes()
+        self._mmap_bbox.create()
 
     # ----------------------------------------------------------------------------------
     #
@@ -90,24 +96,6 @@ class MultiFlow(Doer):
             logging.info("New flow_manager %s hired", hiree_name)
             # self._test_tracker_communication()
             
-    # ----------------------------------------------------------------------------------
-    # send to all doers the 'actor_exit_request'. In principle this should not be
-    # necessary, but in many cases Python processes keep running even after the
-    # main Admin has shutdown
-    # ----------------------------------------------------------------------------------
-
-    def terminate(self):
-        for doer_address in self.all_doers_address():
-            self.send(doer_address, 'actor_exit_request')
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def actor_exit_request(self, message, sender):
-        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
-        self.terminate()
-    
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

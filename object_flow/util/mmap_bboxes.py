@@ -31,56 +31,66 @@ class MmapBboxes:
 
         self.mmap_path = "log/mmap_bboxes"
         self.page_size = 4000
-        self.header_size = 8
-        # size in bytes of one bounding box
-        # four integers, each with 4 bytes + 1 float for confidences (4 bytes),
-        # + 1 int for classID (4 bytes)
-        self.bbox_size = 4 * 4 + 1 * 4 + 1 * 4
+        # size in bytes of one bbox
+        # Yolo: four integers, each with 4 bytes + 1 float for confidences (8 bytes),
+        # + 1 int for classID (2 bytes)
+        self.yolo_block_size = 4 * 4 + 1 * 8 + 1 * 2
+        # Tracker: 1 bit for termination (1 byte) = 1 * 1 + 4 integers * 4 bytes for
+        # bounding boxes 
+        self.tracker_block_size = 1 * 1 + 4 * 4
+        
         self.max_bboxes = 50
+        # header has the number of of bounding boxes stored in the buffer
+        # 1 integer
+        self.header_size = 1 * 4
 
         # maximum size in bytes of bounding boxes for one video
-        self.bboxes_size = self.max_bboxes * self.bbox_size
+        self.bboxes_size = self.header_size + self.max_bboxes * self.yolo_block_size
 
-    # ---------------------------------------------------------------------------------
-    # Open mmap file for reading only
-    # ---------------------------------------------------------------------------------
-
-    def open_read(self):
-
-        # open the mmap file whith the decoded frame. 
-        # number of pages is calculated from the image size
-        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
-        # value to make sure that all image overhead are accounted for. 
-        self._npage = (math.ceil(self.bboxes_size / self.page_size) + 10)
-        self._fd = os.open(self.mmap_path, os.O_RDONLY)
-        
-        return mmap.mmap(self._fd, 0, access = mmap.ACCESS_READ)
-        
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing
+    # ---------------------------------------------------------------------------------
+ 
+    def create(self):
+        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE)
+        
+    # ---------------------------------------------------------------------------------
+    # Open mmap file for writing. Assumes that the file was already created
     # ---------------------------------------------------------------------------------
 
     def open_write(self, video_name, video_id):
         
-        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        # self._npage = self.bboxes_size
-        
-        pg_length = self.bboxes_size * (video_id + 1)
+        self._fd = os.open(self.mmap_path, os.O_RDWR)
+        # pg_length = self.bboxes_size * (video_id + 1)
 
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
         # says that memory sharing is possible
-        # self._buf = mmap.mmap(self._fd, pg_length, access = mmap.ACCESS_WRITE,
-        #                       offset = video_id * mmap.PAGESIZE)
-        self._buf = mmap.mmap(self._fd, pg_length, access = mmap.ACCESS_WRITE)
+        return mmap.mmap(self._fd, 0, access = mmap.ACCESS_WRITE)
+    
+    # ---------------------------------------------------------------------------------
+    # Open mmap file for reading only
+    # ---------------------------------------------------------------------------------
+
+    def open_read(self, video_name, video_id):
+
+        # open the mmap file whith the decoded frame. 
+        # number of pages is calculated from the image size
+        # ceil((width x height x 3) / 4k (page size) + k), where k is a small
+        # value to make sure that all image overhead are accounted for. 
+        # pg_length = self.bboxes_size * (video_id + 1)
+        self._fd = os.open(self.mmap_path, os.O_RDONLY)
+        
+        return mmap.mmap(self._fd, 0, access = mmap.ACCESS_READ)
         
     # ---------------------------------------------------------------------------------
     # Closes the mmap object
     # ---------------------------------------------------------------------------------
 
-    def close(self):
-        self._buf.close()
+    def close(self, buf):
+        buf.close()
         
     # ---------------------------------------------------------------------------------
     # Write 0 to actually mapped file in memory
@@ -93,14 +103,48 @@ class MmapBboxes:
     # read the header and advance the pointer in the file to the next byte
     # ---------------------------------------------------------------------------------
 
-    def set_pointer(self, video_id):
-        self._buf.seek(video_id * (self.bboxes_size))
+    def set_base_address(self, buf, video_id):
+        pos = (video_id * self.bboxes_size)
+        logging.debug("base position set to %d", pos)
+        
+        buf.seek(pos)
 
     # ---------------------------------------------------------------------------------
-    # Write the frame
+    # read the header and advance the pointer in the file to the next byte
     # ---------------------------------------------------------------------------------
 
-    def write_bbox(self, video_name, bbox, confidence, classID):
-        size = self._buf.write(bbox)
-        logging.debug("%s: writing box %s of size %d", video_name, bbox, size)
+    def set_detection_address(self, buf, video_id, box_index = 0):
+        pos = ((video_id * self.bboxes_size) + # base address
+               self.header_size +              # header
+               (box_index * self.yolo_block_size))  # number of bounding boxes
+        logging.debug("detection position set to %d", pos)
+        
+        buf.seek(pos)
+
+    # ---------------------------------------------------------------------------------
+    # reads the header and frame at the given index from the mmap file
+    # ---------------------------------------------------------------------------------
+
+    def read_data(self, buf, num_elmts, dtype):
+        return np.frombuffer(
+            buf.read(num_elmts * np.dtype(dtype).itemsize), dtype=dtype)
+    
+    # ---------------------------------------------------------------------------------
+    # Write header
+    # ---------------------------------------------------------------------------------
+
+    def write_header(self, buf, num_elmts):
+        size = buf.write(num_elmts)
+    
+    # ---------------------------------------------------------------------------------
+    # Write the bounding box information. When migration to Cython, bbox is an
+    # array of 4 ints of type int32, confidence is one float of type float and
+    # classID is one int of type uint16
+    # ---------------------------------------------------------------------------------
+
+    def write_detection(self, buf, bbox, confidence, classID):
+        size = buf.write(bbox)
+        size += buf.write(confidence)
+        size += buf.write(classID)
+        logging.debug("writing box %s of size %d", bbox, size)
         return size

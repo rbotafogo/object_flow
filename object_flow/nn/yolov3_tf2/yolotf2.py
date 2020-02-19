@@ -127,7 +127,64 @@ class YoloTf2(Doer):
         width = self.videos[video_name]['width']
         height = self.videos[video_name]['height']
         
-        self._mmap_bbox.open_write(video_name, video_id)
+        # resize the image to 416 x 416 (seems to be the dimention required by yolo)
+        # to RGB
+        frame = cv2.resize(frame, (416, 416))
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        imge = transform_images(tf.expand_dims(frame, 0), 416)
+
+        bboxes, scores, classes, nums = self.yolo.predict(imge)
+        bboxes, objectness, classes, nums = bboxes[0], scores[0], classes[0], nums[0]
+
+        wh = np.flip(frame.shape[0:2])
+
+        # Constants needed to resize the identified bboxes to the original frame size
+        kw = width/416
+        kh = height/416
+
+        # open the mmap file for writing detections
+        buf = self._mmap_bbox.open_write(video_name, video_id)
+        # moves the memory map index to start writing bounding boxes information
+        self._mmap_bbox.set_detection_address(buf, video_id)
+
+        num_elmts = 0
+        for i in range(nums):
+            # taking only class 0 person... needs to be configurable
+            if classes[i] == 0:
+                if objectness[i] > self.min_confidence:
+                    num_elmts += 1
+                    x1y1 = tuple((np.array(bboxes[i][0:2]) * wh).astype(np.int32))
+                    x2y2 = tuple((np.array(bboxes[i][2:4]) * wh).astype(np.int32))
+                    
+                    box = [x1y1[0], x1y1[1], x2y2[0], x2y2[1]]
+                    box = (box * np.array([kw, kh, kw, kh])).astype(np.int32)
+                    confidence = np.array([objectness[i]]).astype(np.float)
+                    obj_class = np.array([classes[i]]).astype(np.uint16)
+
+                    self._mmap_bbox.write_detection(
+                        buf, box, confidence, obj_class)
+                    
+                    logging.debug("writing detection with box %s confidence %s classID %s",
+                                 box, confidence, obj_class)
+
+        # write the number of detected object on the header of the block
+        self._mmap_bbox.set_base_address(buf, video_id)
+        logging.debug("number of objects detected %d", num_elmts)
+        self._mmap_bbox.write_header(buf, np.array([num_elmts]).astype(np.int32))
+        self._mmap_bbox.close(buf)
+        
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def find_bboxes2(self, video_name, frame_index):
+
+        frame_number, frame = self.videos[video_name]['frames'].read_data(frame_index)
+        video_id = self.videos[video_name]['video_id']
+        width = self.videos[video_name]['width']
+        height = self.videos[video_name]['height']
+        
+        buf = self._mmap_bbox.open_write(video_name, video_id)
         
         # initialize our lists of detected bounding boxes, confidences,
         # and class IDs, respectively
@@ -149,27 +206,38 @@ class YoloTf2(Doer):
         # Constants needed to resize the identified bboxes to the original frame size
         kw = width/416
         kh = height/416
-        
-        self._mmap_bbox.set_pointer(video_id)
-        
+
+        # moves the memory map index to start writing bounding boxes information
+        self._mmap_bbox.set_detection_address(buf, video_id)
+
+        num_elmts = 0
         for i in range(nums):
             # taking only class 0 person... needs to be configurable
             if classes[i] == 0:
                 if objectness[i] > self.min_confidence:
+                    num_elmts += 1
                     x1y1 = tuple((np.array(bboxes[i][0:2]) * wh).astype(np.int32))
                     x2y2 = tuple((np.array(bboxes[i][2:4]) * wh).astype(np.int32))
                     
                     box = [x1y1[0], x1y1[1], x2y2[0], x2y2[1]]
-                    box = box * np.array([kw, kh, kw, kh])
+                    box = (box * np.array([kw, kh, kw, kh])).astype(np.int32)
+                    confidence = np.array([objectness[i]]).astype(np.float)
+                    obj_class = np.array([classes[i]]).astype(np.uint16)
 
-                    self._mmap_bbox.write_bbox(video_name,
-                        box.astype(np.int32), objectness[i], classes[i])
+                    self._mmap_bbox.write_detection(
+                        buf, box, confidence, obj_class)
+                    logging.info("writing detection with box %s confidence %s classID %s",
+                                 box, confidence, obj_class)
                     
                     boxes.append(box.astype(np.int32))
                     
                     confidences.append(objectness[i])
                     classIDs.append(classes[i])
 
-        self._mmap_bbox.close()
+        self._mmap_bbox.set_base_address(buf, video_id)
+        self._mmap_bbox.write_header(buf, np.array([num_elmts]).astype(np.int32))
+        
+        self._mmap_bbox.close(buf)
         
         return boxes, confidences, classIDs
+    

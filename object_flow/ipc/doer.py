@@ -155,7 +155,7 @@ class Doer(Actor):
     def all_doers_address(self):
         for group in self._doers:
             for doer in self._doers[group].items():
-                yield doer[1][0]                
+                yield doer[0], group, doer[1][0]
             
     # ----------------------------------------------------------------------------------
     # send to all doers the 'actor_exit_request'. In principle this should not be
@@ -164,7 +164,9 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
 
     def terminate(self):
-        for doer_address in self.all_doers_address():
+        for doer_name, doer_group, doer_address  in self.all_doers_address():
+            logging.info("%s-%s: sending actor_exit_request to: %s-%s",
+                         self.name, self.group, doer_name, doer_group)
             self.send(doer_address, 'actor_exit_request')
         
     # ----------------------------------------------------------------------------------
@@ -172,7 +174,7 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
 
     def actor_exit_request(self, message, sender):
-        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
+        logging.info("%s-%s: got actor_exit_request", self.name, self.group)
         self.terminate()
     
     # ----------------------------------------------------------------------------------
@@ -251,7 +253,7 @@ class Doer(Actor):
 
     def check_group(self, group):
         if not group in self._doers:
-            logging.info("creating new group: %s", group)
+            logging.info("%s-%s: creating new group: %s", self.name, self.group, group)
             self._doers[group] = {}
 
     # ----------------------------------------------------------------------------------
@@ -259,7 +261,8 @@ class Doer(Actor):
     # ----------------------------------------------------------------------------------
     
     def hrreport(self):
-        logging.info("doers reporting to me: %s", self._doers)
+        logging.info("%s-%s: doers reporting to me: %s", self.name, self.group,
+                     self._doers)
 
     # ----------------------------------------------------------------------------------
     # 

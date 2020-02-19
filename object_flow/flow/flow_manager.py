@@ -105,6 +105,12 @@ class FlowManager(Doer):
                             self.path, buffer_max_size = self._buffer_max_size,
                             group = 'decoders')
 
+        # open the mmap file for communicating bounding boxes with yolo
+        self._mmap_bbox = MmapBboxes()
+        # open the mmap file for reading
+        self.bbox_buf = self._mmap_bbox.open_write(self.video_name, self.video_id)
+
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -116,25 +122,6 @@ class FlowManager(Doer):
             logging.info("%s: decoder created", self.video_name)
             self.phone(hiree_address, 'get_image_info', callback = 'initialize_mmap')
 
-    # ----------------------------------------------------------------------------------
-    # send to all doers the 'actor_exit_request'. In principle this should not be
-    # necessary, but in many cases Python processes keep running even after the
-    # main Admin has shutdown
-    # ----------------------------------------------------------------------------------
-
-    def terminate(self):
-        for doer_address in self.all_doers_address():
-            self.send(doer_address, 'actor_exit_request')
-        self._mmap.close()
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def actor_exit_request(self, message, sender):
-        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
-        self.terminate()
-    
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -233,10 +220,6 @@ class FlowManager(Doer):
         # open the mmap file with the decoded frames
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
         self._mmap.open_write2()
-
-        # open the mmap file for communicating bounding boxes with yolo
-        self._mmap_bbox = MmapBboxes()
-        # self._mmap_bbox_buf = self._mmap_bbox.open_read()
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg)
@@ -351,7 +334,123 @@ class FlowManager(Doer):
     # registered by method 'process_frame'.
     # ----------------------------------------------------------------------------------
 
-    def boxes_detected(self, boxes, confidences, classIDs):
+    def boxes_detected(self):
+
+        boxes = []
+        confidences = []
+        classIDs = []
+        
+        # open the mmap file for reading
+        # buf = self._mmap_bbox.open_write(self.video_name, self.video_id)
+
+        # loop until Yolo has finished processing
+        detections = -1
+        while detections == -1:
+            # read the number of detect objects
+            self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+            detections = self._mmap_bbox.read_data(self.bbox_buf, 1, np.int32)
+            
+        logging.debug("%s: number of objects detected: %d", self.video_name,
+                      detections)
+
+        # read all the detected objects
+        self._mmap_bbox.set_detection_address(self.bbox_buf, self.video_id)
+        for i in range(detections[0]):
+            box = self._mmap_bbox.read_data(self.bbox_buf, 4, np.int32)
+            confidence = self._mmap_bbox.read_data(self.bbox_buf, 1, np.float)
+            classID = self._mmap_bbox.read_data(self.bbox_buf, 1, np.uint16)
+            
+            boxes.append(box)
+            confidences.append(confidence)
+            classIDs.append(classID)
+            
+            logging.debug("%s: reading mmap file - bbox %s confidence %s classID: %s",
+                          self.video_name, box, confidence, classID)
+            
+        # write -1 on the header so that we know that we will be waiting for the
+        # next batch of detections
+        # self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+        # self._mmap_bbox.write_header(self.bbox_buf, np.array([-1]).astype(np.int32))
+        
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_findbboxes += self._time_elapsed()
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time running Yolo is %f",
+                         self.video_name, self._time_findbboxes / 100)
+            self._total_time += self._time_findbboxes
+            self._time_findbboxes = 0
+        # -----------------------------
+        
+        # convert the detected bounding boxes to Items
+        self._setting.detections2items(boxes, confidences, classIDs)
+        
+        # add the newly detected items to the setting. This method will match the
+        # already tracked items with the newly detected ones, adding only the
+        # relevant items
+        self._add_items()
+        
+        # -----------------------------
+        # collecting metric information
+        # -----------------------------
+        # -----------------------------
+        self._time_add_items += self._time_elapsed()
+        # collecting metric information
+        if self._total_frames % 100 == 0:
+            logging.info("%s: average time adding items is %f",
+                         self.video_name, self._time_add_items / 100)
+            self._total_time += self._time_add_items
+            self._time_add_items = 0
+        # -----------------------------
+
+        self._next_frame()
+        
+    # ----------------------------------------------------------------------------------
+    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
+    # registered by method 'process_frame'.
+    # ----------------------------------------------------------------------------------
+
+    def boxes_detected2(self, boxes, confidences, classIDs):
+        
+        boxes = []
+        confidences = []
+        classIDs = []
+        
+        # open the mmap file for reading
+        buf = self._mmap_bbox.open_write(self.video_name, self.video_id)
+
+        # read the number of detect objects
+        self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+
+        # loop until Yolo has finished processing
+        detections = -1
+        while detections == -1:
+            detections = self._mmap_bbox.read_data(self.bbox_buf, 1, np.int32)
+            
+        logging.debug("%s: number of objects detected: %d", self.video_name,
+                     detections)
+
+        # read all the detected objects
+        self._mmap_bbox.set_detection_address(self.bbox_buf, self.video_id)
+        for i in range(detections[0]):
+            box = self._mmap_bbox.read_data(self.bbox_buf, 4, np.int32)
+            confidence = self._mmap_bbox.read_data(self.bbox_buf, 1, np.float)
+            classID = self._mmap_bbox.read_data(self.bbox_buf, 1, np.uint16)
+            
+            boxes.append(box)
+            confidences.append(confidence)
+            classIDs.append(classID)
+            
+            logging.info("%s: reading mmap file - bbox %s confidence %s classID: %s",
+                         self.video_name, box, confidence, classID)
+            
+        # write -1 on the header so that we know that we will be waiting for the
+        # next batch of detections
+        # self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+        # self._mmap_bbox.write_header(self.bbox_buf, np.array([-1]).astype(np.int32))
 
         # -----------------------------
         # collecting metric information
@@ -513,8 +612,17 @@ class FlowManager(Doer):
             self._last_detection = self.cfg.frame_number
             logging.debug("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
-            self.phone(self._yolo, 'find_bboxes', self.video_name, self.frame_index,
-                       callback = 'boxes_detected')
+            # self.phone(self._yolo, 'find_bboxes', self.video_name, self.frame_index,
+            #            callback = 'boxes_detected')
+            
+            # write -1 on the header so that we know that we will be waiting for the
+            # next batch of detections
+            self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+            self._mmap_bbox.write_header(self.bbox_buf, np.array([-1]).astype(np.int32))
+            
+            self.post(self._yolo, 'find_bboxes', self.video_name, self.frame_index)
+            self.boxes_detected()
+            
         else:
             # This is one problem with callback functions: the '_next_frame' method is
             # called here and also on the 'boxes_detected' callback method. It's
