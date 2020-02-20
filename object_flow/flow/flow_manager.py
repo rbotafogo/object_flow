@@ -265,25 +265,6 @@ class FlowManager(Doer):
         self._tracking_phase()
                     
     # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _check_bbox_int(self, bbox):
-        p0 = bbox[0]
-        p1 = bbox[1]
-        p2 = bbox[2]
-        p3 = bbox[3]
-
-        if not isinstance(p0, int):
-            logging.warning('p0 not int')
-        if not isinstance(p1, int):
-            logging.warning('p1 not int')
-        if not isinstance(p2, int):
-            logging.warning('p2 not int')
-        if not isinstance(p3, int):
-            logging.warning('p3 not int')
-
-    # ----------------------------------------------------------------------------------
     # When tracking is done, the trackers calls back this method with the updated
     # items information
     # ----------------------------------------------------------------------------------
@@ -295,15 +276,14 @@ class FlowManager(Doer):
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
-                self._setting.update(bounding_box)
-
-                self._check_bbox_int(bounding_box)
-                
-                # check and remove all bounding boxes that have exited the setting.
-                # Those that have not exited, should be updated
-                exit = self._setting.check_exit(bounding_box)
+                if confidence == -1:
+                    exit = True
+                else:
+                    # self._setting.update(bounding_box)
+                    # check and remove all bounding boxes that have exited the setting.
+                    # Those that have not exited, should be updated
+                    exit = self._setting.check_exit(bounding_box)
                 if exit:
-                    # self._remove_item(item_id)
                     del_items.append(item_id)
                 else:
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
@@ -314,6 +294,7 @@ class FlowManager(Doer):
         # detection phase
         self.num_trackers -= 1
         if self.num_trackers < 1:
+            
             # -----------------------------
             # collecting metric information
             # -----------------------------
@@ -327,6 +308,7 @@ class FlowManager(Doer):
                 self._time_tracking = 0
             # -----------------------------
             
+            self._setting.update()
             self._detection_phase()
             
     # ----------------------------------------------------------------------------------
@@ -367,91 +349,6 @@ class FlowManager(Doer):
             logging.debug("%s: reading mmap file - bbox %s confidence %s classID: %s",
                           self.video_name, box, confidence, classID)
             
-        # write -1 on the header so that we know that we will be waiting for the
-        # next batch of detections
-        # self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
-        # self._mmap_bbox.write_header(self.bbox_buf, np.array([-1]).astype(np.int32))
-        
-        # -----------------------------
-        # collecting metric information
-        # -----------------------------
-        # -----------------------------
-        self._time_findbboxes += self._time_elapsed()
-        # collecting metric information
-        if self._total_frames % 100 == 0:
-            logging.info("%s: average time running Yolo is %f",
-                         self.video_name, self._time_findbboxes / 100)
-            self._total_time += self._time_findbboxes
-            self._time_findbboxes = 0
-        # -----------------------------
-        
-        # convert the detected bounding boxes to Items
-        self._setting.detections2items(boxes, confidences, classIDs)
-        
-        # add the newly detected items to the setting. This method will match the
-        # already tracked items with the newly detected ones, adding only the
-        # relevant items
-        self._add_items()
-        
-        # -----------------------------
-        # collecting metric information
-        # -----------------------------
-        # -----------------------------
-        self._time_add_items += self._time_elapsed()
-        # collecting metric information
-        if self._total_frames % 100 == 0:
-            logging.info("%s: average time adding items is %f",
-                         self.video_name, self._time_add_items / 100)
-            self._total_time += self._time_add_items
-            self._time_add_items = 0
-        # -----------------------------
-
-        self._next_frame()
-        
-    # ----------------------------------------------------------------------------------
-    # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
-    # registered by method 'process_frame'.
-    # ----------------------------------------------------------------------------------
-
-    def boxes_detected2(self, boxes, confidences, classIDs):
-        
-        boxes = []
-        confidences = []
-        classIDs = []
-        
-        # open the mmap file for reading
-        buf = self._mmap_bbox.open_write(self.video_name, self.video_id)
-
-        # read the number of detect objects
-        self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
-
-        # loop until Yolo has finished processing
-        detections = -1
-        while detections == -1:
-            detections = self._mmap_bbox.read_data(self.bbox_buf, 1, np.int32)
-            
-        logging.debug("%s: number of objects detected: %d", self.video_name,
-                     detections)
-
-        # read all the detected objects
-        self._mmap_bbox.set_detection_address(self.bbox_buf, self.video_id)
-        for i in range(detections[0]):
-            box = self._mmap_bbox.read_data(self.bbox_buf, 4, np.int32)
-            confidence = self._mmap_bbox.read_data(self.bbox_buf, 1, np.float)
-            classID = self._mmap_bbox.read_data(self.bbox_buf, 1, np.uint16)
-            
-            boxes.append(box)
-            confidences.append(confidence)
-            classIDs.append(classID)
-            
-            logging.info("%s: reading mmap file - bbox %s confidence %s classID: %s",
-                         self.video_name, box, confidence, classID)
-            
-        # write -1 on the header so that we know that we will be waiting for the
-        # next batch of detections
-        # self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
-        # self._mmap_bbox.write_header(self.bbox_buf, np.array([-1]).astype(np.int32))
-
         # -----------------------------
         # collecting metric information
         # -----------------------------
@@ -556,21 +453,18 @@ class FlowManager(Doer):
         # -----------------------------
             
         # check for disappeared items and remove them:
-        self._check_disappeared()
+        dissapeared = self._setting.check_disappeared(
+            self.cfg.frame_number, self.cfg.data["trackable_objects"]["disappear"])
+        overlapped = self._setting.find_overlap()
         
-        # -----------------------------
-        self._time_ckd += self._time_elapsed()
-        # collecting metric information
-        if self._total_frames % 100 == 0:
-            logging.info("%s: average time of _check_disappeared is %f",
-                         self.video_name, self._time_ckd / 100)
-            self._total_time += self._time_ckd
-            self._time_ckd = 0
-        # -----------------------------
-            
+        # self._remove_items(
+        #     self._setting.check_disappeared(
+        #         self.cfg.frame_number, self.cfg.data["trackable_objects"]["disappear"]))
+        
         # now drop overlaped items
         # logging.info(self._setting.find_overlap())
-        self._remove_items(self._setting.find_overlap())
+        # self._remove_items(self._setting.find_overlap())
+        self._remove_items(dissapeared + overlapped)
         
         # -----------------------------
         self._time_removal += self._time_elapsed()
@@ -739,27 +633,6 @@ class FlowManager(Doer):
                       self.video_name, trackers[key]['items_ids']) 
                               
     # ---------------------------------------------------------------------------------
-    # 
-    # ---------------------------------------------------------------------------------
-
-    def _check_disappeared(self):
-
-        if len(self._setting.items) == 0:
-            return
-        
-        delete = []
-        
-        for item_id, item in self._setting.items.items():
-            if (item.last_update != 0 and
-                self.cfg.frame_number > item.last_update +
-                self.cfg.data["trackable_objects"]["disappear"]):
-                item.disappeared = True
-                item.last_frame = self.cfg.frame_number
-                delete.append(item_id)
-
-        self._remove_items(delete)
-                
-    # ---------------------------------------------------------------------------------
     # Given a list of items to be tracked, send them for tracking to the multiple
     # trackers. This uses a very simple policy: breaks the items in chunks of 5 and
     # send every 5 items to a randomly selected tracker from the available trackers.
@@ -775,7 +648,7 @@ class FlowManager(Doer):
 
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
-            # logging.info("%s: Selected tracker is %s", self.video_name, key)
+            logging.debug("%s: Selected tracker is %s", self.video_name, key)
             
             tracker = self.trackers[key]
             
@@ -908,34 +781,3 @@ class FlowManager(Doer):
         # Display we have just created above
         self.add_listener(self.video_name, self._dp)
         self.playback_started = True
-
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    # DEPRECATED
-    
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
-    def _remove_item2(self, item_id):
-
-        # The item might have been removed by going out of the entry lines
-        if item_id not in self._setting.items.keys():
-            return
-        
-        item = self._setting.items[item_id]
-        del self._setting.items[item_id]
-        self.post(
-            item.tracker_address, 'stop_tracking', self.video_name, item_id)
-    
-    # ---------------------------------------------------------------------------------
-    # 
-    # ---------------------------------------------------------------------------------
-
-    def _remove_items2(self, items):
-        for item in items:
-            self._remove_item(item)
-        

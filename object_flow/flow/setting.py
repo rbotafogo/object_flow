@@ -105,16 +105,32 @@ class Setting:
         return overlapped
     
     # ---------------------------------------------------------------------------------
-    # does all required updates on the received bounding_box after this bounding_box
-    # has changed position from the tracking algorithm
+    # Checks to see if an item has disappeared from the setting. An item has
+    # disappeared if the current frame_number is bigger than the frame number of the
+    # last time this item was updated + a given number (provided in the configuration
+    # file) that tells how many frames should pass after which the item is considered
+    # 'lost' or disappeared.
     # ---------------------------------------------------------------------------------
 
-    def update(self, bounding_box):
-        # should we remove overlapping bounding boxes? If we do so, then occluded
-        # items will be removed; on the other hand, objects detected twice will be
-        # eliminated
-        # self._drop_overlap()
+    def check_disappeared(self, frame_number, disappear_after):
 
+        delete = []
+        
+        if len(self.items) != 0:
+            for item_id, item in self.items.items():
+                if (item.last_update != 0 and
+                    frame_number > item.last_update + disappear_after):
+                    item.disappeared = True
+                    item.last_frame = self.cfg.frame_number
+                    delete.append(item_id)
+
+        return delete
+                
+    # ---------------------------------------------------------------------------------
+    #
+    # ---------------------------------------------------------------------------------
+
+    def update(self):
         # count items that have crossed any counting lines
         self._count()
         CSV.csv_schedule(self.cfg)
@@ -215,10 +231,10 @@ class Setting:
     # ---------------------------------------------------------------------------------
 
     def _overflow_warning(self, where, end_points, p1, p2):
-        message = where + " overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s"
-        logging.warning(
+        message = where + "%s: overflow error: (%d, %d, %d, %d)-(%d, %d)"
+        logging.warning(self.cfg.video_name,
             message, end_points[0], end_points[1], end_points[2], end_points[3],
-            p1, p2, self.cfg.video_name)
+            p1, p2)
         
     # ---------------------------------------------------------------------------------
     #
@@ -317,10 +333,10 @@ class Setting:
         
         except OverflowError:
             logging.warning(
-                "top_crossed: overflow error: (%d, %d, %d, %d)-(%d, %d) for camera %s",
-                top_point[0], top_point[1], item.startX,
+                "%s: top_crossed: overflow error: (%d, %d, %d, %d)-(%d, %d)",
+                self.cfg.video_name, top_point[0], top_point[1], item.startX,
                 item.startY, first_point[0], first_point[1],
-                second_point[0], second_point[1], self.cfg.video_name)
+                second_point[0], second_point[1])
             
         if (self._should_count(item_line)):
             if new_top:
@@ -458,4 +474,3 @@ class Setting:
 
                 item.lines[key]['top_line_position'] = new_top
                 item.lines[key]["bottom_line_position"] = new_bottom
-                

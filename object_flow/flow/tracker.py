@@ -140,6 +140,12 @@ class Tracker(Doer):
         
         for item_id, tracker in video_items.items():
             confidence, pos = self._update_tracker(frame, tracker, width, height)
+            if (any(x < 0 for x in pos) or any (x > 65535 for x in pos)):
+                confidence = -1
+                pos = [0, 0, 0, 0]
+            else:
+                pos = np.array(pos, dtype=np.uint16)
+                
             detections[item_id] = (confidence, pos)
             
         return detections

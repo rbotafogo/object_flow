@@ -151,7 +151,7 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    # PROTECTED METHODS
+    # CALLBACK METHODS
 
     # ----------------------------------------------------------------------------------
     # This method is called by drum_beat.  DrumBeat conducts the capturing of frames.
@@ -180,7 +180,7 @@ class VideoDecoder(Doer):
                 self._capture_average = (now - self.init_time) / 100
                 logging.debug(
                     "%s: buffer size is %d", self.video_name, len(self._frame_number_buffer))
-                logging.debug(
+                logging.info(
                     "%s: average time video capture per frame for the last 100 frames is: %f",
                     self.video_name, self._capture_average)
                 self.init_time = now
