@@ -106,7 +106,7 @@ class FlowManager(Doer):
                 filename = str(fileid).rjust(6, '0') + ".jpg"
                 frame = cv2.imread(self.path + '/' + filename)
                 if writer is None:
-                    fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+                    fourcc = cv2.VideoWriter_fourcc(*"DIVX")
                     writer = cv2.VideoWriter(output_path, fourcc, 30,
                                              (frame.shape[1], frame.shape[0]))
                 writer.write(frame)
@@ -328,7 +328,7 @@ class FlowManager(Doer):
                 self._setting.update(bounding_box)
 
                 self._check_bbox_int(bounding_box)
-                
+
                 # check and remove all bounding boxes that have exited the setting.
                 # Those that have not exited, should be updated
                 exit = self._setting.check_exit(bounding_box)
@@ -356,8 +356,10 @@ class FlowManager(Doer):
                 self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-            
-            self._detection_phase()
+        # if self.cfg.is_image == True:
+        #     self._write_metrics(self._setting.items)
+
+        self._detection_phase()
             
     # ----------------------------------------------------------------------------------
     # Callback method for the 'find_bboxes' call to the Neural Net.  This callback is
@@ -399,7 +401,8 @@ class FlowManager(Doer):
             self._total_time += self._time_add_items
             self._time_add_items = 0
         # -----------------------------
-
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -844,3 +847,14 @@ class FlowManager(Doer):
         for item in items:
             self._remove_item(item)
         
+    def _write_metrics(self, items_update):
+        metric_file = open(self.cfg.data['io']['record'] + ".metrics", "w")
+        for item_id, update in items_update.items():
+            confidence = update.confidence
+            startx = update.startX
+            starty = update.startY
+            endx = update.endX
+            endy = update.endY
+            metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
+                              (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))
+        metric_file.close()
