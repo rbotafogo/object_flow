@@ -322,8 +322,6 @@ class FlowManager(Doer):
 
     def tracking_done(self, items_update):
         if not (items_update == None):
-            if self.cfg.is_image == True:
-                self._write_metrics(items_update)
             del_items = []
             for item_id, update in items_update.items():
                 confidence = update[0]
@@ -334,12 +332,12 @@ class FlowManager(Doer):
 
                 # check and remove all bounding boxes that have exited the setting.
                 # Those that have not exited, should be updated
-                exit = self._setting.check_exit(bounding_box)
-                if exit:
-                    # self._remove_item(item_id)
-                    del_items.append(item_id)
-                else:
-                    self._setting.update_item(self.cfg.frame_number, item_id, confidence,
+                # exit = self._setting.check_exit(bounding_box)
+                # if exit:
+                #     # self._remove_item(item_id)
+                #     del_items.append(item_id)
+                # else:
+                self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
                 self._remove_items(del_items)
 
@@ -359,7 +357,8 @@ class FlowManager(Doer):
                 self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         self._detection_phase()
             
     # ----------------------------------------------------------------------------------
@@ -850,11 +849,10 @@ class FlowManager(Doer):
         
     def _write_metrics(self, items_update):
         for item_id, update in items_update.items():
-            confidence = update[0]
-            bounding_box = update[1]
-            startx = bounding_box[0]
-            starty = bounding_box[1]
-            endx = bounding_box[2]
-            endy = bounding_box[3]
+            confidence = update.confidence
+            startx = update.startX
+            starty = update.startY
+            endx = update.endX
+            endy = update.endY
             self.metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
                               (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))
