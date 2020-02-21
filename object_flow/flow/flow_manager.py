@@ -358,8 +358,8 @@ class FlowManager(Doer):
                 self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-        # if self.cfg.is_image == True:
-        #     self._write_metrics(self._setting.items)
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
 
         self._detection_phase()
             
@@ -403,8 +403,8 @@ class FlowManager(Doer):
             self._total_time += self._time_add_items
             self._time_add_items = 0
         # -----------------------------
-        if self.cfg.is_image == True:
-            self._write_metrics(self._setting.items)
+        # if self.cfg.is_image == True:
+        #     self._write_metrics(self._setting.items)
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
