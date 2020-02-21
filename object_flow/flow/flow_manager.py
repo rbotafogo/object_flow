@@ -16,11 +16,11 @@
 import os
 import mmap
 import math
-
+import tempfile
 import time
 import collections
 from datetime import timedelta
-
+import cv2
 import logging
 import numpy as np
 import random
@@ -68,7 +68,7 @@ class FlowManager(Doer):
         self.playback_started = False
 
         self.frame_index = 0
-        
+        self.temp_file=None
         self._time_load = 0
         self._time_ckd = 0
         self._time_removal = 0
@@ -91,15 +91,29 @@ class FlowManager(Doer):
         self.trackers = trackers
         self._yolo = yolo
         self.video_id = video_id
-        
         self.video_name = cfg.video_name
         self.path = cfg.data['io']['input']
-
         self._last_detection = -self.cfg.data['video_analyser']['skip_detection_frames']
-        
         logging.info("%s: initializing flow_manager with %s", self.video_name,
                      self.path)
 
+        if self.cfg.is_image == True:
+            writer = None
+            filenum = len([lists for lists in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, lists))])
+            fileid = 1
+            output_path=self.path+'/'+self.video_name+'.avi'
+            while fileid <= filenum:
+                filename = str(fileid).rjust(6, '0') + ".jpg"
+                frame = cv2.imread(self.path + '/' + filename)
+                if writer is None:
+                    fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+                    writer = cv2.VideoWriter(output_path, fourcc, 30,
+                                             (frame.shape[1], frame.shape[0]))
+                writer.write(frame)
+                fileid += 1
+            writer.release()
+            self.path=output_path
+            self.metric_file = open(self.cfg.data['io']['record'] + ".metrics", "w")
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, buffer_max_size = self._buffer_max_size,
@@ -122,6 +136,26 @@ class FlowManager(Doer):
             logging.info("%s: decoder created", self.video_name)
             self.phone(hiree_address, 'get_image_info', callback = 'initialize_mmap')
 
+    # ----------------------------------------------------------------------------------
+    # send to all doers the 'actor_exit_request'. In principle this should not be
+    # necessary, but in many cases Python processes keep running even after the
+    # main Admin has shutdown
+    # ----------------------------------------------------------------------------------
+
+    def terminate(self):
+        for doer_address in self.all_doers_address():
+            self.send(doer_address, 'actor_exit_request')
+        self._mmap.close()
+        self.metric_file.close()
+        
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def actor_exit_request(self, message, sender):
+        logging.info("%s, %s: got actor_exit_request", self.name, self.group)
+        self.terminate()
+    
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
@@ -270,7 +304,6 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
-
         if not (items_update == None):
             del_items = []
             for item_id, update in items_update.items():
@@ -293,6 +326,10 @@ class FlowManager(Doer):
         # are all trackers done? If all done then we can call the
         # detection phase
         self.num_trackers -= 1
+        if self.cfg.is_image == True:
+            if (self.cfg.frame_number <=
+                    self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
+                self._write_metrics(self._setting.items)
         if self.num_trackers < 1:
             
             # -----------------------------
@@ -307,7 +344,7 @@ class FlowManager(Doer):
                 self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-            
+
             self._setting.update()
             self._detection_phase()
             
@@ -382,7 +419,8 @@ class FlowManager(Doer):
             self._total_time += self._time_add_items
             self._time_add_items = 0
         # -----------------------------
-
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -409,7 +447,7 @@ class FlowManager(Doer):
 
         # initialize the time_metric at every new frame
         self.time_metric = time.perf_counter()
-        
+
         self.post(self.vd, '_manage_buffer', self._average)
         self.frame_index += 1
         if self.frame_index == self._buffer_max_size - 1:
@@ -781,3 +819,13 @@ class FlowManager(Doer):
         # Display we have just created above
         self.add_listener(self.video_name, self._dp)
         self.playback_started = True
+
+    def _write_metrics(self, items_update):
+        for item_id, update in items_update.items():
+            confidence = update.confidence/100
+            startx = update.startX*1920/500
+            starty = update.startY*1080/281
+            endx = update.endX*1920/500
+            endy = update.endY*1080/281
+            self.metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
+                              (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))

@@ -52,7 +52,6 @@ class VideoDecoder(Doer):
 
         self._frame_number_buffer = collections.deque()
         self._drop_frames = False
-                
         self._stream = None
         self._capture_average = None
         
@@ -81,7 +80,7 @@ class VideoDecoder(Doer):
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
         self._mmap.open_write()
-        self._mmap.set0()
+        #self._mmap.set0()
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(
@@ -164,14 +163,12 @@ class VideoDecoder(Doer):
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
         self.frame_number += 1
-       
         if not grabbed:
             logging.warning("%s: could not grab video stream", self.video_name)
             self._open()
         else:
             # resize image
-            frame = cv2.resize(frame, self.dim, interpolation = cv2.INTER_AREA)
-            
+            frame = imutils.resize(frame, width=500)
             if self._adjust_gamma:
                 frame = cv2.LUT(frame, self._gamma_table)
 
@@ -192,7 +189,7 @@ class VideoDecoder(Doer):
                     self._mmap.write_frame(frame, self.frame_number)
             else:
                 self._mmap.write_frame(frame, self.frame_number)
-                
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

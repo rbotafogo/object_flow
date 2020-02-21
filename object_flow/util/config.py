@@ -51,7 +51,7 @@ class Config:
         # last time the csv file was updated
         self.last_csv_update = None
         self.delta_csv_update = None
-
+        self.is_image = False
         self.frame_number = 0
 
     # ---------------------------------------------------------------------------------

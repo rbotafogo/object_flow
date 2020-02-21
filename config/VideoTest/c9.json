@@ -1,8 +1,8 @@
 {
   
   "io": {
-    "input": "resources/videos/sábado_tarde.avi",
-    "record": "resources/output/Cam9_sabado_tarde.avi"
+    "input": "resources/image/img1",
+    "record": "resources/output/img1.avi"
   },
   
   "video_processor": {

@@ -44,7 +44,6 @@ class DrumBeat(Doer):
     def __initialize__(self, video_name, speed):
         self.video_name = video_name
         self.check_period = speed
-        
         self.wakeup()
 
     # ----------------------------------------------------------------------------------

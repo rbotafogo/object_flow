@@ -60,9 +60,15 @@ class MmapBboxes:
     # ---------------------------------------------------------------------------------
 
     def open_write(self, video_name, video_id):
-        
+
         self._fd = os.open(self.mmap_path, os.O_RDWR)
         # pg_length = self.bboxes_size * (video_id + 1)
+
+        # self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        # # self._npage = self.bboxes_size
+        #
+        # pg_length = self.bboxes_size * (video_id + 1)
+        # os.write(self._fd, b'\x00' * pg_length)
 
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
