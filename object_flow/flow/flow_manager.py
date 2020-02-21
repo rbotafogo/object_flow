@@ -106,7 +106,7 @@ class FlowManager(Doer):
                 filename = str(fileid).rjust(6, '0') + ".jpg"
                 frame = cv2.imread(self.path + '/' + filename)
                 if writer is None:
-                    fourcc = cv2.VideoWriter_fourcc(*"DIVX")
+                    fourcc = cv2.VideoWriter_fourcc(*"XVID")
                     writer = cv2.VideoWriter(output_path, fourcc, 30,
                                              (frame.shape[1], frame.shape[0]))
                 writer.write(frame)

@@ -144,7 +144,7 @@ class Display(Doer):
         #               Util.br_time(), os.getpid(), 'Display', video_name, size)
         if self.writer is None:
             # initialize our video writer
-            fourcc = cv2.VideoWriter_fourcc(*"DIVX")
+            fourcc = cv2.VideoWriter_fourcc(*"XVID")
             self.writer = cv2.VideoWriter(self.cfg.data['io']['record'], fourcc, 30,
                                      (self.frame.shape[1], self.frame.shape[0]))
 
