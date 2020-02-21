@@ -322,7 +322,7 @@ class FlowManager(Doer):
 
     def tracking_done(self, items_update):
         if self.cfg.is_image == True:
-            self._write_metrics(self._setting.items)
+            self._write_metrics(items_update)
         if not (items_update == None):
             del_items = []
             for item_id, update in items_update.items():
@@ -850,10 +850,11 @@ class FlowManager(Doer):
         
     def _write_metrics(self, items_update):
         for item_id, update in items_update.items():
-            confidence = update.confidence
-            startx = update.startX
-            starty = update.startY
-            endx = update.endX
-            endy = update.endY
+            confidence = update[0]
+            bounding_box = update[1]
+            startx = bounding_box[0]
+            starty = bounding_box[1]
+            endx = bounding_box[2]
+            endy = bounding_box[3]
             self.metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
                               (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))
