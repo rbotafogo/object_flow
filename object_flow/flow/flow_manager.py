@@ -358,7 +358,9 @@ class FlowManager(Doer):
                 self._time_tracking = 0
             # -----------------------------
         if self.cfg.is_image == True:
-            self._write_metrics(self._setting.items)
+            if (self.cfg.frame_number <=
+                    self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
+                self._write_metrics(self._setting.items)
         self._detection_phase()
             
     # ----------------------------------------------------------------------------------
@@ -401,8 +403,8 @@ class FlowManager(Doer):
             self._total_time += self._time_add_items
             self._time_add_items = 0
         # -----------------------------
-        # if self.cfg.is_image == True:
-        #     self._write_metrics(self._setting.items)
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -850,9 +852,9 @@ class FlowManager(Doer):
     def _write_metrics(self, items_update):
         for item_id, update in items_update.items():
             confidence = update.confidence
-            startx = update.startX
-            starty = update.startY
-            endx = update.endX
-            endy = update.endY
+            startx = update.startX*1920/500
+            starty = update.startY*1080/281
+            endx = update.endX*1920/500
+            endy = update.endY*1080/281
             self.metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
                               (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))
