@@ -160,6 +160,7 @@ class YoloTf2(Doer):
                     x2y2 = tuple((np.array(bboxes[i][2:4]) * wh).astype(np.int32))
                     
                     box = [x1y1[0], x1y1[1], x2y2[0], x2y2[1]]
+                    print("***********", box)
                     box = box * np.array([kw, kh, kw, kh])
 
                     self._mmap_bbox.write_bbox(video_name,
