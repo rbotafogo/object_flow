@@ -106,13 +106,14 @@ class FlowManager(Doer):
                 filename = str(fileid).rjust(6, '0') + ".jpg"
                 frame = cv2.imread(self.path + '/' + filename)
                 if writer is None:
-                    fourcc = cv2.VideoWriter_fourcc(*"XVID")
+                    fourcc = cv2.VideoWriter_fourcc(*"MJPG")
                     writer = cv2.VideoWriter(output_path, fourcc, 30,
                                              (frame.shape[1], frame.shape[0]))
                 writer.write(frame)
                 fileid += 1
             writer.release()
             self.path=output_path
+            self.metric_file = open(self.cfg.data['io']['record'] + ".metrics", "w")
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
                             self.path, buffer_max_size = self._buffer_max_size,
@@ -139,6 +140,7 @@ class FlowManager(Doer):
         for doer_address in self.all_doers_address():
             self.send(doer_address, 'actor_exit_request')
         self._mmap.close()
+        self.metric_file.close()
         
     # ----------------------------------------------------------------------------------
     #
@@ -848,13 +850,11 @@ class FlowManager(Doer):
             self._remove_item(item)
         
     def _write_metrics(self, items_update):
-        metric_file = open(self.cfg.data['io']['record'] + ".metrics", "w")
         for item_id, update in items_update.items():
             confidence = update.confidence
             startx = update.startX
             starty = update.startY
             endx = update.endX
             endy = update.endY
-            metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
+            self.metric_file.write("%d, %d, %f, %f, %f, %f, %f, -1, -1, -1\n" %
                               (self.cfg.frame_number, item_id, startx, starty, endx-startx, endy-starty, confidence))
-        metric_file.close()
