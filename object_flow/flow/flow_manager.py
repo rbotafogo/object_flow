@@ -321,9 +321,9 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
-        if self.cfg.is_image == True:
-            self._write_metrics(items_update)
         if not (items_update == None):
+            if self.cfg.is_image == True:
+                self._write_metrics(items_update)
             del_items = []
             for item_id, update in items_update.items():
                 confidence = update[0]
