@@ -165,7 +165,7 @@ class VideoDecoder(Doer):
         self.frame_number += 1
         if not grabbed:
             logging.warning("%s: could not grab video stream", self.video_name)
-            # self._open()
+            self._open()
         else:
             # resize image
             frame = imutils.resize(frame, width=500)

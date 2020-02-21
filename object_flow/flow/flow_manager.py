@@ -321,7 +321,8 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
-
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         if not (items_update == None):
             del_items = []
             for item_id, update in items_update.items():
@@ -358,8 +359,6 @@ class FlowManager(Doer):
                 self._total_time += self._time_tracking
                 self._time_tracking = 0
             # -----------------------------
-        if self.cfg.is_image == True:
-            self._write_metrics(self._setting.items)
 
         self._detection_phase()
             
