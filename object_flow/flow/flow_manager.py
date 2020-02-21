@@ -851,7 +851,7 @@ class FlowManager(Doer):
         
     def _write_metrics(self, items_update):
         for item_id, update in items_update.items():
-            confidence = update.confidence
+            confidence = update.confidence/100
             startx = update.startX*1920/500
             starty = update.startY*1080/281
             endx = update.endX*1920/500
