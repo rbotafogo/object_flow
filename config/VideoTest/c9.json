@@ -1,7 +1,7 @@
 {
   
   "io": {
-    "input": "resources/image/img1",
+    "input": "resources/image/img1/c9.avi",
     "record": "resources/output/img1.avi"
   },
   

@@ -98,21 +98,21 @@ class FlowManager(Doer):
                      self.path)
 
         if self.cfg.is_image == True:
-            writer = None
-            filenum = len([lists for lists in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, lists))])
-            fileid = 1
-            output_path=self.path+'/'+self.video_name+'.avi'
-            while fileid <= filenum:
-                filename = str(fileid).rjust(6, '0') + ".jpg"
-                frame = cv2.imread(self.path + '/' + filename)
-                if writer is None:
-                    fourcc = cv2.VideoWriter_fourcc(*"MJPG")
-                    writer = cv2.VideoWriter(output_path, fourcc, 30,
-                                             (frame.shape[1], frame.shape[0]))
-                writer.write(frame)
-                fileid += 1
-            writer.release()
-            self.path=output_path
+            # writer = None
+            # filenum = len([lists for lists in os.listdir(self.path) if os.path.isfile(os.path.join(self.path, lists))])
+            # fileid = 1
+            # output_path=self.path+'/'+self.video_name+'.avi'
+            # while fileid <= filenum:
+            #     filename = str(fileid).rjust(6, '0') + ".jpg"
+            #     frame = cv2.imread(self.path + '/' + filename)
+            #     if writer is None:
+            #         fourcc = cv2.VideoWriter_fourcc(*"MJPG")
+            #         writer = cv2.VideoWriter(output_path, fourcc, 30,
+            #                                  (frame.shape[1], frame.shape[0]))
+            #     writer.write(frame)
+            #     fileid += 1
+            # writer.release()
+            # self.path=output_path
             self.metric_file = open(self.cfg.data['io']['record'] + ".metrics", "w")
         # hire a new video decoder named 'self.video_name'
         self.vd = self.hire(self.video_name, VideoDecoder, self.video_name,
