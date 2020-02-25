@@ -151,6 +151,19 @@ class VideoDecoder(Doer):
     #
     # ----------------------------------------------------------------------------------
 
+    def manage_buffer(self, processing_average):
+        if (processing_average != None and self._capture_average != None):
+            per_diff = int(math.ceil(processing_average / self._capture_average))
+            logging.debug("%s: speed difference is %d", self.video_name,
+                          per_diff)
+            if per_diff > 2:
+                self._drop_frames = True
+                self._drop_by = per_diff
+                
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
     # CALLBACK METHODS
 
     # ----------------------------------------------------------------------------------
@@ -180,14 +193,14 @@ class VideoDecoder(Doer):
                 self._capture_average = (now - self.init_time) / 100
                 logging.debug(
                     "%s: buffer size is %d", self.video_name, len(self._frame_number_buffer))
-                logging.info(
+                logging.debug(
                     "%s: average time video capture per frame for the last 100 frames is: %f",
                     self.video_name, self._capture_average)
                 self.init_time = now
 
             if (self._drop_frames):
                 if ((self.frame_number % self._drop_by) == 0):
-                    logging.debug("%s: adding frame %d", self.video_name,
+                    logging.info("%s: adding frame %d", self.video_name,
                                  self.frame_number)
                     self._mmap.write_frame(frame, self.frame_number)
             else:
@@ -214,19 +227,6 @@ class VideoDecoder(Doer):
     def _get_next_mmap(self):
         self._mmap.next_frame()
         
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _manage_buffer(self, processing_average):
-        if (processing_average != None and self._capture_average != None):
-            per_diff = int(math.ceil(processing_average / self._capture_average))
-            logging.debug("%s: speed difference is %d", self.video_name,
-                          per_diff)
-            if per_diff > 2:
-                self._drop_frames = True
-                self._drop_by = per_diff
-                
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------

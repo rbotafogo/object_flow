@@ -41,6 +41,9 @@ class Item:
         # for registering the bounding box and giving it an object id
         self.item_id = None
 
+        # index of this item in the mmap file
+        self.mmap_index = None
+        
         # class_id and confidence for this class id.  Those values are
         # given by the detection algorithm
         self.class_id = class_id
@@ -179,4 +182,3 @@ class Item:
 
         # update the centroid
         self._update_centroid()
-

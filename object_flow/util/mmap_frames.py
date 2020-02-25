@@ -181,16 +181,21 @@ class MmapFrames:
         if next_index == self.buffer_max_size - 1:
             next_index = 0
 
-        # check to see if the frame was already processed
-        val = -1
-        while val != 0:
-            val = self.read_header(next_index)
+        # if next frame in the buffer has not yet been processed, then just drop
+        # the frame
+        val = self.read_header(next_index)
+        if val != 0:
+            return 0
 
-        # if (self.video_name == 'cshopp1'):
-        #     logging.debug("******%s: writing index %d: buffer value %d ********",
-        #                   self.video_name, next_index, frame_number)
-        
+        # check to see if the frame was already processed.  If not, wait to write
+        # the frame.  This will block the video_decoder.
+        # val = -1
+        # while val != 0:
+        #     val = self.read_header(next_index)
+
+        # move last element of buffer to the next index
         self._buffer_rear = next_index
+        
         logging.debug("%s: writting to mmap position %d", self.video_name,
                       self._buffer_rear)
         
