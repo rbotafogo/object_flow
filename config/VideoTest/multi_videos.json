@@ -16,9 +16,9 @@
   },
   
   "video_cameras": {
-    "cam1": "c15_v2.json",
+    "cam1": "c2.json",
     "cam2": "c9.json",
-    "cam3": "cshopp1.json"
+    "cam3": "c4.json"
   }
   
 }
