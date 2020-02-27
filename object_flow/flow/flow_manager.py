@@ -19,7 +19,6 @@ import math
 
 import time
 import collections
-from datetime import timedelta
 
 import logging
 import numpy as np
@@ -28,6 +27,7 @@ import random
 from object_flow.ipc.doer import Doer
 from object_flow.util.display import Display
 from object_flow.util.geom import Geom
+from object_flow.util.stopwatch import Stopwatch
 
 from object_flow.decoder.video_decoder import VideoDecoder
 from object_flow.flow.item import Item
@@ -68,10 +68,6 @@ class FlowManager(Doer):
         self.playback_started = False
 
         self.frame_index = 0
-
-        # dictionary of time measures for metrics reporting
-        self._time_measures = {}
-        self._time_total = {}
 
     # ----------------------------------------------------------------------------------
     # 
@@ -236,9 +232,6 @@ class FlowManager(Doer):
             # self.post(self.vd, 'start_processing')
             self.post(self.parent_address, 'flow_manager_initialized', self.video_name)
 
-            # Initialize the collection of total process time
-            # self._time_elapsed('process', True)
-        
             # start an endless loop... process_frame calls many functions that end up
             # calling _next_frame, that call back process_frame
             self._process_frame()
@@ -263,19 +256,25 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def tracking_done(self, items_update):
-
+        
         if not (items_update == None):
+            self._total_tracked += len(items_update)
+            
             del_items = []
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
+
+                # check if item has exited the scene
                 if confidence == -1:
                     exit = True
                 else:
-                    # self._setting.update(bounding_box)
                     # check and remove all bounding boxes that have exited the setting.
                     # Those that have not exited, should be updated
                     exit = self._setting.check_exit(bounding_box)
+
+                # if item exited the scene, remove it from the scene and stop tracking
+                # otherwise, update its bounding box location
                 if exit:
                     del_items.append(item_id)
                 else:
@@ -287,12 +286,13 @@ class FlowManager(Doer):
         # detection phase
         self.num_trackers -= 1
         if self.num_trackers < 1:
-            self._time_stop('tracking')
-
+            Stopwatch.stop('tracking')
+            
+            logging.debug("%s: total items is %d; total tracked is %d", self.video_name,
+                          self._total_items, self._total_tracked)
+            
             # update the setting
-            # self._time_elapsed('update', True)
             self._setting.update()
-            # self._time_elapsed('update')
 
             # start the detection phase
             self._detection_phase()
@@ -313,14 +313,14 @@ class FlowManager(Doer):
         while detections == -1:
             # read the number of detect objects
             self._mmap_bbox.set_base_address(self.bbox_buf, self.video_id)
+            # detections is an array with 1 element of size np.int32
             detections = self._mmap_bbox.read_data(self.bbox_buf, 1, np.int32)
 
-        self._time_stop('Yolo')
+        Stopwatch.stop('Yolo')
 
         logging.debug("%s: number of objects detected: %d", self.video_name,
-                      detections)
+                      detections[0])
 
-        # self._time_elapsed('adding items', True)
         # read all the detected objects
         self._mmap_bbox.set_detection_address(self.bbox_buf, self.video_id)
         for i in range(detections[0]):
@@ -342,7 +342,6 @@ class FlowManager(Doer):
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
-        # self._time_elapsed('adding items')
 
         self._next_frame()
         
@@ -356,90 +355,11 @@ class FlowManager(Doer):
     #
     # ----------------------------------------------------------------------------------
 
-    def _time_start(self, measure):
-        if not measure in self._time_measures:
-            self._time_measures[measure] = {}
-            self._time_measures[measure]['total'] = 0
-            self._time_measures[measure]['num_events'] = 0
-
-        self._time_measures[measure]['start'] = time.perf_counter()
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _time_stop(self, measure):
-        now = time.perf_counter()
-        elapsed = now - self._time_measures[measure]['start']
-        
-        self._time_measures[measure]['num_events'] += 1
-        self._time_measures[measure]['total'] += elapsed 
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _time_clear(self, measure):
-        self._time_measures[measure]['total'] = 0
-        self._time_measures[measure]['num_events'] = 0
-        
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _time_report(self, num_frames = 100):
-        if self._total_frames % num_frames == 0:
-            total = 0
-            for measure in self._time_measures:
-                # num_events = self._time_measures[measure]['num_events']
-                num_events = num_frames
-                logging.info("%s: average time to " + measure + " for the last " +
-                             str(num_events) + " frames is %f",
-                             self.video_name,
-                             self._time_measures[measure]['total'] / num_events)
-                if measure != 'process':
-                    total += self._time_measures[measure]['total'] / num_events
-                else:
-                    process_total = self._time_measures[measure]['total'] / num_events
-
-                self._time_clear(measure)
-                
-            logging.info("%s: total time spent %f", self.video_name, total)
-            logging.info("%s: time unaccounted for %s", self.video_name,
-                         process_total - total)
-                
-            logging.info('=================================')
-    
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def _time_elapsed(self, measure, start = False):
-        now = time.perf_counter()
-        
-        if start:
-            elapsed = now
-            self._time_total[measure] = 0
-        else:
-            elapsed = (now - self._time_measures[measure])
-            self._time_total[measure] += elapsed
-
-        self._time_measures[measure] = now
-        
-        return elapsed
-    
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
     def _process_frame(self):
         # self.post(self.vd, 'manage_buffer', self._average)
 
-        self._time_start('process')
+        Stopwatch.start('process')
         
-        # self._time_elapsed("read frame", True)
-
         self.frame_index += 1
         if self.frame_index == self._buffer_max_size - 1:
             self.frame_index = 0
@@ -448,8 +368,6 @@ class FlowManager(Doer):
         while fn == 0 or fn < self.cfg.frame_number:
             fn = self._mmap.read_header(self.frame_index)
 
-        # self._time_elapsed("read frame")
-        
         # if (self.video_name == 'cshopp1'):
         #     logging.warning("%s: processing index %d with frame number: %d",
         #                     self.video_name, self.frame_index, fn)
@@ -472,17 +390,19 @@ class FlowManager(Doer):
         # with tracking information. None so far.
         self.num_trackers = len(self.trackers)
 
-        # self._time_elapsed('removing items', True)
+        self._total_items = len(self._setting.items)
+        self._total_tracked = 0
+        
         # check for disappeared items and remove them:
         dissapeared = self._setting.check_disappeared(
             self.cfg.frame_number, self.cfg.data["trackable_objects"]["disappear"])
         overlapped = self._setting.find_overlap()
         self._remove_items(dissapeared + overlapped)
-        # self._time_elapsed('removing items')
         
         # Initialize the collection of trackers time
-        self._time_start('tracking')
-            
+        Stopwatch.start('tracking')
+
+        
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
@@ -516,7 +436,7 @@ class FlowManager(Doer):
                          self._total_frames)
             
             # initialize the colletion of data for Yolo execution
-            self._time_start('Yolo')
+            Stopwatch.start('Yolo')
             
             # write -1 on the header so that we know that we will be waiting for the
             # next batch of detections
@@ -542,8 +462,8 @@ class FlowManager(Doer):
 
     def _next_frame(self):
 
-        self._time_stop('process')
-        self._time_report()
+        Stopwatch.stop('process')
+        Stopwatch.report(self.video_name, self._total_frames, main_measure = 'process')
         
         # notify all the listeners to this flow_manager that we have finished
         # processing this frame and are going to process the next one.
@@ -583,24 +503,30 @@ class FlowManager(Doer):
     # ---------------------------------------------------------------------------------
 
     def _remove_items(self, items_ids):
+
+        if len(items_ids) == 0:
+            return
+        
         trackers = {}
         
         for item_id in items_ids:
             # The item might have been removed by going out of the entry lines
             if item_id in self._setting.items.keys():
                 item = self._setting.items[item_id]
-                key = str(item.tracker_address)
-                if key not in trackers:
-                    trackers[key] = {}
-                    trackers[key]['doer_address'] = item.tracker_address
-                    trackers[key]['items_ids'] = []
-                    trackers[key]['items_ids'].append(item_id)
+                tk_key = str(item.tracker_address)
+                
+                if tk_key not in trackers:
+                    trackers[tk_key] = {}
+                    trackers[tk_key]['doer_address'] = item.tracker_address
+                    trackers[tk_key]['items_ids'] = []
+
+                trackers[tk_key]['items_ids'].append(item_id)
                 del self._setting.items[item_id]
 
-        for key in trackers:
-            self.post(trackers[key]['doer_address'], 'stop_tracking_items',
-                      self.video_name, trackers[key]['items_ids']) 
-                              
+        for tk_key in trackers:
+            self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
+                      self.video_name, trackers[tk_key]['items_ids']) 
+
     # ---------------------------------------------------------------------------------
     # Given a list of items to be tracked, send them for tracking to the multiple
     # trackers. This uses a very simple policy: breaks the items in chunks of 5 and
@@ -610,11 +536,16 @@ class FlowManager(Doer):
 
     def _distribute2trackers(self, items):
 
+        logging.debug("%s: adding to trackers %d items", self.video_name,
+                      len(items))
+        
         chunck_size = 3
         
         final = [items[i * chunck_size:(i + 1) * chunck_size] for i in
                  range((len(items) + chunck_size - 1) // chunck_size )]
 
+        tracker_items = []
+        
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
             logging.debug("%s: Selected tracker is %s", self.video_name, key)
@@ -624,15 +555,16 @@ class FlowManager(Doer):
             for item in chunk:
                 # first frame where this item was detected
                 item.first_frame = self.cfg.frame_number
-                
                 # set the id of this item to the next value
                 self.next_item_id += 1
                 item.item_id = self.next_item_id
                 self._setting.items[self.next_item_id] = item
                 item.tracker_address = tracker[0]
+                tracker_items.append(item)
 
             self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,
-                      items)
+                      tracker_items)
+            tracker_items = []
                 
     # ---------------------------------------------------------------------------------
     # Matches the newly detected items with the already tracked items using either
