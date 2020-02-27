@@ -309,19 +309,19 @@ class FlowManager(Doer):
             for item_id, update in items_update.items():
                 confidence = update[0]
                 bounding_box = update[1]
-                if confidence == -1:
-                    exit = True
-                else:
-                    # self._setting.update(bounding_box)
-                    # check and remove all bounding boxes that have exited the setting.
-                    # Those that have not exited, should be updated
-                    exit = self._setting.check_exit(bounding_box)
-                if exit:
-                    del_items.append(item_id)
-                else:
-                    self._setting.update_item(self.cfg.frame_number, item_id, confidence,
+                # if confidence == -1:
+                #     exit = True
+                # else:
+                #     # self._setting.update(bounding_box)
+                #     # check and remove all bounding boxes that have exited the setting.
+                #     # Those that have not exited, should be updated
+                #     exit = self._setting.check_exit(bounding_box)
+                # if exit:
+                #     del_items.append(item_id)
+                # else:
+                self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
-                self._remove_items(del_items)
+                # self._remove_items(del_items)
 
         # are all trackers done? If all done then we can call the
         # detection phase
