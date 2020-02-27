@@ -378,7 +378,7 @@ class FlowManager(Doer):
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
-
+        self._write_metrics(self._setting.items)
         self._next_frame()
         
     # ----------------------------------------------------------------------------------
@@ -396,7 +396,7 @@ class FlowManager(Doer):
 
 
         Stopwatch.start('process')
-        
+
         self.frame_index += 1
         if self.frame_index == self._buffer_max_size - 1:
             self.frame_index = 0
