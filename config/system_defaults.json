@@ -3,7 +3,7 @@
     "comment": "Use by default the yolov3 algorithm trained on the Coco dataset.",
     "neural_net": "yolov3_tf2",
     "tracker_type": "dlib",
-    "num_trackers": 5
+    "num_trackers": 10
   },
 
   "neural_net": {
