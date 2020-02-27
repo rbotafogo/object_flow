@@ -27,7 +27,7 @@ class Setting:
     #
     # ---------------------------------------------------------------------------------
 
-    def __init__(self, cfg):
+    def __init__(self, cfg, buffer_size):
         self.cfg = cfg
         self._set_counters()
 
@@ -38,6 +38,10 @@ class Setting:
         
         # dictionary of items in this setting
         self.items = {}
+
+        # Controls in which index in the buffer the item is stored
+        self._mmap_indexes = list(range(0, buffer_size - 1))
+        self._in_use_indexes = []
         
     # ---------------------------------------------------------------------------------
     #
@@ -58,6 +62,8 @@ class Setting:
         
         # convert the bounding boxes to items
         self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
+
+        # add the counting lines to all new items
         for item in self.new_inputs:
             for key in self.cfg.data['counting_lines']:
                 item.init_lines(key, self.cfg.frame_number)

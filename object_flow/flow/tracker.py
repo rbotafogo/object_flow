@@ -22,6 +22,8 @@ import numpy as np
 import dlib
 
 from object_flow.ipc.doer import Doer
+from object_flow.util.stopwatch import Stopwatch
+
 from object_flow.flow.item import Item
 from object_flow.flow.setting import Setting
 from object_flow.util.mmap_frames import MmapFrames
@@ -54,6 +56,9 @@ class Tracker(Doer):
         # A Tracker can track itens from different videos, so it has a list of all
         # videos and for each video, the list of itens it is tracking
         self.videos = {}
+
+        # number of frames processed by this tracker
+        self._total_frames = 0
         
     # ----------------------------------------------------------------------------------
     #
@@ -128,6 +133,11 @@ class Tracker(Doer):
 
     def update_tracked_items(self, video_name, frame_index):
 
+        Stopwatch.start('update_tracking')
+        self._total_frames += 1
+        logging.debug("%s: number of tracked items is %d", str(self.id),
+                      len(self.videos[video_name]['items']))
+        
         if len(self.videos[video_name]['items']) == 0:
             return None
         
@@ -147,7 +157,10 @@ class Tracker(Doer):
                 pos = np.array(pos, dtype=np.uint16)
                 
             detections[item_id] = (confidence, pos)
-            
+
+        Stopwatch.stop('update_tracking') 
+        Stopwatch.report(str(self.id), self._total_frames)       
+        
         return detections
 
     # ----------------------------------------------------------------------------------
