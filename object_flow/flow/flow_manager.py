@@ -312,21 +312,21 @@ class FlowManager(Doer):
                 else:
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
+                print(exit)
                 self._remove_items(del_items)
 
         # are all trackers done? If all done then we can call the
         # detection phase
         self.num_trackers -= 1
-        if self.cfg.is_image == True:
-            if (self.cfg.frame_number <=
-                    self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
-                self._write_metrics(self._setting.items)
         if self.num_trackers < 1:
             Stopwatch.stop('tracking')
 
             logging.debug("%s: total items is %d; total tracked is %d", self.video_name,
                           self._total_items, self._total_tracked)
-            
+            if self.cfg.is_image == True:
+                if (self.cfg.frame_number <=
+                        self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
+                    self._write_metrics(self._setting.items)
             # update the setting
             self._setting.update()
 
@@ -545,7 +545,7 @@ class FlowManager(Doer):
             return
         
         trackers = {}
-        
+
         for item_id in items_ids:
             # The item might have been removed by going out of the entry lines
             if item_id in self._setting.items.keys():
