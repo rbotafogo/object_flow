@@ -88,7 +88,10 @@ class Geom:
 	
     # ---------------------------------------------------------------------------------
     # matches the input objects with the trackable objects by verifying the ones that
-    # have higher intersection over union score
+    # have higher intersection over union score.
+    # Puts elements of set1 in the rows of a matrix ans elements of set2 as the
+    # columns.  Unused_rows are all elements in set1 that do not match elements in
+    # set2.
     # ---------------------------------------------------------------------------------
 
     def iou_match(set1, set2, match_value):

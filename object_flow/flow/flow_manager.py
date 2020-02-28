@@ -575,6 +575,40 @@ class FlowManager(Doer):
 
     def _match_items(self):
         
+        (unused_rows, unused_cols,
+         match_rows_cols) = Geom.iou_match(
+             list(self._setting.items.values()), self._setting.new_inputs,
+             self.cfg.data["trackable_objects"]["iou_match"])
+
+        logging.debug('number of tracked objects %d; identified %d',
+                     len(self._setting.items), len(self._setting.new_inputs))
+        logging.debug('tracked but not matched %s', unused_rows)
+        logging.debug('new items %s', unused_cols)
+        logging.debug('matched tracked x identified %s', match_rows_cols)
+
+        tracked_not_matched = [list(self._setting.items.values())[row] for row in unused_rows]
+        tentative_new = [self._setting.new_inputs[col] for col in unused_cols]
+
+        # now do centroid matching for the itens that did not match according to iou match
+        (u_rows, u_cols,
+         m_r_c) = Geom.centroid_match(
+             tracked_not_matched, tentative_new, 300)
+        
+        logging.debug('matched by centroid %s', m_r_c)
+        logging.debug('++++++++++++')
+        
+        # return (unused_rows, unused_cols, match_rows_cols)
+        return (u_rows, u_cols, m_r_c)
+
+    # ---------------------------------------------------------------------------------
+    # Matches the newly detected items with the already tracked items using either
+    # "iou_match" or "centroid_match" algorithm.
+    # match_row_cols are detected items that were already being tracked
+    # unused_cols are new items
+    # ---------------------------------------------------------------------------------
+
+    def _match_items2(self):
+        
         if self.cfg.data["trackable_objects"]["match"] == "iou_match":
             (unused_rows,
              unused_cols,
