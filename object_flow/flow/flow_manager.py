@@ -591,8 +591,7 @@ class FlowManager(Doer):
 
         # now do centroid matching for the itens that did not match according to iou match
         (u_rows, u_cols,
-         m_r_c) = Geom.centroid_match(
-             tracked_not_matched, tentative_new, 300)
+         m_r_c) = Geom.centroid_match(tracked_not_matched, tentative_new, 300)
         
         logging.debug('matched by centroid %s', m_r_c)
         logging.debug('++++++++++++')
