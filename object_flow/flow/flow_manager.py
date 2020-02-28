@@ -312,7 +312,6 @@ class FlowManager(Doer):
                 else:
                     self._setting.update_item(self.cfg.frame_number, item_id, confidence,
                                               bounding_box)
-                print(exit)
                 self._remove_items(del_items)
 
         # are all trackers done? If all done then we can call the
