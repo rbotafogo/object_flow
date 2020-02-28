@@ -65,16 +65,18 @@ class Stopwatch:
         if total_frames % num_frames == 0:
             total = 0
             for measure in cls._measures:
-                # num_events = cls._measures[measure]['num_events']
-                num_events = num_frames
+                num_events = cls._measures[measure]['num_events']
                 logging.info("%s: average time to " + measure + " for the last " +
-                             str(num_events) + " frames is %f",
-                             name,
-                             cls._measures[measure]['total'] / num_events)
+                             str(num_frames) + " frames is %f", name,
+                             cls._measures[measure]['total'] / num_frames)
+                if num_events != num_frames:
+                    logging.info("%s: average time to " + measure + " for the last " +
+                                 str(num_events) + " events is %f", name,
+                                 cls._measures[measure]['total'] / num_events)
                 if measure != main_measure:
-                    total += cls._measures[measure]['total'] / num_events
+                    total += cls._measures[measure]['total'] / num_frames
                 elif main_measure != None:
-                    process_total = cls._measures[measure]['total'] / num_events
+                    process_total = cls._measures[measure]['total'] / num_frames
 
                 cls.clear(measure)
                 
