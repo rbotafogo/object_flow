@@ -159,7 +159,7 @@ class Tracker(Doer):
             detections[item_id] = (confidence, pos)
 
         Stopwatch.stop('update_tracking') 
-        Stopwatch.report(str(self.id), self._total_frames)       
+        # Stopwatch.report(str(self.id), self._total_frames)       
         
         return detections
 
