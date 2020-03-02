@@ -581,7 +581,8 @@ class FlowManager(Doer):
                  range((len(items) + chunck_size - 1) // chunck_size )]
 
         tracker_items = []
-        
+        print("***********item size:", len(items),"**************")
+        print("***********final size:", len(final), "**************")
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
             logging.debug("%s: Selected tracker is %s", self.video_name, key)
