@@ -171,5 +171,6 @@ class YoloTf2(Doer):
         self._mmap_bbox.set_base_address(buf, video_id)
         logging.debug("number of objects detected %d", num_elmts)
         self._mmap_bbox.write_header(buf, np.array([num_elmts]).astype(np.int32))
+        
         self._mmap_bbox.close(buf)
         

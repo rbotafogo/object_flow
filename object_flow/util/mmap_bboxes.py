@@ -100,6 +100,7 @@ class MmapBboxes:
 
     def close(self, buf):
         buf.close()
+        os.close(self._fd)
         
     # ---------------------------------------------------------------------------------
     # read the header and advance the pointer in the file to the next byte
