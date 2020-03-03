@@ -47,13 +47,15 @@ class MmapBboxes:
         # maximum size in bytes of bounding boxes for one video
         self.bboxes_size = self.header_size + self.max_bboxes * self.yolo_block_size
 
+        self._alloc = mmap.ALLOCATIONGRANULARITY
+        
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing
     # ---------------------------------------------------------------------------------
  
     def create(self):
         self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        os.write(self._fd, b'\x00' * mmap.PAGESIZE)
+        os.write(self._fd, b'\x00' * mmap.ALLOCATIONGRANULARITY)
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing. Assumes that the file was already created
@@ -63,12 +65,19 @@ class MmapBboxes:
         
         self._fd = os.open(self.mmap_path, os.O_RDWR)
         # pg_length = self.bboxes_size * (video_id + 1)
+        alloc = (self.bboxes_size * video_id) % self._alloc
+        self._alloc = (alloc + 1) * mmap.ALLOCATIONGRANULARITY
+        
+        return mmap.mmap(self._fd, mmap.ALLOCATIONGRANULARITY,
+                         access = mmap.ACCESS_WRITE,
+                         offset = alloc * mmap.ALLOCATIONGRANULARITY)
+    
 
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
         # says that memory sharing is possible
-        return mmap.mmap(self._fd, 0, access = mmap.ACCESS_WRITE)
+        # return mmap.mmap(self._fd, 0, access = mmap.ACCESS_WRITE)
     
     # ---------------------------------------------------------------------------------
     # Open mmap file for reading only
@@ -91,13 +100,6 @@ class MmapBboxes:
 
     def close(self, buf):
         buf.close()
-        
-    # ---------------------------------------------------------------------------------
-    # Write 0 to actually mapped file in memory
-    # ---------------------------------------------------------------------------------
-
-    def set0(self):
-        os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
         
     # ---------------------------------------------------------------------------------
     # read the header and advance the pointer in the file to the next byte
@@ -129,6 +131,14 @@ class MmapBboxes:
         return np.frombuffer(
             buf.read(num_elmts * np.dtype(dtype).itemsize), dtype=dtype)
     
+    # ---------------------------------------------------------------------------------
+    # Write 0 to actually mapped file in memory
+    # ---------------------------------------------------------------------------------
+
+    def set0(self, buf):
+        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
+        buf.write(b'\x00' * self.bboxes_size)
+        
     # ---------------------------------------------------------------------------------
     # Write header
     # ---------------------------------------------------------------------------------

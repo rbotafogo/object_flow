@@ -96,9 +96,8 @@ class FlowManager(Doer):
 
         # open the mmap file for communicating bounding boxes with yolo
         self._mmap_bbox = MmapBboxes()
-        # open the mmap file for reading
+        # open the mmap file for writing
         self.bbox_buf = self._mmap_bbox.open_write(self.video_name, self.video_id)
-
 
     # ----------------------------------------------------------------------------------
     #
