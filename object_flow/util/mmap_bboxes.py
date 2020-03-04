@@ -30,16 +30,20 @@ class MmapBboxes:
     def __init__(self):
 
         self.mmap_path = "log/mmap_bboxes"
-        self.page_size = 4000
+        
         # size in bytes of one bbox
         # Yolo: four integers, each with 4 bytes + 1 float for confidences (8 bytes),
         # + 1 int for classID (2 bytes)
         self.yolo_block_size = 4 * 4 + 1 * 8 + 1 * 2
+        
         # Tracker: 1 bit for termination (1 byte) = 1 * 1 + 4 integers * 4 bytes for
         # bounding boxes 
         self.tracker_block_size = 1 * 1 + 4 * 4
-        
+
+        # Maximum number of bounding boxes supported. TODO: make this value grow
+        # automatically if needed
         self.max_bboxes = 50
+        
         # header has the number of of bounding boxes stored in the buffer
         # 1 integer
         self.header_size = 1 * 4

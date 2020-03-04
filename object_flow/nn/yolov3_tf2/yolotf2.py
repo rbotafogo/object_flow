@@ -144,9 +144,9 @@ class YoloTf2(Doer):
 
         # open the mmap file for writing detections
         buf = self._mmap_bbox.open_write(video_name, video_id)
+        
         # moves the memory map index to start writing bounding boxes information
         self._mmap_bbox.set_detection_address(buf, video_id)
-
         num_elmts = 0
         for i in range(nums):
             # taking only class 0 person... needs to be configurable
@@ -161,15 +161,16 @@ class YoloTf2(Doer):
                     confidence = np.array([objectness[i]]).astype(np.float)
                     obj_class = np.array([classes[i]]).astype(np.uint16)
 
-                    self._mmap_bbox.write_detection(
-                        buf, box, confidence, obj_class)
+                    # writing the detection will move the index
+                    self._mmap_bbox.write_detection(buf, box, confidence, obj_class)
                     
                     logging.debug("writing detection with box %s confidence %s classID %s",
                                  box, confidence, obj_class)
 
+        logging.debug("number of objects detected %d", num_elmts)
+        
         # write the number of detected object on the header of the block
         self._mmap_bbox.set_base_address(buf, video_id)
-        logging.debug("number of objects detected %d", num_elmts)
         self._mmap_bbox.write_header(buf, np.array([num_elmts]).astype(np.int32))
         
         self._mmap_bbox.close(buf)

@@ -286,7 +286,6 @@ class FlowManager(Doer):
         self.num_trackers -= 1
         if self.num_trackers < 1:
             Stopwatch.stop('tracking')
-            
             logging.debug("%s: total items is %d; total tracked is %d", self.video_name,
                           self._total_items, self._total_tracked)
             
@@ -307,7 +306,9 @@ class FlowManager(Doer):
         confidences = []
         classIDs = []
         
-        # loop until Yolo has finished processing
+        # TODO: In Windows, there is no way of using signal (as far as I know), so
+        # we have to make this busy loop.  In Linux, we should wait for a signal.
+        # loop until Yolo has finished processing.
         detections = -1
         while detections == -1:
             # read the number of detect objects
@@ -547,6 +548,7 @@ class FlowManager(Doer):
         
         for chunk in final:
             key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
+            
             logging.debug("%s: Selected tracker is %s", self.video_name, key)
             
             tracker = self.trackers[key]
@@ -558,7 +560,10 @@ class FlowManager(Doer):
                 self.next_item_id += 1
                 item.item_id = self.next_item_id
                 self._setting.items[self.next_item_id] = item
+                # store this item trackers information
                 item.tracker_address = tracker[0]
+                item.tracker_id = key
+                # append the item to all the items to be sent to a the tracker
                 tracker_items.append(item)
 
             self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,

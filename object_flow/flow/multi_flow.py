@@ -23,7 +23,6 @@ from object_flow.nn.yolov3_tf2.yolotf2 import YoloTf2
 from object_flow.flow.flow_manager import FlowManager
 from object_flow.flow.tracker import Tracker
 
-from object_flow.util.mmap_frames import MmapFrames
 from object_flow.util.mmap_bboxes import MmapBboxes
 
 #==========================================================================================
