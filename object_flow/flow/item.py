@@ -41,9 +41,6 @@ class Item:
         # for registering the bounding box and giving it an object id
         self.item_id = None
 
-        # index of this item in the mmap file
-        self.mmap_index = None
-        
         # class_id and confidence for this class id.  Those values are
         # given by the detection algorithm
         self.class_id = class_id
@@ -61,6 +58,7 @@ class Item:
 
         # id of the tracker tracking this item
         self.tracker_address = None
+        self.tracker_id = None
         
         # direction to which the object is moving
         self.dirX = None

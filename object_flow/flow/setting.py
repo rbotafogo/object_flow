@@ -39,10 +39,6 @@ class Setting:
         # dictionary of items in this setting
         self.items = {}
 
-        # Controls in which index in the buffer the item is stored
-        self._mmap_indexes = list(range(0, buffer_size - 1))
-        self._in_use_indexes = []
-        
     # ---------------------------------------------------------------------------------
     #
     # ---------------------------------------------------------------------------------
