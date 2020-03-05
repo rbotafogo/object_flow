@@ -185,6 +185,7 @@ class MultiFlow(Doer):
                     item_index+=1
                     self.num_items_per_tracker[tracker_name]+=1
                 self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
+        return items
 
     # ----------------------------------------------------------------------------------
     #
