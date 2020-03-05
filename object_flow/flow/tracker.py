@@ -149,6 +149,7 @@ class Tracker(Doer):
         detections = {}
         
         for item_id, tracker in video_items.items():
+            start_time = time.perf_counter()
             confidence, pos = self._update_tracker(frame, tracker, width, height)
             if (any(x < 0 for x in pos) or any (x > 65535 for x in pos)):
                 confidence = -1
@@ -157,6 +158,8 @@ class Tracker(Doer):
                 pos = np.array(pos, dtype=np.uint16)
                 
             detections[item_id] = (confidence, pos)
+            end_time = time.perf_counter()
+            logging.INFO("Tracker Id: ",self.id, ", Video name: ",video_name, ", Item id: ", item_id, ", Time took: ", (start_time-end_time))
 
         Stopwatch.stop('update_tracking') 
         Stopwatch.report(str(self.id), self._total_frames)       
