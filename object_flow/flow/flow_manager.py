@@ -574,34 +574,33 @@ class FlowManager(Doer):
 
         logging.debug("%s: adding to trackers %d items", self.video_name,
                       len(items))
-        
-        chunck_size = 3
-        
-        final = [items[i * chunck_size:(i + 1) * chunck_size] for i in
-                 range((len(items) + chunck_size - 1) // chunck_size )]
-
-        tracker_items = []
-        print("***********item size:", len(items),"**************")
-        print("***********final size:", len(final), "**************")
-        for chunk in final:
-            key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
-            logging.debug("%s: Selected tracker is %s", self.video_name, key)
-            
-            tracker = self.trackers[key]
-            
-            for item in chunk:
-                # first frame where this item was detected
-                item.first_frame = self.cfg.frame_number
-                # set the id of this item to the next value
-                self.next_item_id += 1
-                item.item_id = self.next_item_id
-                self._setting.items[self.next_item_id] = item
-                item.tracker_address = tracker[0]
-                tracker_items.append(item)
-
-            self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,
-                      tracker_items)
-            tracker_items = []
+        self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index)
+        # chunck_size = 3
+        #
+        # final = [items[i * chunck_size:(i + 1) * chunck_size] for i in
+        #          range((len(items) + chunck_size - 1) // chunck_size )]
+        #
+        # tracker_items = []
+        #
+        # for chunk in final:
+        #     key = list(self.trackers.keys())[random.randrange(len(self.trackers))]
+        #     logging.debug("%s: Selected tracker is %s", self.video_name, key)
+        #
+        #     tracker = self.trackers[key]
+        #
+        #     for item in chunk:
+        #         # first frame where this item was detected
+        #         item.first_frame = self.cfg.frame_number
+        #         # set the id of this item to the next value
+        #         self.next_item_id += 1
+        #         item.item_id = self.next_item_id
+        #         self._setting.items[self.next_item_id] = item
+        #         item.tracker_address = tracker[0]
+        #         tracker_items.append(item)
+        #
+        #     self.post(tracker[0], 'tracks_list', self.video_name, self.frame_index,
+        #               tracker_items)
+        #     tracker_items = []
                 
     # ---------------------------------------------------------------------------------
     # Matches the newly detected items with the already tracked items using either

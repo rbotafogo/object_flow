@@ -53,6 +53,9 @@ class MultiFlow(Doer):
         # Create the memory maped file for communicating bounding boxes
         self._mmap_bbox = MmapBboxes()
         self._mmap_bbox.create()
+        self.num_items_per_tracker = {}
+        self.num_items = 0
+        self.last_frame_id = 0
 
     # ----------------------------------------------------------------------------------
     #
@@ -162,7 +165,26 @@ class MultiFlow(Doer):
     def flow_manager_initialized(self, video_name):
         self.start_playback(video_name)
         # pass
-    
+
+    def assign_job2trackers(self, items, video_name, frame_index):
+        if frame_index> self.last_frame_id:
+            for key in self._doers['trackers'].keys():
+                self.num_items_per_tracker[key]=0
+            self.last_frame_id=frame_index
+            self.num_items=0
+        self.num_items+=len(items)
+        average_items=self.num_items//len(self._doers['trackers']) if self.num_items % len(self._doers['trackers'])==0 else self.num_items//len(self._doers['trackers'])+1
+        item_index=0
+        for tracker_name, num in self.num_items_per_tracker.items():
+            if num<average_items and item_index<len(items):
+                tracker_items = []
+                tracker = self._doers['trackers'][tracker_name]
+                while len(tracker_items)<average_items-num and item_index<len(items):
+                    tracker_items.append(items[item_index])
+                    item_index+=1
+                    self.num_items_per_tracker[tracker_name]+=1
+                self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
+
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
