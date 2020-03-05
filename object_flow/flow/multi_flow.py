@@ -56,6 +56,7 @@ class MultiFlow(Doer):
         self.num_items_per_tracker = {}
         self.num_items = 0
         self.last_frame_id = 0
+        self.next_item_id={}
 
     # ----------------------------------------------------------------------------------
     #
@@ -151,6 +152,7 @@ class MultiFlow(Doer):
             self._yolo, self._next_flow_id,
             group = 'flow_manager')
         self._next_flow_id += 1
+        self.next_item_id[cfg.video_name]=0
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -180,6 +182,8 @@ class MultiFlow(Doer):
                 tracker_items = []
                 tracker = self._doers['trackers'][tracker_name]
                 while len(tracker_items)<average_items-num and item_index<len(items):
+                    self.next_item_id[video_name]+=1
+                    items[item_index].item_id=self.next_item_id[video_name]
                     items[item_index].tracker_address=tracker[0]
                     tracker_items.append(items[item_index])
                     item_index+=1

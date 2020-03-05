@@ -385,7 +385,7 @@ class FlowManager(Doer):
             item.first_frame = self.cfg.frame_number
             self.next_item_id += 1
             item.item_id = self.next_item_id
-            self._setting.items[self.next_item_id] = item
+            self._setting.items[item.item_id] = item
         
     # ----------------------------------------------------------------------------------
     # 
