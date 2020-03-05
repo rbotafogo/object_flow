@@ -574,7 +574,13 @@ class FlowManager(Doer):
 
         logging.debug("%s: adding to trackers %d items", self.video_name,
                       len(items))
+        for item in items:
+            item.first_frame = self.cfg.frame_number
+            self.next_item_id += 1
+            item.item_id = self.next_item_id
+            self._setting.items[self.next_item_id] = item
         self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index)
+
         # chunck_size = 3
         #
         # final = [items[i * chunck_size:(i + 1) * chunck_size] for i in

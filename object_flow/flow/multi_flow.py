@@ -180,6 +180,7 @@ class MultiFlow(Doer):
                 tracker_items = []
                 tracker = self._doers['trackers'][tracker_name]
                 while len(tracker_items)<average_items-num and item_index<len(items):
+                    items[item_index].tracker_address=tracker[0]
                     tracker_items.append(items[item_index])
                     item_index+=1
                     self.num_items_per_tracker[tracker_name]+=1
