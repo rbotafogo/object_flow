@@ -13,7 +13,9 @@ import numpy as np
 import scipy
 import scipy.spatial
 
-class Geom:
+cdef bint boolean_variable = True
+
+cdef class Geom:
 
     # ----------------------------------------------------------------------------------
     # Returns False in one side of the line and true on the other.  The line is
@@ -28,7 +30,8 @@ class Geom:
     #
     # ----------------------------------------------------------------------------------
 
-    def ccw(int p10, int p11, int p20, int p21, int p30,
+    @staticmethod
+    cdef bint ccw(int p10, int p11, int p20, int p21, int p30,
             int p31):
 	# return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
         return ((p31 - p11) * (p20 - p10) > (p21 - p11) * (p30 - p10))
@@ -155,66 +158,3 @@ class Geom:
 	
         unused_cols = set(range(0, c_array.shape[1])).difference(cols)
         return unused_rows, unused_cols, match_rows_cols
-    
-
-
-
-    
-    # ----------------------------------------------------------------------------------
-    # Returns False in one side of the line and true on the other.  The line is
-    # given by the two bounding points: first_point and second_point
-    # ----------------------------------------------------------------------------------
-
-    def point_position2(first_point, second_point, x, y):
-        position = ((second_point[0] - first_point[0]) *
-                    (y - first_point[1]) -
-                    (second_point[1] - first_point[1]) *
-                    (x - first_point[0])) > 0
-        return position
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def ccw2(p1, p2, p3):
-	# return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
-        return ((p3[1] - p1[1]) * (p2[0] - p1[0]) >
-                (p2[1] - p1[1]) * (p3[0] - p1[0]))
-
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    def intersect2(p1, p2, p3, p4):
-	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
-        return (Geom.ccw(p1, p3, p4) != Geom.ccw(p2, p3, p4) and
-                Geom.ccw(p1, p2, p3) != Geom.ccw(p1, p2, p4))
-    
-    # ---------------------------------------------------------------------------------
-    # Calculates the intersection over union of this bounding box with another
-    # given bounding box
-    # ---------------------------------------------------------------------------------
-
-    def iou2(box, other_box):
-        # determine the (x, y)-coordinates of the intersection rectangle
-        x_start = max(box.startX, other_box.startX)
-        y_start = max(box.startY, other_box.startY)
-        x_end = min(box.endX, other_box.endX)
-        y_end = min(box.endY, other_box.endY)
-
-        # compute the area of intersection rectangle
-        inter_area = max(0, x_end - x_start + 1) * max(0, y_end - y_start + 1)
-
-        # compute the area of the given box. The area of the current object
-        # is always kept updated
-        other_box_area = ((other_box.endX - other_box.startX + 1) *
-                          (other_box.endY - other_box.startY + 1))
-
-        # compute the intersection over union by taking the intersection
-        # area and dividing it by the sum of prediction + ground-truth
-        # areas - the interesection area
-        iou = inter_area / float(box.area + other_box_area - inter_area)
-
-        # return the intersection over union value
-        return iou
-	

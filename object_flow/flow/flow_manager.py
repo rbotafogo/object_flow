@@ -402,7 +402,6 @@ class FlowManager(Doer):
         # Initialize the collection of trackers time
         Stopwatch.start('tracking')
 
-        
         # do the tracking phase of the algorithm
         # update tracked items for this video every 'x' frames according to
         # configuration
