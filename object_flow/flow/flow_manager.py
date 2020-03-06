@@ -248,7 +248,7 @@ class FlowManager(Doer):
         
         # register the video with all trackers.  Need to wait for the registration
         # to be done to continues execution
-        self.post(self.parent_address, 'broadcast_trackers', self.video_name, self.video_id, self.width, self.height, self.depth)
+        self.post(self.parent_address, 'register_trackers', self.video_name, self.video_id, self.width, self.height, self.depth)
         # self._trackers_broadcast_with_callback(
         #     'register_video', self.video_name, self.video_id,
         #     self.width, self.height, self.depth, callback = 'register_done')
