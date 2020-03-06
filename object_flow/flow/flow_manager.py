@@ -381,12 +381,6 @@ class FlowManager(Doer):
         self._write_metrics(self._setting.items)
         self._next_frame()
 
-    def items_assigned(self, items):
-        for item in items:
-            item.first_frame = self.cfg.frame_number
-            self.next_item_id += 1
-            item.item_id = self.next_item_id
-            self._setting.items[item.item_id] = item
         
     # ----------------------------------------------------------------------------------
     # 
@@ -551,26 +545,26 @@ class FlowManager(Doer):
 
         if len(items_ids) == 0:
             return
-        
-        trackers = {}
+        self.post(self.parent_address, 'remove_items_in_trackers', items_ids)
+        # trackers = {}
 
         for item_id in items_ids:
             # The item might have been removed by going out of the entry lines
             if item_id in self._setting.items.keys():
-                item = self._setting.items[item_id]
-                tk_key = str(item.tracker_address)
-                
-                if tk_key not in trackers:
-                    trackers[tk_key] = {}
-                    trackers[tk_key]['doer_address'] = item.tracker_address
-                    trackers[tk_key]['items_ids'] = []
-
-                trackers[tk_key]['items_ids'].append(item_id)
+                # item = self._setting.items[item_id]
+                # tk_key = str(item.tracker_address)
+                #
+                # if tk_key not in trackers:
+                #     trackers[tk_key] = {}
+                #     trackers[tk_key]['doer_address'] = item.tracker_address
+                #     trackers[tk_key]['items_ids'] = []
+                #
+                # trackers[tk_key]['items_ids'].append(item_id)
                 del self._setting.items[item_id]
-
-        for tk_key in trackers:
-            self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
-                      self.video_name, trackers[tk_key]['items_ids']) 
+        #
+        # for tk_key in trackers:
+        #     self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
+        #               self.video_name, trackers[tk_key]['items_ids'])
 
     # ---------------------------------------------------------------------------------
     # Given a list of items to be tracked, send them for tracking to the multiple
@@ -583,7 +577,12 @@ class FlowManager(Doer):
 
         logging.debug("%s: adding to trackers %d items", self.video_name,
                       len(items))
-        self.phone(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index, callback='items_assigned')
+        self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index)
+        for item in items:
+            item.first_frame = self.cfg.frame_number
+            self.next_item_id += 1
+            item.item_id = self.next_item_id
+            self._setting.items[item.item_id] = item
         # chunck_size = 3
         #
         # final = [items[i * chunck_size:(i + 1) * chunck_size] for i in
