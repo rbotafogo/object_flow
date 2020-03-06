@@ -72,11 +72,11 @@ class FlowManager(Doer):
     # 
     # ----------------------------------------------------------------------------------
 
-    def __initialize__(self, cfg, trackers, yolo, video_id):
+    def __initialize__(self, cfg, ntrackers, yolo, video_id):
         
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
-        self.trackers = trackers
+        self._registered_trackers = ntrackers
         self._yolo = yolo
         self.video_id = video_id
         self.video_name = cfg.video_name
@@ -233,7 +233,7 @@ class FlowManager(Doer):
         self.depth = depth
         self.frame_size = self.height * self.width * self.depth
 
-        self._registered_trackers = len(self.trackers)
+        # self._registered_trackers = len(self.trackers)
 
         # register the video with yolo.
         self.phone(self._yolo, 'register_video', self.video_name, self.video_id,
@@ -248,9 +248,10 @@ class FlowManager(Doer):
         
         # register the video with all trackers.  Need to wait for the registration
         # to be done to continues execution
-        self._trackers_broadcast_with_callback(
-            'register_video', self.video_name, self.video_id,
-            self.width, self.height, self.depth, callback = 'register_done')
+        self.post(self.parent_address, 'broadcast_trackers', self.video_name, self.video_id, self.width, self.height, self.depth)
+        # self._trackers_broadcast_with_callback(
+        #     'register_video', self.video_name, self.video_id,
+        #     self.width, self.height, self.depth, callback = 'register_done')
         
     # ----------------------------------------------------------------------------------
     # 
@@ -431,7 +432,7 @@ class FlowManager(Doer):
 
         # keep reference to the number of trackers that have already replied
         # with tracking information. None so far.
-        self.num_trackers = len(self.trackers)
+        self.num_trackers = self._registered_trackers
 
         self._total_items = len(self._setting.items)
         self._total_tracked = 0
@@ -452,9 +453,10 @@ class FlowManager(Doer):
         if (self.cfg.data['video_analyser']['track_every_x_frames'] == 1 or
             (self.cfg.frame_number %
              self.cfg.data['video_analyser']['track_every_x_frames'] == 0)):
-            self._trackers_broadcast_with_callback(
-                'update_tracked_items', self.video_name, self.frame_index,
-                callback = 'tracking_done')
+            self.post(self.parent_address, 'update_trackers', self.video_name, self.frame_index)
+            # self._trackers_broadcast_with_callback(
+            #     'update_tracked_items', self.video_name, self.frame_index,
+            #     callback = 'tracking_done')
             
         # should always execute the detection phase. If doing a tracking phase
         # on the frame, then the call to detection_phase should be done after
@@ -529,17 +531,17 @@ class FlowManager(Doer):
     # broadcast a message to all the trackers.
     # ----------------------------------------------------------------------------------
 
-    def _trackers_broadcast_with_callback(self, method, *args, **kwargs):
-        for tracker_name, tracker in self.trackers.items():
-            self.phone(tracker[0], method, *args, **kwargs)
+    # def _trackers_broadcast_with_callback(self, method, *args, **kwargs):
+    #     for tracker_name, tracker in self.trackers.items():
+    #         self.phone(tracker[0], method, *args, **kwargs)
     
     # ----------------------------------------------------------------------------------
     # 
     # ----------------------------------------------------------------------------------
 
-    def _trackers_broadcast(self, method, *args, **kwargs):
-        for tracker_name, tracker in self.trackers.items():
-            self.post(tracker[0], method, *args, **kwargs)
+    # def _trackers_broadcast(self, method, *args, **kwargs):
+    #     for tracker_name, tracker in self.trackers.items():
+    #         self.post(tracker[0], method, *args, **kwargs)
         
     # ---------------------------------------------------------------------------------
     # 

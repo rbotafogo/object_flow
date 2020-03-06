@@ -148,7 +148,7 @@ class MultiFlow(Doer):
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
         cfg.is_image=self.system_cfg.is_image
         manager = self.hire(
-            cfg.video_name, FlowManager, cfg, self._doers['trackers'],
+            cfg.video_name, FlowManager, cfg, self.ntrackers,
             self._yolo, self._next_flow_id,
             group = 'flow_manager')
         self._next_flow_id += 1
@@ -168,8 +168,21 @@ class MultiFlow(Doer):
         self.start_playback(video_name)
         # pass
 
+
+
+    def register_trackers(self, video_name, video_id, width, height, depth):
+        for tracker_name, tracker in self._doers['trackers'].items():
+            self.phone(tracker[0],'register_video', video_name, video_id, width, height, depth, callback='register_done', reply_to=self.last_message_sender)
+
+
+
+    def update_trackers(self, video_name, frame_index):
+        for tracker_name, tracker in self._doers['trackers'].items():
+            self.phone(tracker[0], 'update_tracked_items', video_name, frame_index, callback='tracking_done', reply_to=self.last_message_sender)
+
+
     def assign_job2trackers(self, items, video_name, frame_index):
-        if frame_index> self.last_frame_id:
+        if frame_index==0:
             for key in self._doers['trackers'].keys():
                 self.num_items_per_tracker[key]=0
             self.last_frame_id=frame_index
