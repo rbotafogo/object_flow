@@ -22,7 +22,7 @@ import collections
 import logging
 import numpy as np
 import random
-
+import pdb
 from object_flow.ipc.doer import Doer
 from object_flow.util.display import Display
 from object_flow.util.geom import Geom
@@ -326,6 +326,7 @@ class FlowManager(Doer):
             if self.cfg.is_image == True:
                 if (self.cfg.frame_number <=
                         self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
+                    pdb.set_trace()
                     self._write_metrics(self._setting.items)
             # update the setting
             self._setting.update()
