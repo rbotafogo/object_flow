@@ -76,7 +76,7 @@ class FlowManager(Doer):
         
         self.cfg = cfg
         # trackers hired by multi_flow, available to all flow_managers
-        self._registered_trackers = ntrackers
+        self.ntrackers = ntrackers
         self._yolo = yolo
         self.video_id = video_id
         self.video_name = cfg.video_name
@@ -233,7 +233,7 @@ class FlowManager(Doer):
         self.depth = depth
         self.frame_size = self.height * self.width * self.depth
 
-        # self._registered_trackers = len(self.trackers)
+        self._registered_trackers = self.ntrackers
 
         # register the video with yolo.
         self.phone(self._yolo, 'register_video', self.video_name, self.video_id,
@@ -426,7 +426,7 @@ class FlowManager(Doer):
 
         # keep reference to the number of trackers that have already replied
         # with tracking information. None so far.
-        self.num_trackers = self._registered_trackers
+        self.num_trackers = self.ntrackers
 
         self._total_items = len(self._setting.items)
         self._total_tracked = 0
