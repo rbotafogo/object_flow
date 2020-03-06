@@ -202,13 +202,8 @@ class MultiFlow(Doer):
             self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
                       video_name, trackers[tk_key]['items_ids'])
 
-        
+
     def assign_job2trackers(self, items, video_name, frame_index):
-        if frame_index==0:
-            for key in self._doers['trackers'].keys():
-                self.num_items_per_tracker[key]=0
-            self.last_frame_id=frame_index
-            self.num_items=0
         self.num_items+=len(items)
         average_items=self.num_items//len(self._doers['trackers']) if self.num_items % len(self._doers['trackers'])==0 else self.num_items//len(self._doers['trackers'])+1
         item_index=0
@@ -259,6 +254,8 @@ class MultiFlow(Doer):
             cfg.delta_csv_update = self.system_cfg.data['system_info']['delta']
 
             self.add_camera(cfg)
+        for key in self._doers['trackers'].keys():
+            self.num_items_per_tracker[key] = 0
             
     # ----------------------------------------------------------------------------------
     # Reads the configuration file for the video specific video. It first reads the

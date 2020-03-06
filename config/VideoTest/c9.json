@@ -1,8 +1,8 @@
 {
   
   "io": {
-    "input": "resources/videos/img9.avi",
-    "record": "resources/output/img9.avi"
+    "input": "resources/videos/img2.avi",
+    "record": "resources/output/img2.avi"
   },
   
   "video_processor": {
