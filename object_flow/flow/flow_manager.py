@@ -545,7 +545,7 @@ class FlowManager(Doer):
 
         if len(items_ids) == 0:
             return
-        self.post(self.parent_address, 'remove_items_in_trackers', items_ids)
+        self.post(self.parent_address, 'remove_items_in_trackers', items_ids, self.video_name)
         # trackers = {}
 
         for item_id in items_ids:
