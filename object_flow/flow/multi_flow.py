@@ -220,6 +220,7 @@ class MultiFlow(Doer):
                     self.video_items[video_name][self.next_item_id[video_name]]=item
                     item_index+=1
                     self.num_items_per_tracker[tracker_name]+=1
+                    print(tracker_name, item.item_id)
                 self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
 
     # ----------------------------------------------------------------------------------
