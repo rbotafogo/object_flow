@@ -207,22 +207,47 @@ class MultiFlow(Doer):
 
     def assign_job2trackers(self, items, video_name, frame_index):
         self.num_items+=len(items)
-        average_items=self.num_items//len(self._doers['trackers']) if self.num_items % len(self._doers['trackers'])==0 else self.num_items//len(self._doers['trackers'])+1
+        average_items=self.num_items//len(self._doers['trackers'])
         item_index=0
-        for tracker_name, num in self.num_items_per_tracker.items():
-            if num<average_items and item_index<len(items):
-                tracker_items = []
-                tracker = self._doers['trackers'][tracker_name]
-                while len(tracker_items)<average_items-num and item_index<len(items):
-                    self.next_item_id[video_name]+=1
-                    item=items[item_index]
-                    item.item_id=self.next_item_id[video_name]
-                    item.tracker_address=tracker[0]
-                    tracker_items.append(item)
-                    self.video_items[video_name][item.item_id]=tracker_name
-                    item_index+=1
-                    self.num_items_per_tracker[tracker_name]+=1
-                self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
+        send2trackers={}
+        #for all the items:
+        while item_index<len(items):
+            #find the tracker to assign:
+            for tracker_name, num in self.num_items_per_tracker.items():
+                #find the right tracker:
+                while num<average_items and item_index<len(items):
+                    if tracker_name not in send2trackers:
+                        send2trackers[tracker_name]=[]
+                    #update item information
+                    self.next_item_id[video_name] += 1
+                    item = items[item_index]
+                    item.item_id = self.next_item_id[video_name]
+                    item.tracker_address=self._doers['trackers'][tracker_name][0]
+
+                    self.video_items[video_name][item.item_id] = tracker_name
+                    item_index += 1
+                    #update load balancing dict
+                    self.num_items_per_tracker[tracker_name] += 1
+                    num+=1
+                    send2trackers[tracker_name].append(item)
+            average_items+=1
+        for tracker_name in send2trackers:
+            tracker = self._doers['trackers'][tracker_name]
+            self.post(tracker[0], 'tracks_list', video_name, frame_index,send2trackers[tracker_name])
+        # for tracker_name, num in self.num_items_per_tracker.items():
+        #     if num<average_items and item_index<len(items):
+        #         tracker_items = []
+        #         tracker = self._doers['trackers'][tracker_name]
+        #         while len(tracker_items)<average_items-num and item_index<len(items):
+        #             self.next_item_id[video_name]+=1
+        #             item=items[item_index]
+        #             item.item_id=self.next_item_id[video_name]
+        #             item.tracker_address=tracker[0]
+        #             tracker_items.append(item)
+        #             self.video_items[video_name][item.item_id]=tracker_name
+        #             item_index+=1
+        #             self.num_items_per_tracker[tracker_name]+=1
+        #         self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
 
     # ----------------------------------------------------------------------------------
     #
