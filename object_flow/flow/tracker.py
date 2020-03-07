@@ -147,7 +147,7 @@ class Tracker(Doer):
         
         video_items = self.videos[video_name]['items']
         detections = {}
-        
+        print("Tracker", self.id, " Item length:", len(video_items))
         for item_id, tracker in video_items.items():
             start_time = time.perf_counter()
             confidence, pos = self._update_tracker(frame, tracker, width, height)

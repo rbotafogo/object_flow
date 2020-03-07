@@ -325,7 +325,6 @@ class FlowManager(Doer):
             if self.cfg.is_image == True:
                 if (self.cfg.frame_number <=
                         self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
-                    print(self._total_frames, len(self._setting.items))
                     self._write_metrics(self._setting.items)
             # update the setting
             self._setting.update()
@@ -560,7 +559,6 @@ class FlowManager(Doer):
                 #     trackers[tk_key]['items_ids'] = []
                 #
                 # trackers[tk_key]['items_ids'].append(item_id)
-                print("delete:", self.cfg.frame_number, item_id)
                 del self._setting.items[item_id]
         #
         # for tk_key in trackers:
