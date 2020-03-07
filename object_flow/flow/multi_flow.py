@@ -149,7 +149,7 @@ class MultiFlow(Doer):
         cfg.minutes = self.system_cfg.data['system_info']['minutes']
         cfg.is_image=self.system_cfg.is_image
         manager = self.hire(
-            cfg.video_name, FlowManager, cfg, self.ntrackers,
+            cfg.video_name, FlowManager, cfg, self.system_cfg.data['system_info']['num_trackers'],
             self._yolo, self._next_flow_id,
             group = 'flow_manager')
         self._next_flow_id += 1
