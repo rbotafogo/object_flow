@@ -560,6 +560,7 @@ class FlowManager(Doer):
                 #     trackers[tk_key]['items_ids'] = []
                 #
                 # trackers[tk_key]['items_ids'].append(item_id)
+                print("delete:", self.cfg.frame_number, item_id)
                 del self._setting.items[item_id]
         #
         # for tk_key in trackers:
