@@ -316,8 +316,7 @@ class FlowManager(Doer):
 
         # are all trackers done? If all done then we can call the
         # detection phase
-        self.num_trackers -= 1
-        logging.info("**********^^^^^^^^^^^^^^^file_name:%s, total_tracked:%s, total_items:%s", self.video_name, self._total_tracked, self._total_items)
+        # self.num_trackers -= 1
         if self._total_tracked == self._total_items:
             Stopwatch.stop('tracking')
 
@@ -427,7 +426,7 @@ class FlowManager(Doer):
 
         # keep reference to the number of trackers that have already replied
         # with tracking information. None so far.
-        self.num_trackers = self.ntrackers
+        # self.num_trackers = self.ntrackers
 
 
         
@@ -436,7 +435,7 @@ class FlowManager(Doer):
             self.cfg.frame_number, self.cfg.data["trackable_objects"]["disappear"])
         overlapped = self._setting.find_overlap()
         self._remove_items(dissapeared + overlapped)
-        
+
         self._total_items = len(self._setting.items)
         self._total_tracked = 0
         # Initialize the collection of trackers time
