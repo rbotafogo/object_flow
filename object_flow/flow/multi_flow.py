@@ -235,20 +235,7 @@ class MultiFlow(Doer):
             tracker = self._doers['trackers'][tracker_name]
             self.post(tracker[0], 'tracks_list', video_name, frame_index,send2trackers[tracker_name])
         logging.info("items assigned to each tracker:%s",self.num_items_per_tracker)
-        # for tracker_name, num in self.num_items_per_tracker.items():
-        #     if num<average_items and item_index<len(items):
-        #         tracker_items = []
-        #         tracker = self._doers['trackers'][tracker_name]
-        #         while len(tracker_items)<average_items-num and item_index<len(items):
-        #             self.next_item_id[video_name]+=1
-        #             item=items[item_index]
-        #             item.item_id=self.next_item_id[video_name]
-        #             item.tracker_address=tracker[0]
-        #             tracker_items.append(item)
-        #             self.video_items[video_name][item.item_id]=tracker_name
-        #             item_index+=1
-        #             self.num_items_per_tracker[tracker_name]+=1
-        #         self.post(tracker[0], 'tracks_list', video_name, frame_index, tracker_items)
+
 
     # ----------------------------------------------------------------------------------
     #
