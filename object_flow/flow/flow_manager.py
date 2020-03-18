@@ -317,7 +317,7 @@ class FlowManager(Doer):
         # are all trackers done? If all done then we can call the
         # detection phase
         self.num_trackers -= 1
-        if self.num_trackers < 1:
+        if self._total_tracked == self._total_items:
             Stopwatch.stop('tracking')
 
             logging.debug("%s: total items is %d; total tracked is %d", self.video_name,
