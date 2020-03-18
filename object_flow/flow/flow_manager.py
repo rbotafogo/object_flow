@@ -429,8 +429,7 @@ class FlowManager(Doer):
         # with tracking information. None so far.
         self.num_trackers = self.ntrackers
 
-        self._total_items = len(self._setting.items)
-        self._total_tracked = 0
+
         
         # check for disappeared items and remove them:
         dissapeared = self._setting.check_disappeared(
@@ -438,6 +437,8 @@ class FlowManager(Doer):
         overlapped = self._setting.find_overlap()
         self._remove_items(dissapeared + overlapped)
         
+        self._total_items = len(self._setting.items)
+        self._total_tracked = 0
         # Initialize the collection of trackers time
         Stopwatch.start('tracking')
 
