@@ -1,8 +1,8 @@
 {
   
   "io": {
-    "input": "resources/videos/img2.avi",
-    "record": "resources/output/img2.avi"
+    "input": "resources/videos/Vivo.avi",
+    "record": "resources/output/Vivo.avi"
   },
   
   "video_processor": {
