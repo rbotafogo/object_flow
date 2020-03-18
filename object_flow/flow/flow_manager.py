@@ -377,7 +377,8 @@ class FlowManager(Doer):
         # already tracked items with the newly detected ones, adding only the
         # relevant items
         self._add_items()
-        self._write_metrics(self._setting.items)
+        if self.cfg.is_image == True:
+            self._write_metrics(self._setting.items)
         self._next_frame()
 
         
