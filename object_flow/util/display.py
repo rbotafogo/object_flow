@@ -14,6 +14,9 @@
 
 import cv2
 import logging
+import numpy as np
+import pika
+import json
 
 from object_flow.util.mmap_frames import MmapFrames
 from object_flow.ipc.doer import Doer
@@ -33,6 +36,12 @@ class Display(Doer):
         self.video_name = video_name
         self.cfg = cfg
         self._stop = False
+
+        # for pika communication
+        self.connection = pika.BlockingConnection(
+            pika.ConnectionParameters('localhost'))
+        self.channel = self.connection.channel()
+        self.channel.queue_declare(queue='display')
     
     # ----------------------------------------------------------------------------------
     # 
@@ -130,14 +139,32 @@ class Display(Doer):
                 self._add_counters(spec)
 
     # ----------------------------------------------------------------------------------
-    # 
+    # Sends the image through the rabbitmq queue
     # ----------------------------------------------------------------------------------
 
     def display(self):
+        # ret, img_buf = cv2.imencode('.jpg', self.frame)
+        # dec = cv2.imdecode(img_buf, cv2.IMREAD_COLOR)
+        # cv2.imshow("Iris 8 - Contagem - " + self.video_name, dec)
+
+        # convert image to string so that it can be sent through MQ
+        img_str = cv2.imencode('.jpg', self.frame)[1].tostring()
+
+        # send the actual frame
+        self.channel.basic_publish(exchange='',
+                                   routing_key = 'display',
+                                   properties = pika.BasicProperties(
+                                       headers = {'video_name': self.video_name}),
+                                   body = img_str)
+
+    # ----------------------------------------------------------------------------------
+    # 
+    # ----------------------------------------------------------------------------------
+
+    def display2(self):
         cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
         cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
                              self._read_input, self.video_name)
-        
         cv2.waitKey(25)
 
     # ----------------------------------------------------------------------------------
@@ -147,7 +174,8 @@ class Display(Doer):
 
     def destroy_window(self):
         self._stop = True
-        cv2.destroyAllWindows()        
+        cv2.destroyAllWindows()
+        self.connection.close()
         
     # ----------------------------------------------------------------------------------
     # 

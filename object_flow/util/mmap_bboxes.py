@@ -162,4 +162,5 @@ class MmapBboxes:
         size += buf.write(confidence)
         size += buf.write(classID)
         logging.debug("writing box %s of size %d", bbox, size)
+        logging.debug("writing confidence with value %f", confidence)
         return size

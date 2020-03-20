@@ -12,6 +12,8 @@
 import itertools
 import logging
 
+from object_flow.util.bbox import cBBox
+
 from object_flow.flow.item import Item
 from object_flow.util.geom import Geom
 from object_flow.flow.csv import CSV
@@ -57,7 +59,7 @@ class Setting:
         bboxes = self._validate_entry(bboxes)
         
         # convert the bounding boxes to items
-        self.new_inputs = self._bboxes2items(bboxes, class_ids, confidences)
+        self.new_inputs = self._bboxes2items(bboxes, confidences, class_ids)
 
         # add the counting lines to all new items
         for item in self.new_inputs:
@@ -171,8 +173,8 @@ class Setting:
         for i in range(min_index, len(keys)):
             ti = self.items[keys[i]]
             try: 
-                iou = Geom.iou(item.startX, item.startY, item.endX, item.endY,
-                               ti.startX, ti.startY, ti.endX, ti.endY,)
+                iou = Geom.w_iou(item.startX, item.startY, item.endX, item.endY,
+                                 ti.startX, ti.startY, ti.endX, ti.endY,)
             except OverflowError:
                 logging.info("%s: has_overlap overflow: (%d, %d, %d, %d)-(%d, %d, %d, %d)",
                              self.video_name, 
@@ -220,10 +222,15 @@ class Setting:
     def _bboxes2items(self, bboxes, confidences, class_ids):
 
         new_inputs = []
-        
+
         for (i, bbox) in enumerate(bboxes):
             item = Item(int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]),
                         class_ids[i], confidences[i])
+            
+            # create a C bounding box
+            item.cbbox = cBBox(bbox, class_ids[i], confidences[i])
+            item.cbbox.log()
+            
             new_inputs.append(item)
 
         return new_inputs

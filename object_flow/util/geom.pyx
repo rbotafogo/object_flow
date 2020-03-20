@@ -22,6 +22,7 @@ cdef class Geom:
     # given by the two bounding points: first_point and second_point
     # ----------------------------------------------------------------------------------
 
+    @staticmethod
     def point_position(int fp0, int fp1, int sp0, int sp1,
                        int x, int y):
         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0
@@ -40,6 +41,7 @@ cdef class Geom:
     #
     # ----------------------------------------------------------------------------------
 
+    @staticmethod
     def intersect(int p10, int p11, int p20, int p21,
                   int p30, int p31, int p40, int p41):
 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
@@ -48,22 +50,16 @@ cdef class Geom:
                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=
                 Geom.ccw(p10, p11, p20, p21, p40, p41))
     
-    # ----------------------------------------------------------------------------------
-    #
-    # ----------------------------------------------------------------------------------
-
-    # def in_range(p1, p2, p3):
-    #     return ((p1[0] > p2[0] and p1[0] < p3[0]) and
-    #             (p1[1] > p2[1] and p1[1] < p3[1]))
-
     # ---------------------------------------------------------------------------------
     # Calculates the intersection over union of this bounding box with another
     # given bounding box
     # ---------------------------------------------------------------------------------
 
-    def iou(int box_startX, int box_startY, int box_endX,
-            int box_endY, int obox_startX, int obox_startY,
-            int obox_endX, int obox_endY):
+    @staticmethod
+    cdef double iou(int box_startX, int box_startY, int box_endX,
+                    int box_endY, int obox_startX, int obox_startY,
+                    int obox_endX, int obox_endY):
+        
         # determine the (x, y)-coordinates of the intersection rectangle
         x_start = max(box_startX, obox_startX)
         y_start = max(box_startY, obox_startY)
@@ -89,6 +85,19 @@ cdef class Geom:
         # return the intersection over union value
         return iou
 	
+    @staticmethod
+    def w_iou(int box_startX, int box_startY, int box_endX,
+              int box_endY, int obox_startX, int obox_startY,
+              int obox_endX, int obox_endY):
+        
+        return Geom.iou(box_startX, box_startY, box_endX, box_endY, obox_startX, obox_startY,
+                        obox_endX, obox_endY)
+        
+    @staticmethod
+    def w_iou2(cbbox, ocbbox):
+        return Geom.iou(box_startX, box_startY, box_endX, box_endY, obox_startX, obox_startY,
+                        obox_endX, obox_endY)
+    
     # ---------------------------------------------------------------------------------
     # matches the input objects with the trackable objects by verifying the ones that
     # have higher intersection over union score.
@@ -97,6 +106,7 @@ cdef class Geom:
     # set2.
     # ---------------------------------------------------------------------------------
 
+    @staticmethod
     def iou_match(set1, set2, match_value):
         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
 
@@ -131,6 +141,7 @@ cdef class Geom:
     # the centroid is closer
     # ---------------------------------------------------------------------------------
     
+    @staticmethod
     def centroid_match(set1, set2, max_dist):
         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
 

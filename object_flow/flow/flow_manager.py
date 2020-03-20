@@ -396,6 +396,7 @@ class FlowManager(Doer):
         # check for disappeared items and remove them:
         dissapeared = self._setting.check_disappeared(
             self.cfg.frame_number, self.cfg.data["trackable_objects"]["disappear"])
+        # find overlaped objects and remove them also
         overlapped = self._setting.find_overlap()
         self._remove_items(dissapeared + overlapped)
         
@@ -601,32 +602,6 @@ class FlowManager(Doer):
         
         # return (unused_rows, unused_cols, match_rows_cols)
         return (u_rows, u_cols, m_r_c)
-
-    # ---------------------------------------------------------------------------------
-    # Matches the newly detected items with the already tracked items using either
-    # "iou_match" or "centroid_match" algorithm.
-    # match_row_cols are detected items that were already being tracked
-    # unused_cols are new items
-    # ---------------------------------------------------------------------------------
-
-    def _match_items2(self):
-        
-        if self.cfg.data["trackable_objects"]["match"] == "iou_match":
-            (unused_rows,
-             unused_cols,
-             match_rows_cols) = Geom.iou_match(
-                 list(self._setting.items.values()), self._setting.new_inputs,
-                 self.cfg.data["trackable_objects"]["iou_match"])
-        elif self.cfg.data["trackable_objects"]["match"] == "centroid_match":
-            (unused_rows,
-             unused_cols,
-             match_rows_cols) = Geom.centroid_match(
-                 list(self._setting.items.values()), self._setting.new_inputs,
-                 self.cfg.data["trackable_objects"]["centroid_match_max_distance"])
-        else:
-            logging.info("Unknown matching algorithm specified")
-
-        return (unused_rows, unused_cols, match_rows_cols)
 
     # ---------------------------------------------------------------------------------
     #

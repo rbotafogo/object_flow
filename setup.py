@@ -17,12 +17,16 @@ if use_cython:
     ext_modules += [
         Extension("object_flow.util.geom",
                   ["object_flow/util/geom.pyx"]),
+        Extension("object_flow.util.bbox",
+                  ["object_flow/util/bbox.pyx"]),
     ]
     cmdclass.update({'build_ext': build_ext})
 else:
     ext_modules += [
         Extension("object_flow.util.geom",
                   ["object_flow/util/geom.pyx"]),
+        Extension("object_flow.util.bbox",
+                  ["object_flow/util/bbox.pyx"]),
     ]
 
 

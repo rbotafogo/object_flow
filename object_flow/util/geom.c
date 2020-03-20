@@ -820,8 +820,8 @@ static const char *__pyx_f[] = {
 /*--- Type declarations ---*/
 struct __pyx_obj_11object_flow_4util_4geom_Geom;
 
-/* "object_flow/util/geom.pyx":28
- * 
+/* "object_flow/util/geom.pyx":18
+ * cdef bint boolean_variable = True
  * 
  * cdef class Geom:             # <<<<<<<<<<<<<<
  * 
@@ -836,6 +836,7 @@ struct __pyx_obj_11object_flow_4util_4geom_Geom {
 
 struct __pyx_vtabstruct_11object_flow_4util_4geom_Geom {
   int (*ccw)(int, int, int, int, int, int);
+  double (*iou)(int, int, int, int, int, int, int, int);
 };
 static struct __pyx_vtabstruct_11object_flow_4util_4geom_Geom *__pyx_vtabptr_11object_flow_4util_4geom_Geom;
 
@@ -933,6 +934,47 @@ static PyObject* __Pyx_PyInt_AddObjC(PyObject *op1, PyObject *op2, long intval, 
     (inplace ? PyNumber_InPlaceAdd(op1, op2) : PyNumber_Add(op1, op2))
 #endif
 
+/* PyThreadStateGet.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
+#define __Pyx_PyThreadState_assign  __pyx_tstate = __Pyx_PyThreadState_Current;
+#define __Pyx_PyErr_Occurred()  __pyx_tstate->curexc_type
+#else
+#define __Pyx_PyThreadState_declare
+#define __Pyx_PyThreadState_assign
+#define __Pyx_PyErr_Occurred()  PyErr_Occurred()
+#endif
+
+/* PyErrFetchRestore.proto */
+#if CYTHON_FAST_THREAD_STATE
+#define __Pyx_PyErr_Clear() __Pyx_ErrRestore(NULL, NULL, NULL)
+#define __Pyx_ErrRestoreWithState(type, value, tb)  __Pyx_ErrRestoreInState(PyThreadState_GET(), type, value, tb)
+#define __Pyx_ErrFetchWithState(type, value, tb)    __Pyx_ErrFetchInState(PyThreadState_GET(), type, value, tb)
+#define __Pyx_ErrRestore(type, value, tb)  __Pyx_ErrRestoreInState(__pyx_tstate, type, value, tb)
+#define __Pyx_ErrFetch(type, value, tb)    __Pyx_ErrFetchInState(__pyx_tstate, type, value, tb)
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
+#if CYTHON_COMPILING_IN_CPYTHON
+#define __Pyx_PyErr_SetNone(exc) (Py_INCREF(exc), __Pyx_ErrRestore((exc), NULL, NULL))
+#else
+#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
+#endif
+#else
+#define __Pyx_PyErr_Clear() PyErr_Clear()
+#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
+#define __Pyx_ErrRestoreWithState(type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetchWithState(type, value, tb)  PyErr_Fetch(type, value, tb)
+#define __Pyx_ErrRestoreInState(tstate, type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
+#define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
+#define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
+#endif
+
+/* WriteUnraisableException.proto */
+static void __Pyx_WriteUnraisable(const char *name, int clineno,
+                                  int lineno, const char *filename,
+                                  int full_traceback, int nogil);
+
 /* PyDictVersioning.proto */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 #define __PYX_DICT_VERSION_INIT  ((PY_UINT64_T) -1)
@@ -987,6 +1029,13 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
 #define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
 #endif
 
+/* PyCFunctionFastCall.proto */
+#if CYTHON_FAST_PYCCALL
+static CYTHON_INLINE PyObject *__Pyx_PyCFunction_FastCall(PyObject *func, PyObject **args, Py_ssize_t nargs);
+#else
+#define __Pyx_PyCFunction_FastCall(func, args, nargs)  (assert(0), NULL)
+#endif
+
 /* PyFunctionFastCall.proto */
 #if CYTHON_FAST_PYCALL
 #define __Pyx_PyFunction_FastCall(func, args, nargs)\
@@ -1008,13 +1057,6 @@ static PyObject *__Pyx_PyFunction_FastCallDict(PyObject *func, PyObject **args, 
      (void)(__pyx_pyframe_localsplus_offset = ((size_t)PyFrame_Type.tp_basicsize) - Py_MEMBER_SIZE(PyFrameObject, f_localsplus)))
   #define __Pyx_PyFrame_GetLocalsplus(frame)\
     (assert(__pyx_pyframe_localsplus_offset), (PyObject **)(((char *)(frame)) + __pyx_pyframe_localsplus_offset))
-#endif
-
-/* PyCFunctionFastCall.proto */
-#if CYTHON_FAST_PYCCALL
-static CYTHON_INLINE PyObject *__Pyx_PyCFunction_FastCall(PyObject *func, PyObject **args, Py_ssize_t nargs);
-#else
-#define __Pyx_PyCFunction_FastCall(func, args, nargs)  (assert(0), NULL)
 #endif
 
 /* PyObjectCall2Args.proto */
@@ -1095,42 +1137,6 @@ static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tsta
 #define __Pyx_PyErr_ExceptionMatches(err)  PyErr_ExceptionMatches(err)
 #endif
 
-/* PyThreadStateGet.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyThreadState_declare  PyThreadState *__pyx_tstate;
-#define __Pyx_PyThreadState_assign  __pyx_tstate = __Pyx_PyThreadState_Current;
-#define __Pyx_PyErr_Occurred()  __pyx_tstate->curexc_type
-#else
-#define __Pyx_PyThreadState_declare
-#define __Pyx_PyThreadState_assign
-#define __Pyx_PyErr_Occurred()  PyErr_Occurred()
-#endif
-
-/* PyErrFetchRestore.proto */
-#if CYTHON_FAST_THREAD_STATE
-#define __Pyx_PyErr_Clear() __Pyx_ErrRestore(NULL, NULL, NULL)
-#define __Pyx_ErrRestoreWithState(type, value, tb)  __Pyx_ErrRestoreInState(PyThreadState_GET(), type, value, tb)
-#define __Pyx_ErrFetchWithState(type, value, tb)    __Pyx_ErrFetchInState(PyThreadState_GET(), type, value, tb)
-#define __Pyx_ErrRestore(type, value, tb)  __Pyx_ErrRestoreInState(__pyx_tstate, type, value, tb)
-#define __Pyx_ErrFetch(type, value, tb)    __Pyx_ErrFetchInState(__pyx_tstate, type, value, tb)
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb);
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb);
-#if CYTHON_COMPILING_IN_CPYTHON
-#define __Pyx_PyErr_SetNone(exc) (Py_INCREF(exc), __Pyx_ErrRestore((exc), NULL, NULL))
-#else
-#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
-#endif
-#else
-#define __Pyx_PyErr_Clear() PyErr_Clear()
-#define __Pyx_PyErr_SetNone(exc) PyErr_SetNone(exc)
-#define __Pyx_ErrRestoreWithState(type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetchWithState(type, value, tb)  PyErr_Fetch(type, value, tb)
-#define __Pyx_ErrRestoreInState(tstate, type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetchInState(tstate, type, value, tb)  PyErr_Fetch(type, value, tb)
-#define __Pyx_ErrRestore(type, value, tb)  PyErr_Restore(type, value, tb)
-#define __Pyx_ErrFetch(type, value, tb)  PyErr_Fetch(type, value, tb)
-#endif
-
 /* GetAttr.proto */
 static CYTHON_INLINE PyObject *__Pyx_GetAttr(PyObject *, PyObject *);
 
@@ -1168,6 +1174,10 @@ static int __Pyx_SetVtable(PyObject *dict, void *vtable);
 
 /* SetupReduce.proto */
 static int __Pyx_setup_reduce(PyObject* type_obj);
+
+/* GetNameInClass.proto */
+#define __Pyx_GetNameInClass(var, nmspace, name)  (var) = __Pyx__GetNameInClass(nmspace, name)
+static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name);
 
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
@@ -1227,6 +1237,7 @@ static int __Pyx_check_binary_version(void);
 static int __Pyx_InitStrings(__Pyx_StringTabEntry *t);
 
 static int __pyx_f_11object_flow_4util_4geom_4Geom_ccw(int __pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31); /* proto*/
+static double __pyx_f_11object_flow_4util_4geom_4Geom_iou(int __pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY); /* proto*/
 
 /* Module declarations from 'object_flow.util.geom' */
 static PyTypeObject *__pyx_ptype_11object_flow_4util_4geom_Geom = 0;
@@ -1237,14 +1248,21 @@ extern int __pyx_module_is_main_object_flow__util__geom;
 int __pyx_module_is_main_object_flow__util__geom = 0;
 
 /* Implementation of 'object_flow.util.geom' */
+static PyObject *__pyx_builtin_staticmethod;
 static PyObject *__pyx_builtin_enumerate;
 static PyObject *__pyx_builtin_range;
+static const char __pyx_k_i[] = "i";
+static const char __pyx_k_j[] = "j";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
+static const char __pyx_k_io[] = "io";
 static const char __pyx_k_np[] = "np";
+static const char __pyx_k_to[] = "to";
+static const char __pyx_k_col[] = "col";
+static const char __pyx_k_fp0[] = "fp0";
 static const char __pyx_k_fp1[] = "fp1";
-static const char __pyx_k_iou[] = "iou";
 static const char __pyx_k_new[] = "__new__";
+static const char __pyx_k_p10[] = "p10";
 static const char __pyx_k_p11[] = "p11";
 static const char __pyx_k_p20[] = "p20";
 static const char __pyx_k_p21[] = "p21";
@@ -1252,21 +1270,27 @@ static const char __pyx_k_p30[] = "p30";
 static const char __pyx_k_p31[] = "p31";
 static const char __pyx_k_p40[] = "p40";
 static const char __pyx_k_p41[] = "p41";
+static const char __pyx_k_row[] = "row";
 static const char __pyx_k_sp0[] = "sp0";
 static const char __pyx_k_sp1[] = "sp1";
 static const char __pyx_k_Geom[] = "Geom";
+static const char __pyx_k_cols[] = "cols";
 static const char __pyx_k_dict[] = "__dict__";
 static const char __pyx_k_endX[] = "endX";
 static const char __pyx_k_endY[] = "endY";
 static const char __pyx_k_main[] = "__main__";
 static const char __pyx_k_name[] = "__name__";
+static const char __pyx_k_rows[] = "rows";
+static const char __pyx_k_set1[] = "set1";
 static const char __pyx_k_set2[] = "set2";
 static const char __pyx_k_test[] = "__test__";
 static const char __pyx_k_dtype[] = "dtype";
+static const char __pyx_k_match[] = "match";
 static const char __pyx_k_numpy[] = "numpy";
 static const char __pyx_k_range[] = "range";
 static const char __pyx_k_scipy[] = "scipy";
 static const char __pyx_k_shape[] = "shape";
+static const char __pyx_k_w_iou[] = "w_iou";
 static const char __pyx_k_where[] = "where";
 static const char __pyx_k_zeros[] = "zeros";
 static const char __pyx_k_arange[] = "arange";
@@ -1279,6 +1303,8 @@ static const char __pyx_k_startX[] = "startX";
 static const char __pyx_k_startY[] = "startY";
 static const char __pyx_k_unique[] = "unique";
 static const char __pyx_k_update[] = "update";
+static const char __pyx_k_allrows[] = "allrows";
+static const char __pyx_k_c_array[] = "c_array";
 static const char __pyx_k_float64[] = "float64";
 static const char __pyx_k_spatial[] = "spatial";
 static const char __pyx_k_box_endX[] = "box_endX";
@@ -1291,11 +1317,15 @@ static const char __pyx_k_pyx_type[] = "__pyx_type";
 static const char __pyx_k_setstate[] = "__setstate__";
 static const char __pyx_k_enumerate[] = "enumerate";
 static const char __pyx_k_euclidean[] = "euclidean";
+static const char __pyx_k_intersect[] = "intersect";
+static const char __pyx_k_iou_array[] = "iou_array";
+static const char __pyx_k_iou_match[] = "iou_match";
 static const char __pyx_k_obox_endX[] = "obox_endX";
 static const char __pyx_k_obox_endY[] = "obox_endY";
 static const char __pyx_k_pyx_state[] = "__pyx_state";
 static const char __pyx_k_reduce_ex[] = "__reduce_ex__";
 static const char __pyx_k_setdiff1d[] = "setdiff1d";
+static const char __pyx_k_box_startX[] = "box_startX";
 static const char __pyx_k_box_startY[] = "box_startY";
 static const char __pyx_k_difference[] = "difference";
 static const char __pyx_k_pyx_result[] = "__pyx_result";
@@ -1304,27 +1334,40 @@ static const char __pyx_k_PickleError[] = "PickleError";
 static const char __pyx_k_match_value[] = "match_value";
 static const char __pyx_k_obox_startX[] = "obox_startX";
 static const char __pyx_k_obox_startY[] = "obox_startY";
+static const char __pyx_k_unused_cols[] = "unused_cols";
+static const char __pyx_k_unused_rows[] = "unused_rows";
 static const char __pyx_k_pyx_checksum[] = "__pyx_checksum";
+static const char __pyx_k_staticmethod[] = "staticmethod";
 static const char __pyx_k_stringsource[] = "stringsource";
 static const char __pyx_k_reduce_cython[] = "__reduce_cython__";
 static const char __pyx_k_scipy_spatial[] = "scipy.spatial";
+static const char __pyx_k_centroid_match[] = "centroid_match";
+static const char __pyx_k_point_position[] = "point_position";
+static const char __pyx_k_match_rows_cols[] = "match_rows_cols";
 static const char __pyx_k_pyx_PickleError[] = "__pyx_PickleError";
 static const char __pyx_k_setstate_cython[] = "__setstate_cython__";
 static const char __pyx_k_pyx_unpickle_Geom[] = "__pyx_unpickle_Geom";
 static const char __pyx_k_cline_in_traceback[] = "cline_in_traceback";
 static const char __pyx_k_object_flow_util_geom[] = "object_flow.util.geom";
+static const char __pyx_k_object_flow_util_geom_pyx[] = "object_flow\\util\\geom.pyx";
 static const char __pyx_k_Incompatible_checksums_s_vs_0xd4[] = "Incompatible checksums (%s vs 0xd41d8cd = ())";
 static PyObject *__pyx_n_s_Geom;
 static PyObject *__pyx_kp_s_Incompatible_checksums_s_vs_0xd4;
 static PyObject *__pyx_n_s_PickleError;
+static PyObject *__pyx_n_s_allrows;
 static PyObject *__pyx_n_s_arange;
 static PyObject *__pyx_n_s_argmax;
 static PyObject *__pyx_n_s_argmin;
 static PyObject *__pyx_n_s_box_endX;
 static PyObject *__pyx_n_s_box_endY;
+static PyObject *__pyx_n_s_box_startX;
 static PyObject *__pyx_n_s_box_startY;
+static PyObject *__pyx_n_s_c_array;
 static PyObject *__pyx_n_s_centroid;
+static PyObject *__pyx_n_s_centroid_match;
 static PyObject *__pyx_n_s_cline_in_traceback;
+static PyObject *__pyx_n_s_col;
+static PyObject *__pyx_n_s_cols;
 static PyObject *__pyx_n_s_dict;
 static PyObject *__pyx_n_s_difference;
 static PyObject *__pyx_n_s_distance;
@@ -1334,11 +1377,19 @@ static PyObject *__pyx_n_s_endY;
 static PyObject *__pyx_n_s_enumerate;
 static PyObject *__pyx_n_s_euclidean;
 static PyObject *__pyx_n_u_float64;
+static PyObject *__pyx_n_s_fp0;
 static PyObject *__pyx_n_s_fp1;
 static PyObject *__pyx_n_s_getstate;
+static PyObject *__pyx_n_s_i;
 static PyObject *__pyx_n_s_import;
-static PyObject *__pyx_n_s_iou;
+static PyObject *__pyx_n_s_intersect;
+static PyObject *__pyx_n_s_io;
+static PyObject *__pyx_n_s_iou_array;
+static PyObject *__pyx_n_s_iou_match;
+static PyObject *__pyx_n_s_j;
 static PyObject *__pyx_n_s_main;
+static PyObject *__pyx_n_s_match;
+static PyObject *__pyx_n_s_match_rows_cols;
 static PyObject *__pyx_n_s_match_value;
 static PyObject *__pyx_n_s_max_dist;
 static PyObject *__pyx_n_s_name;
@@ -1346,10 +1397,12 @@ static PyObject *__pyx_n_s_new;
 static PyObject *__pyx_n_s_np;
 static PyObject *__pyx_n_s_numpy;
 static PyObject *__pyx_n_s_object_flow_util_geom;
+static PyObject *__pyx_kp_s_object_flow_util_geom_pyx;
 static PyObject *__pyx_n_s_obox_endX;
 static PyObject *__pyx_n_s_obox_endY;
 static PyObject *__pyx_n_s_obox_startX;
 static PyObject *__pyx_n_s_obox_startY;
+static PyObject *__pyx_n_s_p10;
 static PyObject *__pyx_n_s_p11;
 static PyObject *__pyx_n_s_p20;
 static PyObject *__pyx_n_s_p21;
@@ -1358,6 +1411,7 @@ static PyObject *__pyx_n_s_p31;
 static PyObject *__pyx_n_s_p40;
 static PyObject *__pyx_n_s_p41;
 static PyObject *__pyx_n_s_pickle;
+static PyObject *__pyx_n_s_point_position;
 static PyObject *__pyx_n_s_pyx_PickleError;
 static PyObject *__pyx_n_s_pyx_checksum;
 static PyObject *__pyx_n_s_pyx_result;
@@ -1369,8 +1423,11 @@ static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_reduce;
 static PyObject *__pyx_n_s_reduce_cython;
 static PyObject *__pyx_n_s_reduce_ex;
+static PyObject *__pyx_n_s_row;
+static PyObject *__pyx_n_s_rows;
 static PyObject *__pyx_n_s_scipy;
 static PyObject *__pyx_n_s_scipy_spatial;
+static PyObject *__pyx_n_s_set1;
 static PyObject *__pyx_n_s_set2;
 static PyObject *__pyx_n_s_setdiff1d;
 static PyObject *__pyx_n_s_setstate;
@@ -1381,19 +1438,24 @@ static PyObject *__pyx_n_s_sp1;
 static PyObject *__pyx_n_s_spatial;
 static PyObject *__pyx_n_s_startX;
 static PyObject *__pyx_n_s_startY;
+static PyObject *__pyx_n_s_staticmethod;
 static PyObject *__pyx_kp_s_stringsource;
 static PyObject *__pyx_n_s_test;
+static PyObject *__pyx_n_s_to;
 static PyObject *__pyx_n_s_unique;
+static PyObject *__pyx_n_s_unused_cols;
+static PyObject *__pyx_n_s_unused_rows;
 static PyObject *__pyx_n_s_update;
+static PyObject *__pyx_n_s_w_iou;
 static PyObject *__pyx_n_s_where;
 static PyObject *__pyx_n_s_x;
 static PyObject *__pyx_n_s_y;
 static PyObject *__pyx_n_s_zeros;
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_fp0, int __pyx_v_fp1, int __pyx_v_sp0, int __pyx_v_sp1, int __pyx_v_x, int __pyx_v_y); /* proto */
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31, int __pyx_v_p40, int __pyx_v_p41); /* proto */
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4iou(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY); /* proto */
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_match_value); /* proto */
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_max_dist); /* proto */
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(int __pyx_v_fp0, int __pyx_v_fp1, int __pyx_v_sp0, int __pyx_v_sp1, int __pyx_v_x, int __pyx_v_y); /* proto */
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(int __pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31, int __pyx_v_p40, int __pyx_v_p41); /* proto */
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4w_iou(int __pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY); /* proto */
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(PyObject *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_match_value); /* proto */
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(PyObject *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_max_dist); /* proto */
 static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_10__reduce_cython__(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_12__setstate_cython__(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_self, PyObject *__pyx_v___pyx_state); /* proto */
 static PyObject *__pyx_pf_11object_flow_4util_4geom___pyx_unpickle_Geom(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v___pyx_type, long __pyx_v___pyx_checksum, PyObject *__pyx_v___pyx_state); /* proto */
@@ -1403,57 +1465,32 @@ static PyObject *__pyx_int_1;
 static PyObject *__pyx_int_222419149;
 static PyObject *__pyx_slice_;
 static PyObject *__pyx_tuple__2;
+static PyObject *__pyx_tuple__4;
+static PyObject *__pyx_tuple__6;
+static PyObject *__pyx_tuple__8;
+static PyObject *__pyx_tuple__10;
+static PyObject *__pyx_tuple__12;
 static PyObject *__pyx_codeobj__3;
+static PyObject *__pyx_codeobj__5;
+static PyObject *__pyx_codeobj__7;
+static PyObject *__pyx_codeobj__9;
+static PyObject *__pyx_codeobj__11;
+static PyObject *__pyx_codeobj__13;
 /* Late includes */
 
-/* "object_flow/util/geom.pyx":22
- * # ----------------------------------------------------------------------------------
+/* "object_flow/util/geom.pyx":26
  * 
- * cdef bint ccw(int p10, int p11, int p20, int p21, int p30,             # <<<<<<<<<<<<<<
- *               int p31):
- *      # return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
- */
-
-static int __pyx_f_11object_flow_4util_4geom_ccw(int __pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31) {
-  int __pyx_r;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("ccw", 0);
-
-  /* "object_flow/util/geom.pyx":25
- *               int p31):
- *      # return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
- *      return ((p31 - p11) * (p20 - p10) > (p21 - p11) * (p30 - p10))             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_r = (((__pyx_v_p31 - __pyx_v_p11) * (__pyx_v_p20 - __pyx_v_p10)) > ((__pyx_v_p21 - __pyx_v_p11) * (__pyx_v_p30 - __pyx_v_p10)));
-  goto __pyx_L0;
-
-  /* "object_flow/util/geom.pyx":22
- * # ----------------------------------------------------------------------------------
- * 
- * cdef bint ccw(int p10, int p11, int p20, int p21, int p30,             # <<<<<<<<<<<<<<
- *               int p31):
- *      # return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
- */
-
-  /* function exit code */
-  __pyx_L0:;
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-/* "object_flow/util/geom.pyx":35
- *     # ----------------------------------------------------------------------------------
- * 
+ *     @staticmethod
  *     def point_position(int fp0, int fp1, int sp0, int sp1,             # <<<<<<<<<<<<<<
  *                        int x, int y):
  *         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(PyObject *__pyx_v_fp0, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(PyObject *__pyx_v_fp0, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11object_flow_4util_4geom_4Geom_1point_position = {"point_position", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  int __pyx_v_fp0;
   int __pyx_v_fp1;
   int __pyx_v_sp0;
   int __pyx_v_sp1;
@@ -1463,12 +1500,14 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(PyObje
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("point_position (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fp1,&__pyx_n_s_sp0,&__pyx_n_s_sp1,&__pyx_n_s_x,&__pyx_n_s_y,0};
-    PyObject* values[5] = {0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_fp0,&__pyx_n_s_fp1,&__pyx_n_s_sp0,&__pyx_n_s_sp1,&__pyx_n_s_x,&__pyx_n_s_y,0};
+    PyObject* values[6] = {0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+        CYTHON_FALLTHROUGH;
         case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
         CYTHON_FALLTHROUGH;
         case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
@@ -1485,37 +1524,43 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(PyObje
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_fp1)) != 0)) kw_args--;
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_fp0)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sp0)) != 0)) kw_args--;
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_fp1)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("point_position", 1, 5, 5, 1); __PYX_ERR(0, 35, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, 1); __PYX_ERR(0, 26, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sp1)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sp0)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("point_position", 1, 5, 5, 2); __PYX_ERR(0, 35, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, 2); __PYX_ERR(0, 26, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_x)) != 0)) kw_args--;
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_sp1)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("point_position", 1, 5, 5, 3); __PYX_ERR(0, 35, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, 3); __PYX_ERR(0, 26, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
-        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
+        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_x)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("point_position", 1, 5, 5, 4); __PYX_ERR(0, 35, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, 4); __PYX_ERR(0, 26, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  5:
+        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_y)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, 5); __PYX_ERR(0, 26, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "point_position") < 0)) __PYX_ERR(0, 35, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "point_position") < 0)) __PYX_ERR(0, 26, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 6) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -1523,38 +1568,37 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position(PyObje
       values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
       values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+      values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
     }
-    __pyx_v_fp1 = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_fp1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 35, __pyx_L3_error)
-    __pyx_v_sp0 = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_sp0 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 35, __pyx_L3_error)
-    __pyx_v_sp1 = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sp1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 35, __pyx_L3_error)
-    __pyx_v_x = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_x == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
-    __pyx_v_y = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_y == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 36, __pyx_L3_error)
+    __pyx_v_fp0 = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_fp0 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 26, __pyx_L3_error)
+    __pyx_v_fp1 = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_fp1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 26, __pyx_L3_error)
+    __pyx_v_sp0 = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_sp0 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 26, __pyx_L3_error)
+    __pyx_v_sp1 = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_sp1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 26, __pyx_L3_error)
+    __pyx_v_x = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_x == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 27, __pyx_L3_error)
+    __pyx_v_y = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_y == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 27, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("point_position", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 35, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("point_position", 1, 6, 6, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 26, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("object_flow.util.geom.Geom.point_position", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_point_position(((struct __pyx_obj_11object_flow_4util_4geom_Geom *)__pyx_v_fp0), __pyx_v_fp1, __pyx_v_sp0, __pyx_v_sp1, __pyx_v_x, __pyx_v_y);
+  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_point_position(__pyx_v_fp0, __pyx_v_fp1, __pyx_v_sp0, __pyx_v_sp1, __pyx_v_x, __pyx_v_y);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_fp0, int __pyx_v_fp1, int __pyx_v_sp0, int __pyx_v_sp1, int __pyx_v_x, int __pyx_v_y) {
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(int __pyx_v_fp0, int __pyx_v_fp1, int __pyx_v_sp0, int __pyx_v_sp1, int __pyx_v_x, int __pyx_v_y) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
-  PyObject *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
-  PyObject *__pyx_t_4 = NULL;
   __Pyx_RefNannySetupContext("point_position", 0);
 
-  /* "object_flow/util/geom.pyx":37
+  /* "object_flow/util/geom.pyx":28
  *     def point_position(int fp0, int fp1, int sp0, int sp1,
  *                        int x, int y):
  *         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0             # <<<<<<<<<<<<<<
@@ -1562,41 +1606,15 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(struct 
  *     # ----------------------------------------------------------------------------------
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_sp0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyBool_FromLong(((((__pyx_v_sp0 - __pyx_v_fp0) * (__pyx_v_y - __pyx_v_fp1)) - ((__pyx_v_sp1 - __pyx_v_fp1) * (__pyx_v_x - __pyx_v_fp0))) > 0)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyNumber_Subtract(__pyx_t_1, ((PyObject *)__pyx_v_fp0)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int((__pyx_v_y - __pyx_v_fp1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyNumber_Multiply(__pyx_t_2, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyInt_From_int((__pyx_v_sp1 - __pyx_v_fp1)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_From_int(__pyx_v_x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_4 = PyNumber_Subtract(__pyx_t_2, ((PyObject *)__pyx_v_fp0)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyNumber_Multiply(__pyx_t_1, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = PyNumber_Subtract(__pyx_t_3, __pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = PyObject_RichCompare(__pyx_t_4, __pyx_int_0, Py_GT); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 37, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_r = __pyx_t_2;
-  __pyx_t_2 = 0;
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":35
- *     # ----------------------------------------------------------------------------------
+  /* "object_flow/util/geom.pyx":26
  * 
+ *     @staticmethod
  *     def point_position(int fp0, int fp1, int sp0, int sp1,             # <<<<<<<<<<<<<<
  *                        int x, int y):
  *         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0
@@ -1605,9 +1623,6 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(struct 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_2);
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_XDECREF(__pyx_t_4);
   __Pyx_AddTraceback("object_flow.util.geom.Geom.point_position", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -1616,7 +1631,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_point_position(struct 
   return __pyx_r;
 }
 
-/* "object_flow/util/geom.pyx":44
+/* "object_flow/util/geom.pyx":35
  * 
  *     @staticmethod
  *     cdef bint ccw(int p10, int p11, int p20, int p21, int p30,             # <<<<<<<<<<<<<<
@@ -1629,7 +1644,7 @@ static int __pyx_f_11object_flow_4util_4geom_4Geom_ccw(int __pyx_v_p10, int __py
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("ccw", 0);
 
-  /* "object_flow/util/geom.pyx":47
+  /* "object_flow/util/geom.pyx":38
  *             int p31):
  * 	# return (C.y-A.y)*(B.x-A.x) > (B.y-A.y)*(C.x-A.x)
  *         return ((p31 - p11) * (p20 - p10) > (p21 - p11) * (p30 - p10))             # <<<<<<<<<<<<<<
@@ -1639,7 +1654,7 @@ static int __pyx_f_11object_flow_4util_4geom_4Geom_ccw(int __pyx_v_p10, int __py
   __pyx_r = (((__pyx_v_p31 - __pyx_v_p11) * (__pyx_v_p20 - __pyx_v_p10)) > ((__pyx_v_p21 - __pyx_v_p11) * (__pyx_v_p30 - __pyx_v_p10)));
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":44
+  /* "object_flow/util/geom.pyx":35
  * 
  *     @staticmethod
  *     cdef bint ccw(int p10, int p11, int p20, int p21, int p30,             # <<<<<<<<<<<<<<
@@ -1653,17 +1668,19 @@ static int __pyx_f_11object_flow_4util_4geom_4Geom_ccw(int __pyx_v_p10, int __py
   return __pyx_r;
 }
 
-/* "object_flow/util/geom.pyx":53
- *     # ----------------------------------------------------------------------------------
+/* "object_flow/util/geom.pyx":45
  * 
+ *     @staticmethod
  *     def intersect(int p10, int p11, int p20, int p21,             # <<<<<<<<<<<<<<
  *                   int p30, int p31, int p40, int p41):
  * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(PyObject *__pyx_v_p10, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(PyObject *__pyx_v_p10, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11object_flow_4util_4geom_4Geom_3intersect = {"intersect", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  int __pyx_v_p10;
   int __pyx_v_p11;
   int __pyx_v_p20;
   int __pyx_v_p21;
@@ -1675,12 +1692,14 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(PyObject *_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("intersect (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_p11,&__pyx_n_s_p20,&__pyx_n_s_p21,&__pyx_n_s_p30,&__pyx_n_s_p31,&__pyx_n_s_p40,&__pyx_n_s_p41,0};
-    PyObject* values[7] = {0,0,0,0,0,0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_p10,&__pyx_n_s_p11,&__pyx_n_s_p20,&__pyx_n_s_p21,&__pyx_n_s_p30,&__pyx_n_s_p31,&__pyx_n_s_p40,&__pyx_n_s_p41,0};
+    PyObject* values[8] = {0,0,0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
+        CYTHON_FALLTHROUGH;
         case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
         CYTHON_FALLTHROUGH;
         case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
@@ -1701,49 +1720,55 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(PyObject *_
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p11)) != 0)) kw_args--;
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p10)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p20)) != 0)) kw_args--;
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p11)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 1); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 1); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p21)) != 0)) kw_args--;
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p20)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 2); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 2); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p30)) != 0)) kw_args--;
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p21)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 3); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 3); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
-        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p31)) != 0)) kw_args--;
+        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p30)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 4); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 4); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  5:
-        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p40)) != 0)) kw_args--;
+        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p31)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 5); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 5); __PYX_ERR(0, 45, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  6:
-        if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p41)) != 0)) kw_args--;
+        if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p40)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, 6); __PYX_ERR(0, 53, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 6); __PYX_ERR(0, 45, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  7:
+        if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_p41)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, 7); __PYX_ERR(0, 45, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "intersect") < 0)) __PYX_ERR(0, 53, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "intersect") < 0)) __PYX_ERR(0, 45, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 7) {
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 8) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -1753,41 +1778,41 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect(PyObject *_
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
       values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
       values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
+      values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
     }
-    __pyx_v_p11 = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_p11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
-    __pyx_v_p20 = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_p20 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
-    __pyx_v_p21 = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_p21 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 53, __pyx_L3_error)
-    __pyx_v_p30 = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_p30 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L3_error)
-    __pyx_v_p31 = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_p31 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L3_error)
-    __pyx_v_p40 = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_p40 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L3_error)
-    __pyx_v_p41 = __Pyx_PyInt_As_int(values[6]); if (unlikely((__pyx_v_p41 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 54, __pyx_L3_error)
+    __pyx_v_p10 = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_p10 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L3_error)
+    __pyx_v_p11 = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_p11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L3_error)
+    __pyx_v_p20 = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_p20 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L3_error)
+    __pyx_v_p21 = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_p21 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 45, __pyx_L3_error)
+    __pyx_v_p30 = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_p30 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L3_error)
+    __pyx_v_p31 = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_p31 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L3_error)
+    __pyx_v_p40 = __Pyx_PyInt_As_int(values[6]); if (unlikely((__pyx_v_p40 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L3_error)
+    __pyx_v_p41 = __Pyx_PyInt_As_int(values[7]); if (unlikely((__pyx_v_p41 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 46, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("intersect", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 53, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("intersect", 1, 8, 8, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 45, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("object_flow.util.geom.Geom.intersect", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(((struct __pyx_obj_11object_flow_4util_4geom_Geom *)__pyx_v_p10), __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41);
+  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(__pyx_v_p10, __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31, int __pyx_v_p40, int __pyx_v_p41) {
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(int __pyx_v_p10, int __pyx_v_p11, int __pyx_v_p20, int __pyx_v_p21, int __pyx_v_p30, int __pyx_v_p31, int __pyx_v_p40, int __pyx_v_p41) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
   int __pyx_t_2;
-  int __pyx_t_3;
-  PyObject *__pyx_t_4 = NULL;
-  int __pyx_t_5;
+  PyObject *__pyx_t_3 = NULL;
   __Pyx_RefNannySetupContext("intersect", 0);
 
-  /* "object_flow/util/geom.pyx":56
+  /* "object_flow/util/geom.pyx":48
  *                   int p30, int p31, int p40, int p41):
  * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
  *         return (Geom.ccw(p10, p11, p30, p31, p40, p41) !=             # <<<<<<<<<<<<<<
@@ -1796,70 +1821,51 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(struct __py
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "object_flow/util/geom.pyx":57
+  /* "object_flow/util/geom.pyx":49
  * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
  *         return (Geom.ccw(p10, p11, p30, p31, p40, p41) !=
  *                 Geom.ccw(p20, p21, p30, p31, p40, p41) and             # <<<<<<<<<<<<<<
  *                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=
  *                 Geom.ccw(p10, p11, p20, p21, p40, p41))
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int(((PyObject *)__pyx_v_p10)); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 56, __pyx_L1_error)
+  __pyx_t_2 = (__pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_v_p10, __pyx_v_p11, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41) != __pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41));
+  if (__pyx_t_2) {
+  } else {
 
-  /* "object_flow/util/geom.pyx":56
+    /* "object_flow/util/geom.pyx":48
  *                   int p30, int p31, int p40, int p41):
  * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
  *         return (Geom.ccw(p10, p11, p30, p31, p40, p41) !=             # <<<<<<<<<<<<<<
  *                 Geom.ccw(p20, p21, p30, p31, p40, p41) and
  *                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=
  */
-  __pyx_t_3 = (__pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_t_2, __pyx_v_p11, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41) != __pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31, __pyx_v_p40, __pyx_v_p41));
-  if (__pyx_t_3) {
-  } else {
-    __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 56, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_1 = __pyx_t_4;
-    __pyx_t_4 = 0;
+    __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 48, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_1 = __pyx_t_3;
+    __pyx_t_3 = 0;
     goto __pyx_L3_bool_binop_done;
   }
 
-  /* "object_flow/util/geom.pyx":58
+  /* "object_flow/util/geom.pyx":50
  *         return (Geom.ccw(p10, p11, p30, p31, p40, p41) !=
  *                 Geom.ccw(p20, p21, p30, p31, p40, p41) and
  *                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=             # <<<<<<<<<<<<<<
  *                 Geom.ccw(p10, p11, p20, p21, p40, p41))
  * 
  */
-  __pyx_t_2 = __Pyx_PyInt_As_int(((PyObject *)__pyx_v_p10)); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 58, __pyx_L1_error)
-
-  /* "object_flow/util/geom.pyx":59
- *                 Geom.ccw(p20, p21, p30, p31, p40, p41) and
- *                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=
- *                 Geom.ccw(p10, p11, p20, p21, p40, p41))             # <<<<<<<<<<<<<<
- * 
- *     # ----------------------------------------------------------------------------------
- */
-  __pyx_t_5 = __Pyx_PyInt_As_int(((PyObject *)__pyx_v_p10)); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 59, __pyx_L1_error)
-
-  /* "object_flow/util/geom.pyx":58
- *         return (Geom.ccw(p10, p11, p30, p31, p40, p41) !=
- *                 Geom.ccw(p20, p21, p30, p31, p40, p41) and
- *                 Geom.ccw(p10, p11, p20, p21, p30, p31) !=             # <<<<<<<<<<<<<<
- *                 Geom.ccw(p10, p11, p20, p21, p40, p41))
- * 
- */
-  __pyx_t_3 = (__pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_t_2, __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31) != __pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_t_5, __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p40, __pyx_v_p41));
-  __pyx_t_4 = __Pyx_PyBool_FromLong(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 58, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_1 = __pyx_t_4;
-  __pyx_t_4 = 0;
+  __pyx_t_2 = (__pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_v_p10, __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p30, __pyx_v_p31) != __pyx_f_11object_flow_4util_4geom_4Geom_ccw(__pyx_v_p10, __pyx_v_p11, __pyx_v_p20, __pyx_v_p21, __pyx_v_p40, __pyx_v_p41));
+  __pyx_t_3 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_1 = __pyx_t_3;
+  __pyx_t_3 = 0;
   __pyx_L3_bool_binop_done:;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":53
- *     # ----------------------------------------------------------------------------------
+  /* "object_flow/util/geom.pyx":45
  * 
+ *     @staticmethod
  *     def intersect(int p10, int p11, int p20, int p21,             # <<<<<<<<<<<<<<
  *                   int p30, int p31, int p40, int p41):
  * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
@@ -1868,7 +1874,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(struct __py
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
-  __Pyx_XDECREF(__pyx_t_4);
+  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_AddTraceback("object_flow.util.geom.Geom.intersect", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -1877,131 +1883,15 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_2intersect(struct __py
   return __pyx_r;
 }
 
-/* "object_flow/util/geom.pyx":74
- *     # ---------------------------------------------------------------------------------
+/* "object_flow/util/geom.pyx":59
  * 
- *     def iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
- *             int box_endY, int obox_startX, int obox_startY,
- *             int obox_endX, int obox_endY):
+ *     @staticmethod
+ *     cdef double iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *                     int box_endY, int obox_startX, int obox_startY,
+ *                     int obox_endX, int obox_endY):
  */
 
-/* Python wrapper */
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_5iou(PyObject *__pyx_v_box_startX, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_5iou(PyObject *__pyx_v_box_startX, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  int __pyx_v_box_startY;
-  int __pyx_v_box_endX;
-  int __pyx_v_box_endY;
-  int __pyx_v_obox_startX;
-  int __pyx_v_obox_startY;
-  int __pyx_v_obox_endX;
-  int __pyx_v_obox_endY;
-  PyObject *__pyx_r = 0;
-  __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("iou (wrapper)", 0);
-  {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_box_startY,&__pyx_n_s_box_endX,&__pyx_n_s_box_endY,&__pyx_n_s_obox_startX,&__pyx_n_s_obox_startY,&__pyx_n_s_obox_endX,&__pyx_n_s_obox_endY,0};
-    PyObject* values[7] = {0,0,0,0,0,0,0};
-    if (unlikely(__pyx_kwds)) {
-      Py_ssize_t kw_args;
-      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
-      switch (pos_args) {
-        case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
-        CYTHON_FALLTHROUGH;
-        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
-        CYTHON_FALLTHROUGH;
-        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
-        CYTHON_FALLTHROUGH;
-        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-        CYTHON_FALLTHROUGH;
-        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-        CYTHON_FALLTHROUGH;
-        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-        CYTHON_FALLTHROUGH;
-        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-        CYTHON_FALLTHROUGH;
-        case  0: break;
-        default: goto __pyx_L5_argtuple_error;
-      }
-      kw_args = PyDict_Size(__pyx_kwds);
-      switch (pos_args) {
-        case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_startY)) != 0)) kw_args--;
-        else goto __pyx_L5_argtuple_error;
-        CYTHON_FALLTHROUGH;
-        case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_endX)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 1); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  2:
-        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_endY)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 2); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  3:
-        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_startX)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 3); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  4:
-        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_startY)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 4); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  5:
-        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_endX)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 5); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-        CYTHON_FALLTHROUGH;
-        case  6:
-        if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_endY)) != 0)) kw_args--;
-        else {
-          __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, 6); __PYX_ERR(0, 74, __pyx_L3_error)
-        }
-      }
-      if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "iou") < 0)) __PYX_ERR(0, 74, __pyx_L3_error)
-      }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 7) {
-      goto __pyx_L5_argtuple_error;
-    } else {
-      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
-      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
-      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
-      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
-      values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
-      values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
-      values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
-    }
-    __pyx_v_box_startY = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_box_startY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L3_error)
-    __pyx_v_box_endX = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_box_endX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L3_error)
-    __pyx_v_box_endY = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_box_endY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 75, __pyx_L3_error)
-    __pyx_v_obox_startX = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_obox_startX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 75, __pyx_L3_error)
-    __pyx_v_obox_startY = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_obox_startY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 75, __pyx_L3_error)
-    __pyx_v_obox_endX = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_obox_endX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
-    __pyx_v_obox_endY = __Pyx_PyInt_As_int(values[6]); if (unlikely((__pyx_v_obox_endY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 76, __pyx_L3_error)
-  }
-  goto __pyx_L4_argument_unpacking_done;
-  __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("iou", 1, 7, 7, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 74, __pyx_L3_error)
-  __pyx_L3_error:;
-  __Pyx_AddTraceback("object_flow.util.geom.Geom.iou", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __Pyx_RefNannyFinishContext();
-  return NULL;
-  __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_4iou(((struct __pyx_obj_11object_flow_4util_4geom_Geom *)__pyx_v_box_startX), __pyx_v_box_startY, __pyx_v_box_endX, __pyx_v_box_endY, __pyx_v_obox_startX, __pyx_v_obox_startY, __pyx_v_obox_endX, __pyx_v_obox_endY);
-
-  /* function exit code */
-  __Pyx_RefNannyFinishContext();
-  return __pyx_r;
-}
-
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4iou(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY) {
+static double __pyx_f_11object_flow_4util_4geom_4Geom_iou(int __pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY) {
   PyObject *__pyx_v_x_start = NULL;
   PyObject *__pyx_v_y_start = NULL;
   PyObject *__pyx_v_x_end = NULL;
@@ -2010,255 +1900,228 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4iou(struct __pyx_obj_
   PyObject *__pyx_v_box_area = NULL;
   PyObject *__pyx_v_obox_area = NULL;
   PyObject *__pyx_v_iou = NULL;
-  PyObject *__pyx_r = NULL;
+  double __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
-  struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_t_2 = NULL;
-  PyObject *__pyx_t_3 = NULL;
+  int __pyx_t_2;
+  int __pyx_t_3;
   PyObject *__pyx_t_4 = NULL;
   PyObject *__pyx_t_5 = NULL;
-  int __pyx_t_6;
-  int __pyx_t_7;
-  int __pyx_t_8;
-  long __pyx_t_9;
+  long __pyx_t_6;
+  PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  int __pyx_t_9;
   PyObject *__pyx_t_10 = NULL;
-  PyObject *__pyx_t_11 = NULL;
+  double __pyx_t_11;
   __Pyx_RefNannySetupContext("iou", 0);
 
-  /* "object_flow/util/geom.pyx":78
- *             int obox_endX, int obox_endY):
+  /* "object_flow/util/geom.pyx":64
+ * 
  *         # determine the (x, y)-coordinates of the intersection rectangle
  *         x_start = max(box_startX, obox_startX)             # <<<<<<<<<<<<<<
  *         y_start = max(box_startY, obox_startY)
  *         x_end = min(box_endX, obox_endX)
  */
   __pyx_t_1 = __pyx_v_obox_startX;
-  __Pyx_INCREF(((PyObject *)__pyx_v_box_startX));
   __pyx_t_2 = __pyx_v_box_startX;
-  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 78, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyObject_RichCompare(__pyx_t_4, ((PyObject *)__pyx_t_2), Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 78, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_5); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 78, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (__pyx_t_6) {
-    __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 78, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_3 = __pyx_t_5;
-    __pyx_t_5 = 0;
+  if (((__pyx_t_1 > __pyx_t_2) != 0)) {
+    __pyx_t_3 = __pyx_t_1;
   } else {
-    __Pyx_INCREF(((PyObject *)__pyx_t_2));
-    __pyx_t_3 = ((PyObject *)__pyx_t_2);
+    __pyx_t_3 = __pyx_t_2;
   }
-  __Pyx_DECREF(((PyObject *)__pyx_t_2)); __pyx_t_2 = 0;
-  __pyx_t_5 = __pyx_t_3;
-  __Pyx_INCREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_v_x_start = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 64, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_v_x_start = __pyx_t_4;
+  __pyx_t_4 = 0;
 
-  /* "object_flow/util/geom.pyx":79
+  /* "object_flow/util/geom.pyx":65
  *         # determine the (x, y)-coordinates of the intersection rectangle
  *         x_start = max(box_startX, obox_startX)
  *         y_start = max(box_startY, obox_startY)             # <<<<<<<<<<<<<<
  *         x_end = min(box_endX, obox_endX)
  *         y_end = min(box_endY, obox_endY)
  */
-  __pyx_t_1 = __pyx_v_obox_startY;
-  __pyx_t_7 = __pyx_v_box_startY;
-  if (((__pyx_t_1 > __pyx_t_7) != 0)) {
-    __pyx_t_8 = __pyx_t_1;
+  __pyx_t_3 = __pyx_v_obox_startY;
+  __pyx_t_1 = __pyx_v_box_startY;
+  if (((__pyx_t_3 > __pyx_t_1) != 0)) {
+    __pyx_t_2 = __pyx_t_3;
   } else {
-    __pyx_t_8 = __pyx_t_7;
+    __pyx_t_2 = __pyx_t_1;
   }
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_t_8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 79, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_v_y_start = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_t_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_v_y_start = __pyx_t_4;
+  __pyx_t_4 = 0;
 
-  /* "object_flow/util/geom.pyx":80
+  /* "object_flow/util/geom.pyx":66
  *         x_start = max(box_startX, obox_startX)
  *         y_start = max(box_startY, obox_startY)
  *         x_end = min(box_endX, obox_endX)             # <<<<<<<<<<<<<<
  *         y_end = min(box_endY, obox_endY)
  * 
  */
-  __pyx_t_8 = __pyx_v_obox_endX;
-  __pyx_t_1 = __pyx_v_box_endX;
-  if (((__pyx_t_8 < __pyx_t_1) != 0)) {
-    __pyx_t_7 = __pyx_t_8;
+  __pyx_t_2 = __pyx_v_obox_endX;
+  __pyx_t_3 = __pyx_v_box_endX;
+  if (((__pyx_t_2 < __pyx_t_3) != 0)) {
+    __pyx_t_1 = __pyx_t_2;
   } else {
-    __pyx_t_7 = __pyx_t_1;
+    __pyx_t_1 = __pyx_t_3;
   }
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_t_7); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 80, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_v_x_end = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 66, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_v_x_end = __pyx_t_4;
+  __pyx_t_4 = 0;
 
-  /* "object_flow/util/geom.pyx":81
+  /* "object_flow/util/geom.pyx":67
  *         y_start = max(box_startY, obox_startY)
  *         x_end = min(box_endX, obox_endX)
  *         y_end = min(box_endY, obox_endY)             # <<<<<<<<<<<<<<
  * 
  *         # compute the area of intersection rectangle
  */
-  __pyx_t_7 = __pyx_v_obox_endY;
-  __pyx_t_8 = __pyx_v_box_endY;
-  if (((__pyx_t_7 < __pyx_t_8) != 0)) {
-    __pyx_t_1 = __pyx_t_7;
+  __pyx_t_1 = __pyx_v_obox_endY;
+  __pyx_t_2 = __pyx_v_box_endY;
+  if (((__pyx_t_1 < __pyx_t_2) != 0)) {
+    __pyx_t_3 = __pyx_t_1;
   } else {
-    __pyx_t_1 = __pyx_t_8;
+    __pyx_t_3 = __pyx_t_2;
   }
-  __pyx_t_5 = __Pyx_PyInt_From_int(__pyx_t_1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 81, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_v_y_end = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_4 = __Pyx_PyInt_From_int(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_4);
+  __pyx_v_y_end = __pyx_t_4;
+  __pyx_t_4 = 0;
 
-  /* "object_flow/util/geom.pyx":84
+  /* "object_flow/util/geom.pyx":70
  * 
  *         # compute the area of intersection rectangle
  *         inter_area = max(0, x_end - x_start + 1) * max(0, y_end - y_start + 1)             # <<<<<<<<<<<<<<
  * 
  *         # compute the area of the given box. The area of the current object
  */
-  __pyx_t_5 = PyNumber_Subtract(__pyx_v_x_end, __pyx_v_x_start); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = __Pyx_PyInt_AddObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_9 = 0;
-  __pyx_t_4 = __Pyx_PyInt_From_long(__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_t_4 = PyNumber_Subtract(__pyx_v_x_end, __pyx_v_x_start); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 70, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_10 = PyObject_RichCompare(__pyx_t_3, __pyx_t_4, Py_GT); __Pyx_XGOTREF(__pyx_t_10); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_AddObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  if (__pyx_t_6) {
-    __Pyx_INCREF(__pyx_t_3);
-    __pyx_t_5 = __pyx_t_3;
+  __pyx_t_6 = 0;
+  __pyx_t_7 = __Pyx_PyInt_From_long(__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __pyx_t_8 = PyObject_RichCompare(__pyx_t_5, __pyx_t_7, Py_GT); __Pyx_XGOTREF(__pyx_t_8); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_8); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  if (__pyx_t_9) {
+    __Pyx_INCREF(__pyx_t_5);
+    __pyx_t_4 = __pyx_t_5;
   } else {
-    __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_t_9); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 84, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyInt_From_long(__pyx_t_6); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 70, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_8);
+    __pyx_t_4 = __pyx_t_8;
+    __pyx_t_8 = 0;
+  }
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_5 = PyNumber_Subtract(__pyx_v_y_end, __pyx_v_y_start); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_8 = __Pyx_PyInt_AddObjC(__pyx_t_5, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __pyx_t_6 = 0;
+  __pyx_t_7 = __Pyx_PyInt_From_long(__pyx_t_6); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_7);
+  __pyx_t_10 = PyObject_RichCompare(__pyx_t_8, __pyx_t_7, Py_GT); __Pyx_XGOTREF(__pyx_t_10); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+  __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_10); if (unlikely(__pyx_t_9 < 0)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+  if (__pyx_t_9) {
+    __Pyx_INCREF(__pyx_t_8);
+    __pyx_t_5 = __pyx_t_8;
+  } else {
+    __pyx_t_10 = __Pyx_PyInt_From_long(__pyx_t_6); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 70, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
     __pyx_t_5 = __pyx_t_10;
     __pyx_t_10 = 0;
   }
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = PyNumber_Subtract(__pyx_v_y_end, __pyx_v_y_start); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_10 = __Pyx_PyInt_AddObjC(__pyx_t_3, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_9 = 0;
-  __pyx_t_4 = __Pyx_PyInt_From_long(__pyx_t_9); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_11 = PyObject_RichCompare(__pyx_t_10, __pyx_t_4, Py_GT); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 84, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  __pyx_t_8 = PyNumber_Multiply(__pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 70, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  if (__pyx_t_6) {
-    __Pyx_INCREF(__pyx_t_10);
-    __pyx_t_3 = __pyx_t_10;
-  } else {
-    __pyx_t_11 = __Pyx_PyInt_From_long(__pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 84, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_3 = __pyx_t_11;
-    __pyx_t_11 = 0;
-  }
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = PyNumber_Multiply(__pyx_t_5, __pyx_t_3); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 84, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_v_inter_area = __pyx_t_10;
-  __pyx_t_10 = 0;
+  __pyx_v_inter_area = __pyx_t_8;
+  __pyx_t_8 = 0;
 
-  /* "object_flow/util/geom.pyx":88
+  /* "object_flow/util/geom.pyx":74
  *         # compute the area of the given box. The area of the current object
  *         # is always kept updated
  *         box_area = ((box_endX - box_startX + 1) * (box_endY - box_startY + 1))             # <<<<<<<<<<<<<<
  * 
  *         # compute the area of the given box. The area of the current object
  */
-  __pyx_t_10 = __Pyx_PyInt_From_int(__pyx_v_box_endX); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 88, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __pyx_t_3 = PyNumber_Subtract(__pyx_t_10, ((PyObject *)__pyx_v_box_startX)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __pyx_t_10 = __Pyx_PyInt_AddObjC(__pyx_t_3, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 88, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_10);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyInt_From_long(((__pyx_v_box_endY - __pyx_v_box_startY) + 1)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 88, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = PyNumber_Multiply(__pyx_t_10, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 88, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_v_box_area = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_8 = __Pyx_PyInt_From_long((((__pyx_v_box_endX - __pyx_v_box_startX) + 1) * ((__pyx_v_box_endY - __pyx_v_box_startY) + 1))); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_v_box_area = __pyx_t_8;
+  __pyx_t_8 = 0;
 
-  /* "object_flow/util/geom.pyx":92
+  /* "object_flow/util/geom.pyx":78
  *         # compute the area of the given box. The area of the current object
  *         # is always kept updated
  *         obox_area = ((obox_endX - obox_startX + 1) * (obox_endY - obox_startY + 1))             # <<<<<<<<<<<<<<
  * 
  *         # compute the intersection over union by taking the intersection
  */
-  __pyx_t_5 = __Pyx_PyInt_From_long((((__pyx_v_obox_endX - __pyx_v_obox_startX) + 1) * ((__pyx_v_obox_endY - __pyx_v_obox_startY) + 1))); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 92, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_v_obox_area = __pyx_t_5;
-  __pyx_t_5 = 0;
+  __pyx_t_8 = __Pyx_PyInt_From_long((((__pyx_v_obox_endX - __pyx_v_obox_startX) + 1) * ((__pyx_v_obox_endY - __pyx_v_obox_startY) + 1))); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 78, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_v_obox_area = __pyx_t_8;
+  __pyx_t_8 = 0;
 
-  /* "object_flow/util/geom.pyx":97
+  /* "object_flow/util/geom.pyx":83
  *         # area and dividing it by the sum of prediction + ground-truth
  *         # areas - the interesection area
  *         iou = inter_area / float(box_area + obox_area - inter_area)             # <<<<<<<<<<<<<<
  * 
  *         # return the intersection over union value
  */
-  __pyx_t_5 = PyNumber_Add(__pyx_v_box_area, __pyx_v_obox_area); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_8 = PyNumber_Add(__pyx_v_box_area, __pyx_v_obox_area); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_t_5 = PyNumber_Subtract(__pyx_t_8, __pyx_v_inter_area); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_3 = PyNumber_Subtract(__pyx_t_5, __pyx_v_inter_area); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  __pyx_t_8 = __Pyx_PyNumber_Float(__pyx_t_5); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 83, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyNumber_Float(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 97, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_v_inter_area, __pyx_t_8); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 83, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyNumber_Divide(__pyx_v_inter_area, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 97, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_v_iou = __pyx_t_3;
-  __pyx_t_3 = 0;
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  __pyx_v_iou = __pyx_t_5;
+  __pyx_t_5 = 0;
 
-  /* "object_flow/util/geom.pyx":100
+  /* "object_flow/util/geom.pyx":86
  * 
  *         # return the intersection over union value
  *         return iou             # <<<<<<<<<<<<<<
  * 
- *     # ---------------------------------------------------------------------------------
+ *     @staticmethod
  */
-  __Pyx_XDECREF(__pyx_r);
-  __Pyx_INCREF(__pyx_v_iou);
-  __pyx_r = __pyx_v_iou;
+  __pyx_t_11 = __pyx_PyFloat_AsDouble(__pyx_v_iou); if (unlikely((__pyx_t_11 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 86, __pyx_L1_error)
+  __pyx_r = __pyx_t_11;
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":74
- *     # ---------------------------------------------------------------------------------
+  /* "object_flow/util/geom.pyx":59
  * 
- *     def iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
- *             int box_endY, int obox_startX, int obox_startY,
- *             int obox_endX, int obox_endY):
+ *     @staticmethod
+ *     cdef double iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *                     int box_endY, int obox_startX, int obox_startY,
+ *                     int obox_endX, int obox_endY):
  */
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(((PyObject *)__pyx_t_2));
-  __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
+  __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
   __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_11);
-  __Pyx_AddTraceback("object_flow.util.geom.Geom.iou", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = NULL;
+  __Pyx_WriteUnraisable("object_flow.util.geom.Geom.iou", __pyx_clineno, __pyx_lineno, __pyx_filename, 1, 0);
+  __pyx_r = 0;
   __pyx_L0:;
   __Pyx_XDECREF(__pyx_v_x_start);
   __Pyx_XDECREF(__pyx_v_y_start);
@@ -2268,34 +2131,52 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4iou(struct __pyx_obj_
   __Pyx_XDECREF(__pyx_v_box_area);
   __Pyx_XDECREF(__pyx_v_obox_area);
   __Pyx_XDECREF(__pyx_v_iou);
-  __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "object_flow/util/geom.pyx":110
- *     # ---------------------------------------------------------------------------------
+/* "object_flow/util/geom.pyx":89
  * 
- *     def iou_match(set1, set2, match_value):             # <<<<<<<<<<<<<<
- *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
- * 
+ *     @staticmethod
+ *     def w_iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *               int box_endY, int obox_startX, int obox_startY,
+ *               int obox_endX, int obox_endY):
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match(PyObject *__pyx_v_set1, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match(PyObject *__pyx_v_set1, PyObject *__pyx_args, PyObject *__pyx_kwds) {
-  PyObject *__pyx_v_set2 = 0;
-  PyObject *__pyx_v_match_value = 0;
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_5w_iou(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11object_flow_4util_4geom_4Geom_5w_iou = {"w_iou", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_5w_iou, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_5w_iou(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  int __pyx_v_box_startX;
+  int __pyx_v_box_startY;
+  int __pyx_v_box_endX;
+  int __pyx_v_box_endY;
+  int __pyx_v_obox_startX;
+  int __pyx_v_obox_startY;
+  int __pyx_v_obox_endX;
+  int __pyx_v_obox_endY;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("iou_match (wrapper)", 0);
+  __Pyx_RefNannySetupContext("w_iou (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_set2,&__pyx_n_s_match_value,0};
-    PyObject* values[2] = {0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_box_startX,&__pyx_n_s_box_startY,&__pyx_n_s_box_endX,&__pyx_n_s_box_endY,&__pyx_n_s_obox_startX,&__pyx_n_s_obox_startY,&__pyx_n_s_obox_endX,&__pyx_n_s_obox_endY,0};
+    PyObject* values[8] = {0,0,0,0,0,0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  8: values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
+        CYTHON_FALLTHROUGH;
+        case  7: values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
+        CYTHON_FALLTHROUGH;
+        case  6: values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+        CYTHON_FALLTHROUGH;
+        case  5: values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+        CYTHON_FALLTHROUGH;
+        case  4: values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+        CYTHON_FALLTHROUGH;
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -2306,43 +2187,219 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match(PyObject *_
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set2)) != 0)) kw_args--;
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_startX)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_match_value)) != 0)) kw_args--;
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_startY)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("iou_match", 1, 2, 2, 1); __PYX_ERR(0, 110, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 1); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_endX)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 2); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  3:
+        if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_box_endY)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 3); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  4:
+        if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_startX)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 4); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  5:
+        if (likely((values[5] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_startY)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 5); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  6:
+        if (likely((values[6] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_endX)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 6); __PYX_ERR(0, 89, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  7:
+        if (likely((values[7] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_obox_endY)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, 7); __PYX_ERR(0, 89, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "iou_match") < 0)) __PYX_ERR(0, 110, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "w_iou") < 0)) __PYX_ERR(0, 89, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 8) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+      values[3] = PyTuple_GET_ITEM(__pyx_args, 3);
+      values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
+      values[5] = PyTuple_GET_ITEM(__pyx_args, 5);
+      values[6] = PyTuple_GET_ITEM(__pyx_args, 6);
+      values[7] = PyTuple_GET_ITEM(__pyx_args, 7);
     }
-    __pyx_v_set2 = values[0];
-    __pyx_v_match_value = values[1];
+    __pyx_v_box_startX = __Pyx_PyInt_As_int(values[0]); if (unlikely((__pyx_v_box_startX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 89, __pyx_L3_error)
+    __pyx_v_box_startY = __Pyx_PyInt_As_int(values[1]); if (unlikely((__pyx_v_box_startY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 89, __pyx_L3_error)
+    __pyx_v_box_endX = __Pyx_PyInt_As_int(values[2]); if (unlikely((__pyx_v_box_endX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 89, __pyx_L3_error)
+    __pyx_v_box_endY = __Pyx_PyInt_As_int(values[3]); if (unlikely((__pyx_v_box_endY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L3_error)
+    __pyx_v_obox_startX = __Pyx_PyInt_As_int(values[4]); if (unlikely((__pyx_v_obox_startX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L3_error)
+    __pyx_v_obox_startY = __Pyx_PyInt_As_int(values[5]); if (unlikely((__pyx_v_obox_startY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 90, __pyx_L3_error)
+    __pyx_v_obox_endX = __Pyx_PyInt_As_int(values[6]); if (unlikely((__pyx_v_obox_endX == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L3_error)
+    __pyx_v_obox_endY = __Pyx_PyInt_As_int(values[7]); if (unlikely((__pyx_v_obox_endY == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 91, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("iou_match", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 110, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("w_iou", 1, 8, 8, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 89, __pyx_L3_error)
   __pyx_L3_error:;
-  __Pyx_AddTraceback("object_flow.util.geom.Geom.iou_match", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("object_flow.util.geom.Geom.w_iou", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(((struct __pyx_obj_11object_flow_4util_4geom_Geom *)__pyx_v_set1), __pyx_v_set2, __pyx_v_match_value);
+  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_4w_iou(__pyx_v_box_startX, __pyx_v_box_startY, __pyx_v_box_endX, __pyx_v_box_endY, __pyx_v_obox_startX, __pyx_v_obox_startY, __pyx_v_obox_endX, __pyx_v_obox_endY);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_match_value) {
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_4w_iou(int __pyx_v_box_startX, int __pyx_v_box_startY, int __pyx_v_box_endX, int __pyx_v_box_endY, int __pyx_v_obox_startX, int __pyx_v_obox_startY, int __pyx_v_obox_endX, int __pyx_v_obox_endY) {
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  PyObject *__pyx_t_1 = NULL;
+  __Pyx_RefNannySetupContext("w_iou", 0);
+
+  /* "object_flow/util/geom.pyx":93
+ *               int obox_endX, int obox_endY):
+ * 
+ *         return Geom.iou(box_startX, box_startY, box_endX, box_endY, obox_startX, obox_startY,             # <<<<<<<<<<<<<<
+ *                         obox_endX, obox_endY)
+ * 
+ */
+  __Pyx_XDECREF(__pyx_r);
+
+  /* "object_flow/util/geom.pyx":94
+ * 
+ *         return Geom.iou(box_startX, box_startY, box_endX, box_endY, obox_startX, obox_startY,
+ *                         obox_endX, obox_endY)             # <<<<<<<<<<<<<<
+ * 
+ *     # ---------------------------------------------------------------------------------
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_11object_flow_4util_4geom_4Geom_iou(__pyx_v_box_startX, __pyx_v_box_startY, __pyx_v_box_endX, __pyx_v_box_endY, __pyx_v_obox_startX, __pyx_v_obox_startY, __pyx_v_obox_endX, __pyx_v_obox_endY)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 93, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_r = __pyx_t_1;
+  __pyx_t_1 = 0;
+  goto __pyx_L0;
+
+  /* "object_flow/util/geom.pyx":89
+ * 
+ *     @staticmethod
+ *     def w_iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *               int box_endY, int obox_startX, int obox_startY,
+ *               int obox_endX, int obox_endY):
+ */
+
+  /* function exit code */
+  __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_AddTraceback("object_flow.util.geom.Geom.w_iou", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "object_flow/util/geom.pyx":105
+ * 
+ *     @staticmethod
+ *     def iou_match(set1, set2, match_value):             # <<<<<<<<<<<<<<
+ *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ * 
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11object_flow_4util_4geom_4Geom_7iou_match = {"iou_match", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_set1 = 0;
+  PyObject *__pyx_v_set2 = 0;
+  PyObject *__pyx_v_match_value = 0;
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("iou_match (wrapper)", 0);
+  {
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_set1,&__pyx_n_s_set2,&__pyx_n_s_match_value,0};
+    PyObject* values[3] = {0,0,0};
+    if (unlikely(__pyx_kwds)) {
+      Py_ssize_t kw_args;
+      const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
+      switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
+        case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+        CYTHON_FALLTHROUGH;
+        case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+        CYTHON_FALLTHROUGH;
+        case  0: break;
+        default: goto __pyx_L5_argtuple_error;
+      }
+      kw_args = PyDict_Size(__pyx_kwds);
+      switch (pos_args) {
+        case  0:
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set1)) != 0)) kw_args--;
+        else goto __pyx_L5_argtuple_error;
+        CYTHON_FALLTHROUGH;
+        case  1:
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set2)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("iou_match", 1, 3, 3, 1); __PYX_ERR(0, 105, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_match_value)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("iou_match", 1, 3, 3, 2); __PYX_ERR(0, 105, __pyx_L3_error)
+        }
+      }
+      if (unlikely(kw_args > 0)) {
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "iou_match") < 0)) __PYX_ERR(0, 105, __pyx_L3_error)
+      }
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
+      goto __pyx_L5_argtuple_error;
+    } else {
+      values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
+      values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+    }
+    __pyx_v_set1 = values[0];
+    __pyx_v_set2 = values[1];
+    __pyx_v_match_value = values[2];
+  }
+  goto __pyx_L4_argument_unpacking_done;
+  __pyx_L5_argtuple_error:;
+  __Pyx_RaiseArgtupleInvalid("iou_match", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 105, __pyx_L3_error)
+  __pyx_L3_error:;
+  __Pyx_AddTraceback("object_flow.util.geom.Geom.iou_match", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_RefNannyFinishContext();
+  return NULL;
+  __pyx_L4_argument_unpacking_done:;
+  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(__pyx_v_set1, __pyx_v_set2, __pyx_v_match_value);
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(PyObject *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_match_value) {
   PyObject *__pyx_v_iou_array = NULL;
   PyObject *__pyx_v_i = NULL;
   PyObject *__pyx_v_to = NULL;
@@ -2368,42 +2425,39 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   Py_ssize_t __pyx_t_7;
   PyObject *(*__pyx_t_8)(PyObject *);
   PyObject *__pyx_t_9 = NULL;
-  PyObject *__pyx_t_10 = NULL;
-  PyObject *__pyx_t_11 = NULL;
-  PyObject *__pyx_t_12 = NULL;
-  PyObject *__pyx_t_13 = NULL;
-  PyObject *__pyx_t_14 = NULL;
-  PyObject *__pyx_t_15 = NULL;
-  PyObject *__pyx_t_16 = NULL;
-  PyObject *__pyx_t_17 = NULL;
+  int __pyx_t_10;
+  int __pyx_t_11;
+  int __pyx_t_12;
+  int __pyx_t_13;
+  int __pyx_t_14;
+  int __pyx_t_15;
+  int __pyx_t_16;
+  int __pyx_t_17;
   PyObject *__pyx_t_18 = NULL;
-  PyObject *__pyx_t_19 = NULL;
+  int __pyx_t_19;
   int __pyx_t_20;
-  PyObject *__pyx_t_21 = NULL;
-  int __pyx_t_22;
-  int __pyx_t_23;
-  int __pyx_t_24;
+  int __pyx_t_21;
   __Pyx_RefNannySetupContext("iou_match", 0);
 
-  /* "object_flow/util/geom.pyx":111
- * 
+  /* "object_flow/util/geom.pyx":106
+ *     @staticmethod
  *     def iou_match(set1, set2, match_value):
  *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")             # <<<<<<<<<<<<<<
  * 
  *         # calculate the iou metric for all tracked objects x input objects
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = PyObject_Length(((PyObject *)__pyx_v_set1)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 111, __pyx_L1_error)
-  __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyObject_Length(__pyx_v_set2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 111, __pyx_L1_error)
-  __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
@@ -2411,15 +2465,15 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
   __pyx_t_1 = 0;
   __pyx_t_4 = 0;
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_n_u_float64) < 0) __PYX_ERR(0, 111, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_n_u_float64) < 0) __PYX_ERR(0, 106, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -2427,7 +2481,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_v_iou_array = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":115
+  /* "object_flow/util/geom.pyx":110
  *         # calculate the iou metric for all tracked objects x input objects
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):             # <<<<<<<<<<<<<<
@@ -2436,30 +2490,30 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
  */
   __Pyx_INCREF(__pyx_int_0);
   __pyx_t_1 = __pyx_int_0;
-  if (likely(PyList_CheckExact(((PyObject *)__pyx_v_set1))) || PyTuple_CheckExact(((PyObject *)__pyx_v_set1))) {
-    __pyx_t_5 = ((PyObject *)__pyx_v_set1); __Pyx_INCREF(__pyx_t_5); __pyx_t_3 = 0;
+  if (likely(PyList_CheckExact(__pyx_v_set1)) || PyTuple_CheckExact(__pyx_v_set1)) {
+    __pyx_t_5 = __pyx_v_set1; __Pyx_INCREF(__pyx_t_5); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_5 = PyObject_GetIter(((PyObject *)__pyx_v_set1)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_set1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 110, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_6)) {
       if (likely(PyList_CheckExact(__pyx_t_5))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 115, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 115, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 110, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -2469,7 +2523,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 115, __pyx_L1_error)
+          else __PYX_ERR(0, 110, __pyx_L1_error)
         }
         break;
       }
@@ -2479,13 +2533,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __pyx_t_4 = 0;
     __Pyx_INCREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_1);
-    __pyx_t_4 = __Pyx_PyInt_AddObjC(__pyx_t_1, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 115, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_AddObjC(__pyx_t_1, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 110, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1);
     __pyx_t_1 = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "object_flow/util/geom.pyx":116
+    /* "object_flow/util/geom.pyx":111
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):             # <<<<<<<<<<<<<<
@@ -2498,26 +2552,26 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
       __pyx_t_2 = __pyx_v_set2; __Pyx_INCREF(__pyx_t_2); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
     } else {
-      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_set2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 116, __pyx_L1_error)
+      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_set2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 116, __pyx_L1_error)
+      __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 111, __pyx_L1_error)
     }
     for (;;) {
       if (likely(!__pyx_t_8)) {
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_9 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
+          __pyx_t_9 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 111, __pyx_L1_error)
           #else
-          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 116, __pyx_L1_error)
+          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 111, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
           #endif
         } else {
           if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_9 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 116, __pyx_L1_error)
+          __pyx_t_9 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 111, __pyx_L1_error)
           #else
-          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 116, __pyx_L1_error)
+          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 111, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
           #endif
         }
@@ -2527,7 +2581,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 116, __pyx_L1_error)
+            else __PYX_ERR(0, 111, __pyx_L1_error)
           }
           break;
         }
@@ -2537,145 +2591,82 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
       __pyx_t_9 = 0;
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_4);
-      __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 116, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 111, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4);
       __pyx_t_4 = __pyx_t_9;
       __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":117
+      /* "object_flow/util/geom.pyx":112
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):
  *                 iou_array[i, j] = Geom.iou(to.startX, to.startY, to.endX, to.endY,             # <<<<<<<<<<<<<<
  *                                            io.startX, io.startY, io.endX, io.endY)
  * 
  */
-      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom), __pyx_n_s_iou); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_startX); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_11);
-      __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_startY); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_12);
-      __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_endX); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_13);
-      __pyx_t_14 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_endY); if (unlikely(!__pyx_t_14)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_14);
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_startX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_10 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_10 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_startY); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_11 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_11 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_endX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_12 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_12 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_endY); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_13 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_13 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":118
+      /* "object_flow/util/geom.pyx":113
  *             for (j, io) in enumerate(set2):
  *                 iou_array[i, j] = Geom.iou(to.startX, to.startY, to.endX, to.endY,
  *                                            io.startX, io.startY, io.endX, io.endY)             # <<<<<<<<<<<<<<
  * 
  *         # TODO: should this be calculated automatically somehow
  */
-      __pyx_t_15 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_startX); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 118, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_15);
-      __pyx_t_16 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_startY); if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 118, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_16);
-      __pyx_t_17 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_endX); if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 118, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_17);
-      __pyx_t_18 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_endY); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 118, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_18);
-      __pyx_t_19 = NULL;
-      __pyx_t_20 = 0;
-      if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_10))) {
-        __pyx_t_19 = PyMethod_GET_SELF(__pyx_t_10);
-        if (likely(__pyx_t_19)) {
-          PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_10);
-          __Pyx_INCREF(__pyx_t_19);
-          __Pyx_INCREF(function);
-          __Pyx_DECREF_SET(__pyx_t_10, function);
-          __pyx_t_20 = 1;
-        }
-      }
-      #if CYTHON_FAST_PYCALL
-      if (PyFunction_Check(__pyx_t_10)) {
-        PyObject *__pyx_temp[9] = {__pyx_t_19, __pyx_t_11, __pyx_t_12, __pyx_t_13, __pyx_t_14, __pyx_t_15, __pyx_t_16, __pyx_t_17, __pyx_t_18};
-        __pyx_t_9 = __Pyx_PyFunction_FastCall(__pyx_t_10, __pyx_temp+1-__pyx_t_20, 8+__pyx_t_20); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 117, __pyx_L1_error)
-        __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
-        __Pyx_GOTREF(__pyx_t_9);
-        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-        __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-        __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-      } else
-      #endif
-      #if CYTHON_FAST_PYCCALL
-      if (__Pyx_PyFastCFunction_Check(__pyx_t_10)) {
-        PyObject *__pyx_temp[9] = {__pyx_t_19, __pyx_t_11, __pyx_t_12, __pyx_t_13, __pyx_t_14, __pyx_t_15, __pyx_t_16, __pyx_t_17, __pyx_t_18};
-        __pyx_t_9 = __Pyx_PyCFunction_FastCall(__pyx_t_10, __pyx_temp+1-__pyx_t_20, 8+__pyx_t_20); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 117, __pyx_L1_error)
-        __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
-        __Pyx_GOTREF(__pyx_t_9);
-        __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-        __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        __Pyx_DECREF(__pyx_t_14); __pyx_t_14 = 0;
-        __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
-        __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-        __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
-      } else
-      #endif
-      {
-        __pyx_t_21 = PyTuple_New(8+__pyx_t_20); if (unlikely(!__pyx_t_21)) __PYX_ERR(0, 117, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_21);
-        if (__pyx_t_19) {
-          __Pyx_GIVEREF(__pyx_t_19); PyTuple_SET_ITEM(__pyx_t_21, 0, __pyx_t_19); __pyx_t_19 = NULL;
-        }
-        __Pyx_GIVEREF(__pyx_t_11);
-        PyTuple_SET_ITEM(__pyx_t_21, 0+__pyx_t_20, __pyx_t_11);
-        __Pyx_GIVEREF(__pyx_t_12);
-        PyTuple_SET_ITEM(__pyx_t_21, 1+__pyx_t_20, __pyx_t_12);
-        __Pyx_GIVEREF(__pyx_t_13);
-        PyTuple_SET_ITEM(__pyx_t_21, 2+__pyx_t_20, __pyx_t_13);
-        __Pyx_GIVEREF(__pyx_t_14);
-        PyTuple_SET_ITEM(__pyx_t_21, 3+__pyx_t_20, __pyx_t_14);
-        __Pyx_GIVEREF(__pyx_t_15);
-        PyTuple_SET_ITEM(__pyx_t_21, 4+__pyx_t_20, __pyx_t_15);
-        __Pyx_GIVEREF(__pyx_t_16);
-        PyTuple_SET_ITEM(__pyx_t_21, 5+__pyx_t_20, __pyx_t_16);
-        __Pyx_GIVEREF(__pyx_t_17);
-        PyTuple_SET_ITEM(__pyx_t_21, 6+__pyx_t_20, __pyx_t_17);
-        __Pyx_GIVEREF(__pyx_t_18);
-        PyTuple_SET_ITEM(__pyx_t_21, 7+__pyx_t_20, __pyx_t_18);
-        __pyx_t_11 = 0;
-        __pyx_t_12 = 0;
-        __pyx_t_13 = 0;
-        __pyx_t_14 = 0;
-        __pyx_t_15 = 0;
-        __pyx_t_16 = 0;
-        __pyx_t_17 = 0;
-        __pyx_t_18 = 0;
-        __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_10, __pyx_t_21, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 117, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_9);
-        __Pyx_DECREF(__pyx_t_21); __pyx_t_21 = 0;
-      }
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_startX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_14 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_14 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_startY); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_15 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_15 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_endX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_16 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_16 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+      __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_endY); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_17 = __Pyx_PyInt_As_int(__pyx_t_9); if (unlikely((__pyx_t_17 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 113, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":117
+      /* "object_flow/util/geom.pyx":112
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):
  *                 iou_array[i, j] = Geom.iou(to.startX, to.startY, to.endX, to.endY,             # <<<<<<<<<<<<<<
  *                                            io.startX, io.startY, io.endX, io.endY)
  * 
  */
-      __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_10);
+      __pyx_t_9 = PyFloat_FromDouble(__pyx_f_11object_flow_4util_4geom_4Geom_iou(__pyx_t_10, __pyx_t_11, __pyx_t_12, __pyx_t_13, __pyx_t_14, __pyx_t_15, __pyx_t_16, __pyx_t_17)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_9);
+      __pyx_t_18 = PyTuple_New(2); if (unlikely(!__pyx_t_18)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_18);
       __Pyx_INCREF(__pyx_v_i);
       __Pyx_GIVEREF(__pyx_v_i);
-      PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_v_i);
+      PyTuple_SET_ITEM(__pyx_t_18, 0, __pyx_v_i);
       __Pyx_INCREF(__pyx_v_j);
       __Pyx_GIVEREF(__pyx_v_j);
-      PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_v_j);
-      if (unlikely(PyObject_SetItem(__pyx_v_iou_array, __pyx_t_10, __pyx_t_9) < 0)) __PYX_ERR(0, 117, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+      PyTuple_SET_ITEM(__pyx_t_18, 1, __pyx_v_j);
+      if (unlikely(PyObject_SetItem(__pyx_v_iou_array, __pyx_t_18, __pyx_t_9) < 0)) __PYX_ERR(0, 112, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_18); __pyx_t_18 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":116
+      /* "object_flow/util/geom.pyx":111
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):             # <<<<<<<<<<<<<<
@@ -2686,7 +2677,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "object_flow/util/geom.pyx":115
+    /* "object_flow/util/geom.pyx":110
  *         # calculate the iou metric for all tracked objects x input objects
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):             # <<<<<<<<<<<<<<
@@ -2697,19 +2688,19 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":121
+  /* "object_flow/util/geom.pyx":116
  * 
  *         # TODO: should this be calculated automatically somehow
  *         match = np.where(iou_array > match_value)             # <<<<<<<<<<<<<<
  *         rows = np.unique(match[0])
  *         cols = []
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_where); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_where); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyObject_RichCompare(__pyx_v_iou_array, __pyx_v_match_value, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
+  __pyx_t_5 = PyObject_RichCompare(__pyx_v_iou_array, __pyx_v_match_value, Py_GT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 116, __pyx_L1_error)
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
     __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
@@ -2723,25 +2714,25 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 116, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_match = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":122
+  /* "object_flow/util/geom.pyx":117
  *         # TODO: should this be calculated automatically somehow
  *         match = np.where(iou_array > match_value)
  *         rows = np.unique(match[0])             # <<<<<<<<<<<<<<
  *         cols = []
  *         match_rows_cols = []
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_match, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_match, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -2756,37 +2747,37 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_t_4) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 122, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_rows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":123
+  /* "object_flow/util/geom.pyx":118
  *         match = np.where(iou_array > match_value)
  *         rows = np.unique(match[0])
  *         cols = []             # <<<<<<<<<<<<<<
  *         match_rows_cols = []
  * 
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 118, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_cols = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":124
+  /* "object_flow/util/geom.pyx":119
  *         rows = np.unique(match[0])
  *         cols = []
  *         match_rows_cols = []             # <<<<<<<<<<<<<<
  * 
  *         for row in rows:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_match_rows_cols = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":126
+  /* "object_flow/util/geom.pyx":121
  *         match_rows_cols = []
  * 
  *         for row in rows:             # <<<<<<<<<<<<<<
@@ -2797,26 +2788,26 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __pyx_t_1 = __pyx_v_rows; __Pyx_INCREF(__pyx_t_1); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_rows); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_rows); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 126, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 121, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_6)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 121, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 121, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -2826,7 +2817,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 126, __pyx_L1_error)
+          else __PYX_ERR(0, 121, __pyx_L1_error)
         }
         break;
       }
@@ -2835,14 +2826,14 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __Pyx_XDECREF_SET(__pyx_v_row, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":127
+    /* "object_flow/util/geom.pyx":122
  * 
  *         for row in rows:
  *             col = iou_array[row, :].argmax()             # <<<<<<<<<<<<<<
  *             if col in cols:
  *                 continue
  */
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_INCREF(__pyx_v_row);
     __Pyx_GIVEREF(__pyx_v_row);
@@ -2850,10 +2841,10 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __Pyx_INCREF(__pyx_slice_);
     __Pyx_GIVEREF(__pyx_slice_);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice_);
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_iou_array, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 127, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_iou_array, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 122, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_argmax); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 127, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_argmax); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 122, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -2868,24 +2859,24 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     }
     __pyx_t_5 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 127, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 122, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_XDECREF_SET(__pyx_v_col, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":128
+    /* "object_flow/util/geom.pyx":123
  *         for row in rows:
  *             col = iou_array[row, :].argmax()
  *             if col in cols:             # <<<<<<<<<<<<<<
  *                 continue
  *             cols.append(col)
  */
-    __pyx_t_22 = (__Pyx_PySequence_ContainsTF(__pyx_v_col, __pyx_v_cols, Py_EQ)); if (unlikely(__pyx_t_22 < 0)) __PYX_ERR(0, 128, __pyx_L1_error)
-    __pyx_t_23 = (__pyx_t_22 != 0);
-    if (__pyx_t_23) {
+    __pyx_t_19 = (__Pyx_PySequence_ContainsTF(__pyx_v_col, __pyx_v_cols, Py_EQ)); if (unlikely(__pyx_t_19 < 0)) __PYX_ERR(0, 123, __pyx_L1_error)
+    __pyx_t_20 = (__pyx_t_19 != 0);
+    if (__pyx_t_20) {
 
-      /* "object_flow/util/geom.pyx":129
+      /* "object_flow/util/geom.pyx":124
  *             col = iou_array[row, :].argmax()
  *             if col in cols:
  *                 continue             # <<<<<<<<<<<<<<
@@ -2894,7 +2885,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
  */
       goto __pyx_L7_continue;
 
-      /* "object_flow/util/geom.pyx":128
+      /* "object_flow/util/geom.pyx":123
  *         for row in rows:
  *             col = iou_array[row, :].argmax()
  *             if col in cols:             # <<<<<<<<<<<<<<
@@ -2903,23 +2894,23 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
  */
     }
 
-    /* "object_flow/util/geom.pyx":130
+    /* "object_flow/util/geom.pyx":125
  *             if col in cols:
  *                 continue
  *             cols.append(col)             # <<<<<<<<<<<<<<
  *             match_rows_cols.append((row, col))
  * 
  */
-    __pyx_t_24 = __Pyx_PyList_Append(__pyx_v_cols, __pyx_v_col); if (unlikely(__pyx_t_24 == ((int)-1))) __PYX_ERR(0, 130, __pyx_L1_error)
+    __pyx_t_21 = __Pyx_PyList_Append(__pyx_v_cols, __pyx_v_col); if (unlikely(__pyx_t_21 == ((int)-1))) __PYX_ERR(0, 125, __pyx_L1_error)
 
-    /* "object_flow/util/geom.pyx":131
+    /* "object_flow/util/geom.pyx":126
  *                 continue
  *             cols.append(col)
  *             match_rows_cols.append((row, col))             # <<<<<<<<<<<<<<
  * 
  *         allrows = np.arange(len(set1))
  */
-    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_INCREF(__pyx_v_row);
     __Pyx_GIVEREF(__pyx_v_row);
@@ -2927,10 +2918,10 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
     __Pyx_INCREF(__pyx_v_col);
     __Pyx_GIVEREF(__pyx_v_col);
     PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_col);
-    __pyx_t_24 = __Pyx_PyList_Append(__pyx_v_match_rows_cols, __pyx_t_5); if (unlikely(__pyx_t_24 == ((int)-1))) __PYX_ERR(0, 131, __pyx_L1_error)
+    __pyx_t_21 = __Pyx_PyList_Append(__pyx_v_match_rows_cols, __pyx_t_5); if (unlikely(__pyx_t_21 == ((int)-1))) __PYX_ERR(0, 126, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":126
+    /* "object_flow/util/geom.pyx":121
  *         match_rows_cols = []
  * 
  *         for row in rows:             # <<<<<<<<<<<<<<
@@ -2941,20 +2932,20 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":133
+  /* "object_flow/util/geom.pyx":128
  *             match_rows_cols.append((row, col))
  * 
  *         allrows = np.arange(len(set1))             # <<<<<<<<<<<<<<
  *         unused_rows = np.setdiff1d(allrows, rows)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 128, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_arange); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_arange); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 128, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_3 = PyObject_Length(((PyObject *)__pyx_v_set1)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 133, __pyx_L1_error)
-  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 133, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 128, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
@@ -2969,26 +2960,26 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_allrows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":134
+  /* "object_flow/util/geom.pyx":129
  * 
  *         allrows = np.arange(len(set1))
  *         unused_rows = np.setdiff1d(allrows, rows)             # <<<<<<<<<<<<<<
  * 
  *         unused_cols = set(range(0, iou_array.shape[1])).difference(cols)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 134, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_setdiff1d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 134, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_setdiff1d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
-  __pyx_t_20 = 0;
+  __pyx_t_17 = 0;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
     __pyx_t_4 = PyMethod_GET_SELF(__pyx_t_5);
     if (likely(__pyx_t_4)) {
@@ -2996,13 +2987,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_INCREF(function);
       __Pyx_DECREF_SET(__pyx_t_5, function);
-      __pyx_t_20 = 1;
+      __pyx_t_17 = 1;
     }
   }
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_allrows, __pyx_v_rows};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_20, 2+__pyx_t_20); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_17, 2+__pyx_t_17); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -3010,24 +3001,24 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_allrows, __pyx_v_rows};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_20, 2+__pyx_t_20); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_17, 2+__pyx_t_17); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_2 = PyTuple_New(2+__pyx_t_20); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 134, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(2+__pyx_t_17); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 129, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4); __pyx_t_4 = NULL;
     }
     __Pyx_INCREF(__pyx_v_allrows);
     __Pyx_GIVEREF(__pyx_v_allrows);
-    PyTuple_SET_ITEM(__pyx_t_2, 0+__pyx_t_20, __pyx_v_allrows);
+    PyTuple_SET_ITEM(__pyx_t_2, 0+__pyx_t_17, __pyx_v_allrows);
     __Pyx_INCREF(__pyx_v_rows);
     __Pyx_GIVEREF(__pyx_v_rows);
-    PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_20, __pyx_v_rows);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 134, __pyx_L1_error)
+    PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_17, __pyx_v_rows);
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -3035,19 +3026,19 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_v_unused_rows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":136
+  /* "object_flow/util/geom.pyx":131
  *         unused_rows = np.setdiff1d(allrows, rows)
  * 
  *         unused_cols = set(range(0, iou_array.shape[1])).difference(cols)             # <<<<<<<<<<<<<<
  *         return unused_rows, unused_cols, match_rows_cols
  * 
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_iou_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_iou_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -3055,13 +3046,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_5 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_difference); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_difference); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -3076,13 +3067,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   }
   __pyx_t_1 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_cols) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_cols);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 136, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_unused_cols = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":137
+  /* "object_flow/util/geom.pyx":132
  * 
  *         unused_cols = set(range(0, iou_array.shape[1])).difference(cols)
  *         return unused_rows, unused_cols, match_rows_cols             # <<<<<<<<<<<<<<
@@ -3090,7 +3081,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
  *     # ---------------------------------------------------------------------------------
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_unused_rows);
   __Pyx_GIVEREF(__pyx_v_unused_rows);
@@ -3105,9 +3096,9 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":110
- *     # ---------------------------------------------------------------------------------
+  /* "object_flow/util/geom.pyx":105
  * 
+ *     @staticmethod
  *     def iou_match(set1, set2, match_value):             # <<<<<<<<<<<<<<
  *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
  * 
@@ -3120,17 +3111,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   __Pyx_XDECREF(__pyx_t_4);
   __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_XDECREF(__pyx_t_10);
-  __Pyx_XDECREF(__pyx_t_11);
-  __Pyx_XDECREF(__pyx_t_12);
-  __Pyx_XDECREF(__pyx_t_13);
-  __Pyx_XDECREF(__pyx_t_14);
-  __Pyx_XDECREF(__pyx_t_15);
-  __Pyx_XDECREF(__pyx_t_16);
-  __Pyx_XDECREF(__pyx_t_17);
   __Pyx_XDECREF(__pyx_t_18);
-  __Pyx_XDECREF(__pyx_t_19);
-  __Pyx_XDECREF(__pyx_t_21);
   __Pyx_AddTraceback("object_flow.util.geom.Geom.iou_match", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
@@ -3153,29 +3134,33 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_6iou_match(struct __py
   return __pyx_r;
 }
 
-/* "object_flow/util/geom.pyx":144
- *     # ---------------------------------------------------------------------------------
+/* "object_flow/util/geom.pyx":140
  * 
+ *     @staticmethod
  *     def centroid_match(set1, set2, max_dist):             # <<<<<<<<<<<<<<
  *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
  * 
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match(PyObject *__pyx_v_set1, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match(PyObject *__pyx_v_set1, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static PyMethodDef __pyx_mdef_11object_flow_4util_4geom_4Geom_9centroid_match = {"centroid_match", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match, METH_VARARGS|METH_KEYWORDS, 0};
+static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+  PyObject *__pyx_v_set1 = 0;
   PyObject *__pyx_v_set2 = 0;
   PyObject *__pyx_v_max_dist = 0;
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("centroid_match (wrapper)", 0);
   {
-    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_set2,&__pyx_n_s_max_dist,0};
-    PyObject* values[2] = {0,0};
+    static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_set1,&__pyx_n_s_set2,&__pyx_n_s_max_dist,0};
+    PyObject* values[3] = {0,0,0};
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
       switch (pos_args) {
+        case  3: values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
+        CYTHON_FALLTHROUGH;
         case  2: values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
         CYTHON_FALLTHROUGH;
         case  1: values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
@@ -3186,43 +3171,51 @@ static PyObject *__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match(PyObje
       kw_args = PyDict_Size(__pyx_kwds);
       switch (pos_args) {
         case  0:
-        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set2)) != 0)) kw_args--;
+        if (likely((values[0] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set1)) != 0)) kw_args--;
         else goto __pyx_L5_argtuple_error;
         CYTHON_FALLTHROUGH;
         case  1:
-        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_max_dist)) != 0)) kw_args--;
+        if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_set2)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("centroid_match", 1, 2, 2, 1); __PYX_ERR(0, 144, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("centroid_match", 1, 3, 3, 1); __PYX_ERR(0, 140, __pyx_L3_error)
+        }
+        CYTHON_FALLTHROUGH;
+        case  2:
+        if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_max_dist)) != 0)) kw_args--;
+        else {
+          __Pyx_RaiseArgtupleInvalid("centroid_match", 1, 3, 3, 2); __PYX_ERR(0, 140, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "centroid_match") < 0)) __PYX_ERR(0, 144, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "centroid_match") < 0)) __PYX_ERR(0, 140, __pyx_L3_error)
       }
-    } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
+    } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = PyTuple_GET_ITEM(__pyx_args, 0);
       values[1] = PyTuple_GET_ITEM(__pyx_args, 1);
+      values[2] = PyTuple_GET_ITEM(__pyx_args, 2);
     }
-    __pyx_v_set2 = values[0];
-    __pyx_v_max_dist = values[1];
+    __pyx_v_set1 = values[0];
+    __pyx_v_set2 = values[1];
+    __pyx_v_max_dist = values[2];
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("centroid_match", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 144, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("centroid_match", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 140, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("object_flow.util.geom.Geom.centroid_match", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(((struct __pyx_obj_11object_flow_4util_4geom_Geom *)__pyx_v_set1), __pyx_v_set2, __pyx_v_max_dist);
+  __pyx_r = __pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(__pyx_v_set1, __pyx_v_set2, __pyx_v_max_dist);
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct __pyx_obj_11object_flow_4util_4geom_Geom *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_max_dist) {
+static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(PyObject *__pyx_v_set1, PyObject *__pyx_v_set2, PyObject *__pyx_v_max_dist) {
   PyObject *__pyx_v_c_array = NULL;
   PyObject *__pyx_v_i = NULL;
   PyObject *__pyx_v_to = NULL;
@@ -3259,25 +3252,25 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   int __pyx_t_18;
   __Pyx_RefNannySetupContext("centroid_match", 0);
 
-  /* "object_flow/util/geom.pyx":145
- * 
+  /* "object_flow/util/geom.pyx":141
+ *     @staticmethod
  *     def centroid_match(set1, set2, max_dist):
  *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")             # <<<<<<<<<<<<<<
  * 
  *         # calculate the iou metric for all tracked objects x input objects
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_np); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_n_s_zeros); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_3 = PyObject_Length(((PyObject *)__pyx_v_set1)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 145, __pyx_L1_error)
-  __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = PyObject_Length(__pyx_v_set2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 145, __pyx_L1_error)
-  __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set2); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_4 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_1);
@@ -3285,15 +3278,15 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_4);
   __pyx_t_1 = 0;
   __pyx_t_4 = 0;
-  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_n_u_float64) < 0) __PYX_ERR(0, 145, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_n_s_dtype, __pyx_n_u_float64) < 0) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -3301,7 +3294,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_v_c_array = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":149
+  /* "object_flow/util/geom.pyx":145
  *         # calculate the iou metric for all tracked objects x input objects
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):             # <<<<<<<<<<<<<<
@@ -3310,30 +3303,30 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
  */
   __Pyx_INCREF(__pyx_int_0);
   __pyx_t_1 = __pyx_int_0;
-  if (likely(PyList_CheckExact(((PyObject *)__pyx_v_set1))) || PyTuple_CheckExact(((PyObject *)__pyx_v_set1))) {
-    __pyx_t_5 = ((PyObject *)__pyx_v_set1); __Pyx_INCREF(__pyx_t_5); __pyx_t_3 = 0;
+  if (likely(PyList_CheckExact(__pyx_v_set1)) || PyTuple_CheckExact(__pyx_v_set1)) {
+    __pyx_t_5 = __pyx_v_set1; __Pyx_INCREF(__pyx_t_5); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_5 = PyObject_GetIter(((PyObject *)__pyx_v_set1)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_5 = PyObject_GetIter(__pyx_v_set1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_6 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_5)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 145, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_6)) {
       if (likely(PyList_CheckExact(__pyx_t_5))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 149, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 149, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_5)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 149, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_5, __pyx_t_3); __Pyx_INCREF(__pyx_t_4); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 145, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 149, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_5, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -3343,7 +3336,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 149, __pyx_L1_error)
+          else __PYX_ERR(0, 145, __pyx_L1_error)
         }
         break;
       }
@@ -3353,13 +3346,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __pyx_t_4 = 0;
     __Pyx_INCREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_i, __pyx_t_1);
-    __pyx_t_4 = __Pyx_PyInt_AddObjC(__pyx_t_1, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 149, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_AddObjC(__pyx_t_1, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 145, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_1);
     __pyx_t_1 = __pyx_t_4;
     __pyx_t_4 = 0;
 
-    /* "object_flow/util/geom.pyx":150
+    /* "object_flow/util/geom.pyx":146
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):             # <<<<<<<<<<<<<<
@@ -3372,26 +3365,26 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       __pyx_t_2 = __pyx_v_set2; __Pyx_INCREF(__pyx_t_2); __pyx_t_7 = 0;
       __pyx_t_8 = NULL;
     } else {
-      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_set2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_7 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_set2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_2);
-      __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_8 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 146, __pyx_L1_error)
     }
     for (;;) {
       if (likely(!__pyx_t_8)) {
         if (likely(PyList_CheckExact(__pyx_t_2))) {
           if (__pyx_t_7 >= PyList_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_9 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 150, __pyx_L1_error)
+          __pyx_t_9 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
           #else
-          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 150, __pyx_L1_error)
+          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 146, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
           #endif
         } else {
           if (__pyx_t_7 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
           #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-          __pyx_t_9 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 150, __pyx_L1_error)
+          __pyx_t_9 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_7); __Pyx_INCREF(__pyx_t_9); __pyx_t_7++; if (unlikely(0 < 0)) __PYX_ERR(0, 146, __pyx_L1_error)
           #else
-          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 150, __pyx_L1_error)
+          __pyx_t_9 = PySequence_ITEM(__pyx_t_2, __pyx_t_7); __pyx_t_7++; if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 146, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_9);
           #endif
         }
@@ -3401,7 +3394,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
           PyObject* exc_type = PyErr_Occurred();
           if (exc_type) {
             if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-            else __PYX_ERR(0, 150, __pyx_L1_error)
+            else __PYX_ERR(0, 146, __pyx_L1_error)
           }
           break;
         }
@@ -3411,33 +3404,33 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       __pyx_t_9 = 0;
       __Pyx_INCREF(__pyx_t_4);
       __Pyx_XDECREF_SET(__pyx_v_j, __pyx_t_4);
-      __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 150, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyInt_AddObjC(__pyx_t_4, __pyx_int_1, 1, 0, 0); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4);
       __pyx_t_4 = __pyx_t_9;
       __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":151
+      /* "object_flow/util/geom.pyx":147
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):
  *                 c_array[i, j] = scipy.spatial.distance.euclidean(to.centroid, io.centroid)             # <<<<<<<<<<<<<<
  * 
  *         # TODO: should this be calculated automatically somehow
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_scipy); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_n_s_scipy); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_spatial); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_spatial); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_n_s_distance); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_euclidean); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_10, __pyx_n_s_euclidean); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_centroid); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_to, __pyx_n_s_centroid); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_centroid); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_v_io, __pyx_n_s_centroid); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_12);
       __pyx_t_13 = NULL;
       __pyx_t_14 = 0;
@@ -3454,7 +3447,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       #if CYTHON_FAST_PYCALL
       if (PyFunction_Check(__pyx_t_11)) {
         PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_t_10, __pyx_t_12};
-        __pyx_t_9 = __Pyx_PyFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 147, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -3464,7 +3457,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       #if CYTHON_FAST_PYCCALL
       if (__Pyx_PyFastCFunction_Check(__pyx_t_11)) {
         PyObject *__pyx_temp[3] = {__pyx_t_13, __pyx_t_10, __pyx_t_12};
-        __pyx_t_9 = __Pyx_PyCFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyCFunction_FastCall(__pyx_t_11, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 147, __pyx_L1_error)
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
@@ -3472,7 +3465,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       } else
       #endif
       {
-        __pyx_t_15 = PyTuple_New(2+__pyx_t_14); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_15 = PyTuple_New(2+__pyx_t_14); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 147, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_15);
         if (__pyx_t_13) {
           __Pyx_GIVEREF(__pyx_t_13); PyTuple_SET_ITEM(__pyx_t_15, 0, __pyx_t_13); __pyx_t_13 = NULL;
@@ -3483,12 +3476,12 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
         PyTuple_SET_ITEM(__pyx_t_15, 1+__pyx_t_14, __pyx_t_12);
         __pyx_t_10 = 0;
         __pyx_t_12 = 0;
-        __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_15, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 151, __pyx_L1_error)
+        __pyx_t_9 = __Pyx_PyObject_Call(__pyx_t_11, __pyx_t_15, NULL); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 147, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
       }
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-      __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 151, __pyx_L1_error)
+      __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_INCREF(__pyx_v_i);
       __Pyx_GIVEREF(__pyx_v_i);
@@ -3496,11 +3489,11 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
       __Pyx_INCREF(__pyx_v_j);
       __Pyx_GIVEREF(__pyx_v_j);
       PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_v_j);
-      if (unlikely(PyObject_SetItem(__pyx_v_c_array, __pyx_t_11, __pyx_t_9) < 0)) __PYX_ERR(0, 151, __pyx_L1_error)
+      if (unlikely(PyObject_SetItem(__pyx_v_c_array, __pyx_t_11, __pyx_t_9) < 0)) __PYX_ERR(0, 147, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "object_flow/util/geom.pyx":150
+      /* "object_flow/util/geom.pyx":146
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):
  *             for (j, io) in enumerate(set2):             # <<<<<<<<<<<<<<
@@ -3511,7 +3504,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "object_flow/util/geom.pyx":149
+    /* "object_flow/util/geom.pyx":145
  *         # calculate the iou metric for all tracked objects x input objects
  * 	# creates a matrix of iou distances
  *         for (i, to) in enumerate(set1):             # <<<<<<<<<<<<<<
@@ -3522,19 +3515,19 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":154
+  /* "object_flow/util/geom.pyx":150
  * 
  *         # TODO: should this be calculated automatically somehow
  *         match = np.where(c_array < max_dist)             # <<<<<<<<<<<<<<
  *         rows = np.unique(match[0])
  *         cols = []
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_where); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_where); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyObject_RichCompare(__pyx_v_c_array, __pyx_v_max_dist, Py_LT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_t_5 = PyObject_RichCompare(__pyx_v_c_array, __pyx_v_max_dist, Py_LT); __Pyx_XGOTREF(__pyx_t_5); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 150, __pyx_L1_error)
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
     __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_4);
@@ -3548,25 +3541,25 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_match = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":155
+  /* "object_flow/util/geom.pyx":151
  *         # TODO: should this be calculated automatically somehow
  *         match = np.where(c_array < max_dist)
  *         rows = np.unique(match[0])             # <<<<<<<<<<<<<<
  *         cols = []
  *         match_rows_cols = []
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_unique); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_match, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 155, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_GetItemInt(__pyx_v_match, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -3581,37 +3574,37 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_5, __pyx_t_2, __pyx_t_4) : __Pyx_PyObject_CallOneArg(__pyx_t_5, __pyx_t_4);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_v_rows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":156
+  /* "object_flow/util/geom.pyx":152
  *         match = np.where(c_array < max_dist)
  *         rows = np.unique(match[0])
  *         cols = []             # <<<<<<<<<<<<<<
  *         match_rows_cols = []
  * 
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_cols = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":157
+  /* "object_flow/util/geom.pyx":153
  *         rows = np.unique(match[0])
  *         cols = []
  *         match_rows_cols = []             # <<<<<<<<<<<<<<
  * 
  *         for row in rows:
  */
-  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 157, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 153, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_match_rows_cols = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":159
+  /* "object_flow/util/geom.pyx":155
  *         match_rows_cols = []
  * 
  *         for row in rows:             # <<<<<<<<<<<<<<
@@ -3622,26 +3615,26 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __pyx_t_1 = __pyx_v_rows; __Pyx_INCREF(__pyx_t_1); __pyx_t_3 = 0;
     __pyx_t_6 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_rows); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 159, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_rows); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 155, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 159, __pyx_L1_error)
+    __pyx_t_6 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 155, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_6)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 155, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 159, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_1, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 155, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -3651,7 +3644,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 159, __pyx_L1_error)
+          else __PYX_ERR(0, 155, __pyx_L1_error)
         }
         break;
       }
@@ -3660,14 +3653,14 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __Pyx_XDECREF_SET(__pyx_v_row, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":160
+    /* "object_flow/util/geom.pyx":156
  * 
  *         for row in rows:
  *             col = c_array[row, :].argmin()             # <<<<<<<<<<<<<<
  *             if col in cols:
  *                 continue
  */
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 160, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_INCREF(__pyx_v_row);
     __Pyx_GIVEREF(__pyx_v_row);
@@ -3675,10 +3668,10 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __Pyx_INCREF(__pyx_slice_);
     __Pyx_GIVEREF(__pyx_slice_);
     PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_slice_);
-    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_c_array, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 160, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetItem(__pyx_v_c_array, __pyx_t_4); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_argmin); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 160, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_n_s_argmin); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_2 = NULL;
@@ -3693,24 +3686,24 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     }
     __pyx_t_5 = (__pyx_t_2) ? __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_2) : __Pyx_PyObject_CallNoArg(__pyx_t_4);
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 160, __pyx_L1_error)
+    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 156, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_XDECREF_SET(__pyx_v_col, __pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":161
+    /* "object_flow/util/geom.pyx":157
  *         for row in rows:
  *             col = c_array[row, :].argmin()
  *             if col in cols:             # <<<<<<<<<<<<<<
  *                 continue
  *             cols.append(col)
  */
-    __pyx_t_16 = (__Pyx_PySequence_ContainsTF(__pyx_v_col, __pyx_v_cols, Py_EQ)); if (unlikely(__pyx_t_16 < 0)) __PYX_ERR(0, 161, __pyx_L1_error)
+    __pyx_t_16 = (__Pyx_PySequence_ContainsTF(__pyx_v_col, __pyx_v_cols, Py_EQ)); if (unlikely(__pyx_t_16 < 0)) __PYX_ERR(0, 157, __pyx_L1_error)
     __pyx_t_17 = (__pyx_t_16 != 0);
     if (__pyx_t_17) {
 
-      /* "object_flow/util/geom.pyx":162
+      /* "object_flow/util/geom.pyx":158
  *             col = c_array[row, :].argmin()
  *             if col in cols:
  *                 continue             # <<<<<<<<<<<<<<
@@ -3719,7 +3712,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
  */
       goto __pyx_L7_continue;
 
-      /* "object_flow/util/geom.pyx":161
+      /* "object_flow/util/geom.pyx":157
  *         for row in rows:
  *             col = c_array[row, :].argmin()
  *             if col in cols:             # <<<<<<<<<<<<<<
@@ -3728,23 +3721,23 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
  */
     }
 
-    /* "object_flow/util/geom.pyx":163
+    /* "object_flow/util/geom.pyx":159
  *             if col in cols:
  *                 continue
  *             cols.append(col)             # <<<<<<<<<<<<<<
  *             match_rows_cols.append((row, col))
  * 
  */
-    __pyx_t_18 = __Pyx_PyList_Append(__pyx_v_cols, __pyx_v_col); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 163, __pyx_L1_error)
+    __pyx_t_18 = __Pyx_PyList_Append(__pyx_v_cols, __pyx_v_col); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 159, __pyx_L1_error)
 
-    /* "object_flow/util/geom.pyx":164
+    /* "object_flow/util/geom.pyx":160
  *                 continue
  *             cols.append(col)
  *             match_rows_cols.append((row, col))             # <<<<<<<<<<<<<<
  * 
  *         allrows = np.arange(len(set1))
  */
-    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 164, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __Pyx_INCREF(__pyx_v_row);
     __Pyx_GIVEREF(__pyx_v_row);
@@ -3752,10 +3745,10 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __Pyx_INCREF(__pyx_v_col);
     __Pyx_GIVEREF(__pyx_v_col);
     PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_v_col);
-    __pyx_t_18 = __Pyx_PyList_Append(__pyx_v_match_rows_cols, __pyx_t_5); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 164, __pyx_L1_error)
+    __pyx_t_18 = __Pyx_PyList_Append(__pyx_v_match_rows_cols, __pyx_t_5); if (unlikely(__pyx_t_18 == ((int)-1))) __PYX_ERR(0, 160, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "object_flow/util/geom.pyx":159
+    /* "object_flow/util/geom.pyx":155
  *         match_rows_cols = []
  * 
  *         for row in rows:             # <<<<<<<<<<<<<<
@@ -3766,20 +3759,20 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":166
+  /* "object_flow/util/geom.pyx":162
  *             match_rows_cols.append((row, col))
  * 
  *         allrows = np.arange(len(set1))             # <<<<<<<<<<<<<<
  *         unused_rows = np.setdiff1d(allrows, rows)
  * 
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_n_s_np); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_arange); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_arange); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_3 = PyObject_Length(((PyObject *)__pyx_v_set1)); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 166, __pyx_L1_error)
-  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_3 = PyObject_Length(__pyx_v_set1); if (unlikely(__pyx_t_3 == ((Py_ssize_t)-1))) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_5 = PyInt_FromSsize_t(__pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_2 = NULL;
   if (CYTHON_UNPACK_METHODS && unlikely(PyMethod_Check(__pyx_t_4))) {
@@ -3794,22 +3787,22 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_t_1 = (__pyx_t_2) ? __Pyx_PyObject_Call2Args(__pyx_t_4, __pyx_t_2, __pyx_t_5) : __Pyx_PyObject_CallOneArg(__pyx_t_4, __pyx_t_5);
   __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_allrows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":167
+  /* "object_flow/util/geom.pyx":163
  * 
  *         allrows = np.arange(len(set1))
  *         unused_rows = np.setdiff1d(allrows, rows)             # <<<<<<<<<<<<<<
  * 
  *         unused_cols = set(range(0, c_array.shape[1])).difference(cols)
  */
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_n_s_np); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_setdiff1d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 167, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_setdiff1d); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 163, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -3827,7 +3820,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_allrows, __pyx_v_rows};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -3835,13 +3828,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[3] = {__pyx_t_4, __pyx_v_allrows, __pyx_v_rows};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_14, 2+__pyx_t_14); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_2 = PyTuple_New(2+__pyx_t_14); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_New(2+__pyx_t_14); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     if (__pyx_t_4) {
       __Pyx_GIVEREF(__pyx_t_4); PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_4); __pyx_t_4 = NULL;
@@ -3852,7 +3845,7 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
     __Pyx_INCREF(__pyx_v_rows);
     __Pyx_GIVEREF(__pyx_v_rows);
     PyTuple_SET_ITEM(__pyx_t_2, 1+__pyx_t_14, __pyx_v_rows);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 163, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   }
@@ -3860,18 +3853,18 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_v_unused_rows = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":169
+  /* "object_flow/util/geom.pyx":165
  *         unused_rows = np.setdiff1d(allrows, rows)
  * 
  *         unused_cols = set(range(0, c_array.shape[1])).difference(cols)             # <<<<<<<<<<<<<<
  *         return unused_rows, unused_cols, match_rows_cols
  */
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_c_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_c_array, __pyx_n_s_shape); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_GetItemInt(__pyx_t_5, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_INCREF(__pyx_int_0);
   __Pyx_GIVEREF(__pyx_int_0);
@@ -3879,13 +3872,13 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_5, 1, __pyx_t_2);
   __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_range, __pyx_t_5, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_5 = PySet_New(__pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_difference); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_n_s_difference); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_5 = NULL;
@@ -3900,19 +3893,19 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   }
   __pyx_t_1 = (__pyx_t_5) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_5, __pyx_v_cols) : __Pyx_PyObject_CallOneArg(__pyx_t_2, __pyx_v_cols);
   __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 165, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_v_unused_cols = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "object_flow/util/geom.pyx":170
+  /* "object_flow/util/geom.pyx":166
  * 
  *         unused_cols = set(range(0, c_array.shape[1])).difference(cols)
  *         return unused_rows, unused_cols, match_rows_cols             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(__pyx_v_unused_rows);
   __Pyx_GIVEREF(__pyx_v_unused_rows);
@@ -3927,9 +3920,9 @@ static PyObject *__pyx_pf_11object_flow_4util_4geom_4Geom_8centroid_match(struct
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "object_flow/util/geom.pyx":144
- *     # ---------------------------------------------------------------------------------
+  /* "object_flow/util/geom.pyx":140
  * 
+ *     @staticmethod
  *     def centroid_match(set1, set2, max_dist):             # <<<<<<<<<<<<<<
  *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
  * 
@@ -4646,7 +4639,7 @@ static void __pyx_tp_dealloc_11object_flow_4util_4geom_Geom(PyObject *o) {
 static PyMethodDef __pyx_methods_11object_flow_4util_4geom_Geom[] = {
   {"point_position", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_1point_position, METH_VARARGS|METH_KEYWORDS, 0},
   {"intersect", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_3intersect, METH_VARARGS|METH_KEYWORDS, 0},
-  {"iou", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_5iou, METH_VARARGS|METH_KEYWORDS, 0},
+  {"w_iou", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_5w_iou, METH_VARARGS|METH_KEYWORDS, 0},
   {"iou_match", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_7iou_match, METH_VARARGS|METH_KEYWORDS, 0},
   {"centroid_match", (PyCFunction)(void*)(PyCFunctionWithKeywords)__pyx_pw_11object_flow_4util_4geom_4Geom_9centroid_match, METH_VARARGS|METH_KEYWORDS, 0},
   {"__reduce_cython__", (PyCFunction)__pyx_pw_11object_flow_4util_4geom_4Geom_11__reduce_cython__, METH_NOARGS, 0},
@@ -4772,14 +4765,20 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_Geom, __pyx_k_Geom, sizeof(__pyx_k_Geom), 0, 0, 1, 1},
   {&__pyx_kp_s_Incompatible_checksums_s_vs_0xd4, __pyx_k_Incompatible_checksums_s_vs_0xd4, sizeof(__pyx_k_Incompatible_checksums_s_vs_0xd4), 0, 0, 1, 0},
   {&__pyx_n_s_PickleError, __pyx_k_PickleError, sizeof(__pyx_k_PickleError), 0, 0, 1, 1},
+  {&__pyx_n_s_allrows, __pyx_k_allrows, sizeof(__pyx_k_allrows), 0, 0, 1, 1},
   {&__pyx_n_s_arange, __pyx_k_arange, sizeof(__pyx_k_arange), 0, 0, 1, 1},
   {&__pyx_n_s_argmax, __pyx_k_argmax, sizeof(__pyx_k_argmax), 0, 0, 1, 1},
   {&__pyx_n_s_argmin, __pyx_k_argmin, sizeof(__pyx_k_argmin), 0, 0, 1, 1},
   {&__pyx_n_s_box_endX, __pyx_k_box_endX, sizeof(__pyx_k_box_endX), 0, 0, 1, 1},
   {&__pyx_n_s_box_endY, __pyx_k_box_endY, sizeof(__pyx_k_box_endY), 0, 0, 1, 1},
+  {&__pyx_n_s_box_startX, __pyx_k_box_startX, sizeof(__pyx_k_box_startX), 0, 0, 1, 1},
   {&__pyx_n_s_box_startY, __pyx_k_box_startY, sizeof(__pyx_k_box_startY), 0, 0, 1, 1},
+  {&__pyx_n_s_c_array, __pyx_k_c_array, sizeof(__pyx_k_c_array), 0, 0, 1, 1},
   {&__pyx_n_s_centroid, __pyx_k_centroid, sizeof(__pyx_k_centroid), 0, 0, 1, 1},
+  {&__pyx_n_s_centroid_match, __pyx_k_centroid_match, sizeof(__pyx_k_centroid_match), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
+  {&__pyx_n_s_col, __pyx_k_col, sizeof(__pyx_k_col), 0, 0, 1, 1},
+  {&__pyx_n_s_cols, __pyx_k_cols, sizeof(__pyx_k_cols), 0, 0, 1, 1},
   {&__pyx_n_s_dict, __pyx_k_dict, sizeof(__pyx_k_dict), 0, 0, 1, 1},
   {&__pyx_n_s_difference, __pyx_k_difference, sizeof(__pyx_k_difference), 0, 0, 1, 1},
   {&__pyx_n_s_distance, __pyx_k_distance, sizeof(__pyx_k_distance), 0, 0, 1, 1},
@@ -4789,11 +4788,19 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_enumerate, __pyx_k_enumerate, sizeof(__pyx_k_enumerate), 0, 0, 1, 1},
   {&__pyx_n_s_euclidean, __pyx_k_euclidean, sizeof(__pyx_k_euclidean), 0, 0, 1, 1},
   {&__pyx_n_u_float64, __pyx_k_float64, sizeof(__pyx_k_float64), 0, 1, 0, 1},
+  {&__pyx_n_s_fp0, __pyx_k_fp0, sizeof(__pyx_k_fp0), 0, 0, 1, 1},
   {&__pyx_n_s_fp1, __pyx_k_fp1, sizeof(__pyx_k_fp1), 0, 0, 1, 1},
   {&__pyx_n_s_getstate, __pyx_k_getstate, sizeof(__pyx_k_getstate), 0, 0, 1, 1},
+  {&__pyx_n_s_i, __pyx_k_i, sizeof(__pyx_k_i), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
-  {&__pyx_n_s_iou, __pyx_k_iou, sizeof(__pyx_k_iou), 0, 0, 1, 1},
+  {&__pyx_n_s_intersect, __pyx_k_intersect, sizeof(__pyx_k_intersect), 0, 0, 1, 1},
+  {&__pyx_n_s_io, __pyx_k_io, sizeof(__pyx_k_io), 0, 0, 1, 1},
+  {&__pyx_n_s_iou_array, __pyx_k_iou_array, sizeof(__pyx_k_iou_array), 0, 0, 1, 1},
+  {&__pyx_n_s_iou_match, __pyx_k_iou_match, sizeof(__pyx_k_iou_match), 0, 0, 1, 1},
+  {&__pyx_n_s_j, __pyx_k_j, sizeof(__pyx_k_j), 0, 0, 1, 1},
   {&__pyx_n_s_main, __pyx_k_main, sizeof(__pyx_k_main), 0, 0, 1, 1},
+  {&__pyx_n_s_match, __pyx_k_match, sizeof(__pyx_k_match), 0, 0, 1, 1},
+  {&__pyx_n_s_match_rows_cols, __pyx_k_match_rows_cols, sizeof(__pyx_k_match_rows_cols), 0, 0, 1, 1},
   {&__pyx_n_s_match_value, __pyx_k_match_value, sizeof(__pyx_k_match_value), 0, 0, 1, 1},
   {&__pyx_n_s_max_dist, __pyx_k_max_dist, sizeof(__pyx_k_max_dist), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
@@ -4801,10 +4808,12 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_np, __pyx_k_np, sizeof(__pyx_k_np), 0, 0, 1, 1},
   {&__pyx_n_s_numpy, __pyx_k_numpy, sizeof(__pyx_k_numpy), 0, 0, 1, 1},
   {&__pyx_n_s_object_flow_util_geom, __pyx_k_object_flow_util_geom, sizeof(__pyx_k_object_flow_util_geom), 0, 0, 1, 1},
+  {&__pyx_kp_s_object_flow_util_geom_pyx, __pyx_k_object_flow_util_geom_pyx, sizeof(__pyx_k_object_flow_util_geom_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_obox_endX, __pyx_k_obox_endX, sizeof(__pyx_k_obox_endX), 0, 0, 1, 1},
   {&__pyx_n_s_obox_endY, __pyx_k_obox_endY, sizeof(__pyx_k_obox_endY), 0, 0, 1, 1},
   {&__pyx_n_s_obox_startX, __pyx_k_obox_startX, sizeof(__pyx_k_obox_startX), 0, 0, 1, 1},
   {&__pyx_n_s_obox_startY, __pyx_k_obox_startY, sizeof(__pyx_k_obox_startY), 0, 0, 1, 1},
+  {&__pyx_n_s_p10, __pyx_k_p10, sizeof(__pyx_k_p10), 0, 0, 1, 1},
   {&__pyx_n_s_p11, __pyx_k_p11, sizeof(__pyx_k_p11), 0, 0, 1, 1},
   {&__pyx_n_s_p20, __pyx_k_p20, sizeof(__pyx_k_p20), 0, 0, 1, 1},
   {&__pyx_n_s_p21, __pyx_k_p21, sizeof(__pyx_k_p21), 0, 0, 1, 1},
@@ -4813,6 +4822,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_p40, __pyx_k_p40, sizeof(__pyx_k_p40), 0, 0, 1, 1},
   {&__pyx_n_s_p41, __pyx_k_p41, sizeof(__pyx_k_p41), 0, 0, 1, 1},
   {&__pyx_n_s_pickle, __pyx_k_pickle, sizeof(__pyx_k_pickle), 0, 0, 1, 1},
+  {&__pyx_n_s_point_position, __pyx_k_point_position, sizeof(__pyx_k_point_position), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_PickleError, __pyx_k_pyx_PickleError, sizeof(__pyx_k_pyx_PickleError), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_checksum, __pyx_k_pyx_checksum, sizeof(__pyx_k_pyx_checksum), 0, 0, 1, 1},
   {&__pyx_n_s_pyx_result, __pyx_k_pyx_result, sizeof(__pyx_k_pyx_result), 0, 0, 1, 1},
@@ -4824,8 +4834,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_reduce, __pyx_k_reduce, sizeof(__pyx_k_reduce), 0, 0, 1, 1},
   {&__pyx_n_s_reduce_cython, __pyx_k_reduce_cython, sizeof(__pyx_k_reduce_cython), 0, 0, 1, 1},
   {&__pyx_n_s_reduce_ex, __pyx_k_reduce_ex, sizeof(__pyx_k_reduce_ex), 0, 0, 1, 1},
+  {&__pyx_n_s_row, __pyx_k_row, sizeof(__pyx_k_row), 0, 0, 1, 1},
+  {&__pyx_n_s_rows, __pyx_k_rows, sizeof(__pyx_k_rows), 0, 0, 1, 1},
   {&__pyx_n_s_scipy, __pyx_k_scipy, sizeof(__pyx_k_scipy), 0, 0, 1, 1},
   {&__pyx_n_s_scipy_spatial, __pyx_k_scipy_spatial, sizeof(__pyx_k_scipy_spatial), 0, 0, 1, 1},
+  {&__pyx_n_s_set1, __pyx_k_set1, sizeof(__pyx_k_set1), 0, 0, 1, 1},
   {&__pyx_n_s_set2, __pyx_k_set2, sizeof(__pyx_k_set2), 0, 0, 1, 1},
   {&__pyx_n_s_setdiff1d, __pyx_k_setdiff1d, sizeof(__pyx_k_setdiff1d), 0, 0, 1, 1},
   {&__pyx_n_s_setstate, __pyx_k_setstate, sizeof(__pyx_k_setstate), 0, 0, 1, 1},
@@ -4836,10 +4849,15 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_spatial, __pyx_k_spatial, sizeof(__pyx_k_spatial), 0, 0, 1, 1},
   {&__pyx_n_s_startX, __pyx_k_startX, sizeof(__pyx_k_startX), 0, 0, 1, 1},
   {&__pyx_n_s_startY, __pyx_k_startY, sizeof(__pyx_k_startY), 0, 0, 1, 1},
+  {&__pyx_n_s_staticmethod, __pyx_k_staticmethod, sizeof(__pyx_k_staticmethod), 0, 0, 1, 1},
   {&__pyx_kp_s_stringsource, __pyx_k_stringsource, sizeof(__pyx_k_stringsource), 0, 0, 1, 0},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
+  {&__pyx_n_s_to, __pyx_k_to, sizeof(__pyx_k_to), 0, 0, 1, 1},
   {&__pyx_n_s_unique, __pyx_k_unique, sizeof(__pyx_k_unique), 0, 0, 1, 1},
+  {&__pyx_n_s_unused_cols, __pyx_k_unused_cols, sizeof(__pyx_k_unused_cols), 0, 0, 1, 1},
+  {&__pyx_n_s_unused_rows, __pyx_k_unused_rows, sizeof(__pyx_k_unused_rows), 0, 0, 1, 1},
   {&__pyx_n_s_update, __pyx_k_update, sizeof(__pyx_k_update), 0, 0, 1, 1},
+  {&__pyx_n_s_w_iou, __pyx_k_w_iou, sizeof(__pyx_k_w_iou), 0, 0, 1, 1},
   {&__pyx_n_s_where, __pyx_k_where, sizeof(__pyx_k_where), 0, 0, 1, 1},
   {&__pyx_n_s_x, __pyx_k_x, sizeof(__pyx_k_x), 0, 0, 1, 1},
   {&__pyx_n_s_y, __pyx_k_y, sizeof(__pyx_k_y), 0, 0, 1, 1},
@@ -4847,8 +4865,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 115, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 136, __pyx_L1_error)
+  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 131, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -4858,26 +4877,86 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "object_flow/util/geom.pyx":127
+  /* "object_flow/util/geom.pyx":122
  * 
  *         for row in rows:
  *             col = iou_array[row, :].argmax()             # <<<<<<<<<<<<<<
  *             if col in cols:
  *                 continue
  */
-  __pyx_slice_ = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice_)) __PYX_ERR(0, 127, __pyx_L1_error)
+  __pyx_slice_ = PySlice_New(Py_None, Py_None, Py_None); if (unlikely(!__pyx_slice_)) __PYX_ERR(0, 122, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_slice_);
   __Pyx_GIVEREF(__pyx_slice_);
+
+  /* "object_flow/util/geom.pyx":26
+ * 
+ *     @staticmethod
+ *     def point_position(int fp0, int fp1, int sp0, int sp1,             # <<<<<<<<<<<<<<
+ *                        int x, int y):
+ *         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0
+ */
+  __pyx_tuple__2 = PyTuple_Pack(6, __pyx_n_s_fp0, __pyx_n_s_fp1, __pyx_n_s_sp0, __pyx_n_s_sp1, __pyx_n_s_x, __pyx_n_s_y); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
+  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(6, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_object_flow_util_geom_pyx, __pyx_n_s_point_position, 26, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(0, 26, __pyx_L1_error)
+
+  /* "object_flow/util/geom.pyx":45
+ * 
+ *     @staticmethod
+ *     def intersect(int p10, int p11, int p20, int p21,             # <<<<<<<<<<<<<<
+ *                   int p30, int p31, int p40, int p41):
+ * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
+ */
+  __pyx_tuple__4 = PyTuple_Pack(8, __pyx_n_s_p10, __pyx_n_s_p11, __pyx_n_s_p20, __pyx_n_s_p21, __pyx_n_s_p30, __pyx_n_s_p31, __pyx_n_s_p40, __pyx_n_s_p41); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_codeobj__5 = (PyObject*)__Pyx_PyCode_New(8, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__4, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_object_flow_util_geom_pyx, __pyx_n_s_intersect, 45, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__5)) __PYX_ERR(0, 45, __pyx_L1_error)
+
+  /* "object_flow/util/geom.pyx":89
+ * 
+ *     @staticmethod
+ *     def w_iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *               int box_endY, int obox_startX, int obox_startY,
+ *               int obox_endX, int obox_endY):
+ */
+  __pyx_tuple__6 = PyTuple_Pack(8, __pyx_n_s_box_startX, __pyx_n_s_box_startY, __pyx_n_s_box_endX, __pyx_n_s_box_endY, __pyx_n_s_obox_startX, __pyx_n_s_obox_startY, __pyx_n_s_obox_endX, __pyx_n_s_obox_endY); if (unlikely(!__pyx_tuple__6)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__6);
+  __Pyx_GIVEREF(__pyx_tuple__6);
+  __pyx_codeobj__7 = (PyObject*)__Pyx_PyCode_New(8, 0, 8, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__6, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_object_flow_util_geom_pyx, __pyx_n_s_w_iou, 89, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__7)) __PYX_ERR(0, 89, __pyx_L1_error)
+
+  /* "object_flow/util/geom.pyx":105
+ * 
+ *     @staticmethod
+ *     def iou_match(set1, set2, match_value):             # <<<<<<<<<<<<<<
+ *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ * 
+ */
+  __pyx_tuple__8 = PyTuple_Pack(17, __pyx_n_s_set1, __pyx_n_s_set2, __pyx_n_s_match_value, __pyx_n_s_iou_array, __pyx_n_s_i, __pyx_n_s_to, __pyx_n_s_j, __pyx_n_s_io, __pyx_n_s_match, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_match_rows_cols, __pyx_n_s_row, __pyx_n_s_col, __pyx_n_s_allrows, __pyx_n_s_unused_rows, __pyx_n_s_unused_cols); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_codeobj__9 = (PyObject*)__Pyx_PyCode_New(3, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__8, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_object_flow_util_geom_pyx, __pyx_n_s_iou_match, 105, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__9)) __PYX_ERR(0, 105, __pyx_L1_error)
+
+  /* "object_flow/util/geom.pyx":140
+ * 
+ *     @staticmethod
+ *     def centroid_match(set1, set2, max_dist):             # <<<<<<<<<<<<<<
+ *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ * 
+ */
+  __pyx_tuple__10 = PyTuple_Pack(17, __pyx_n_s_set1, __pyx_n_s_set2, __pyx_n_s_max_dist, __pyx_n_s_c_array, __pyx_n_s_i, __pyx_n_s_to, __pyx_n_s_j, __pyx_n_s_io, __pyx_n_s_match, __pyx_n_s_rows, __pyx_n_s_cols, __pyx_n_s_match_rows_cols, __pyx_n_s_row, __pyx_n_s_col, __pyx_n_s_allrows, __pyx_n_s_unused_rows, __pyx_n_s_unused_cols); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_codeobj__11 = (PyObject*)__Pyx_PyCode_New(3, 0, 17, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__10, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_object_flow_util_geom_pyx, __pyx_n_s_centroid_match, 140, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__11)) __PYX_ERR(0, 140, __pyx_L1_error)
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_Geom(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_tuple__2 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__2);
-  __Pyx_GIVEREF(__pyx_tuple__2);
-  __pyx_codeobj__3 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__2, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Geom, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__3)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(5, __pyx_n_s_pyx_type, __pyx_n_s_pyx_checksum, __pyx_n_s_pyx_state, __pyx_n_s_pyx_PickleError, __pyx_n_s_pyx_result); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_codeobj__13 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__12, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_stringsource, __pyx_n_s_pyx_unpickle_Geom, 1, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__13)) __PYX_ERR(1, 1, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -4933,16 +5012,17 @@ static int __Pyx_modinit_type_init_code(void) {
   /*--- Type init code ---*/
   __pyx_vtabptr_11object_flow_4util_4geom_Geom = &__pyx_vtable_11object_flow_4util_4geom_Geom;
   __pyx_vtable_11object_flow_4util_4geom_Geom.ccw = (int (*)(int, int, int, int, int, int))__pyx_f_11object_flow_4util_4geom_4Geom_ccw;
-  if (PyType_Ready(&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
+  __pyx_vtable_11object_flow_4util_4geom_Geom.iou = (double (*)(int, int, int, int, int, int, int, int))__pyx_f_11object_flow_4util_4geom_4Geom_iou;
+  if (PyType_Ready(&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_11object_flow_4util_4geom_Geom.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_11object_flow_4util_4geom_Geom.tp_dictoffset && __pyx_type_11object_flow_4util_4geom_Geom.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_11object_flow_4util_4geom_Geom.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_11object_flow_4util_4geom_Geom.tp_dict, __pyx_vtabptr_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Geom, (PyObject *)&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
-  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 28, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_11object_flow_4util_4geom_Geom.tp_dict, __pyx_vtabptr_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Geom, (PyObject *)&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
+  if (__Pyx_setup_reduce((PyObject*)&__pyx_type_11object_flow_4util_4geom_Geom) < 0) __PYX_ERR(0, 18, __pyx_L1_error)
   __pyx_ptype_11object_flow_4util_4geom_Geom = &__pyx_type_11object_flow_4util_4geom_Geom;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -5068,6 +5148,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec_geom(PyObject *__pyx_pyinit_module
 #endif
 {
   PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannyDeclarations
   #if CYTHON_PEP489_MULTI_PHASE_INIT
   if (__pyx_m) {
@@ -5213,35 +5294,181 @@ if (!__Pyx_RefNanny) {
  * 
  * cdef bint boolean_variable = True             # <<<<<<<<<<<<<<
  * 
- * # ----------------------------------------------------------------------------------
+ * cdef class Geom:
  */
   __pyx_v_11object_flow_4util_4geom_boolean_variable = 1;
+
+  /* "object_flow/util/geom.pyx":26
+ * 
+ *     @staticmethod
+ *     def point_position(int fp0, int fp1, int sp0, int sp1,             # <<<<<<<<<<<<<<
+ *                        int x, int y):
+ *         return ((sp0 - fp0) * (y - fp1) - (sp1 - fp1) * (x - fp0)) > 0
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_4Geom_1point_position, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_point_position, __pyx_t_1) < 0) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":25
+ *     # ----------------------------------------------------------------------------------
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def point_position(int fp0, int fp1, int sp0, int sp1,
+ *                        int x, int y):
+ */
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom, __pyx_n_s_point_position); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_point_position, __pyx_t_2) < 0) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":45
+ * 
+ *     @staticmethod
+ *     def intersect(int p10, int p11, int p20, int p21,             # <<<<<<<<<<<<<<
+ *                   int p30, int p31, int p40, int p41):
+ * 	# return Geom.ccw(A,C,D) != Geom.ccw(B,C,D) and Geom.ccw(A,B,C) != Geom.ccw(A,B,D)
+ */
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_4Geom_3intersect, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_intersect, __pyx_t_2) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":44
+ *     # ----------------------------------------------------------------------------------
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def intersect(int p10, int p11, int p20, int p21,
+ *                   int p30, int p31, int p40, int p41):
+ */
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom, __pyx_n_s_intersect); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_intersect, __pyx_t_1) < 0) __PYX_ERR(0, 45, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":89
+ * 
+ *     @staticmethod
+ *     def w_iou(int box_startX, int box_startY, int box_endX,             # <<<<<<<<<<<<<<
+ *               int box_endY, int obox_startX, int obox_startY,
+ *               int obox_endX, int obox_endY):
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_4Geom_5w_iou, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_w_iou, __pyx_t_1) < 0) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":88
+ *         return iou
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def w_iou(int box_startX, int box_startY, int box_endX,
+ *               int box_endY, int obox_startX, int obox_startY,
+ */
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom, __pyx_n_s_w_iou); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 88, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_w_iou, __pyx_t_2) < 0) __PYX_ERR(0, 89, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":105
+ * 
+ *     @staticmethod
+ *     def iou_match(set1, set2, match_value):             # <<<<<<<<<<<<<<
+ *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ * 
+ */
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_4Geom_7iou_match, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_iou_match, __pyx_t_2) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":104
+ *     # ---------------------------------------------------------------------------------
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def iou_match(set1, set2, match_value):
+ *         iou_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ */
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom, __pyx_n_s_iou_match); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 104, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_iou_match, __pyx_t_1) < 0) __PYX_ERR(0, 105, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":140
+ * 
+ *     @staticmethod
+ *     def centroid_match(set1, set2, max_dist):             # <<<<<<<<<<<<<<
+ *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ * 
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_4Geom_9centroid_match, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_centroid_match, __pyx_t_1) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
+
+  /* "object_flow/util/geom.pyx":139
+ *     # ---------------------------------------------------------------------------------
+ * 
+ *     @staticmethod             # <<<<<<<<<<<<<<
+ *     def centroid_match(set1, set2, max_dist):
+ *         c_array = np.zeros((len(set1), len(set2)), dtype="float64")
+ */
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom, __pyx_n_s_centroid_match); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_11object_flow_4util_4geom_Geom->tp_dict, __pyx_n_s_centroid_match, __pyx_t_2) < 0) __PYX_ERR(0, 140, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  PyType_Modified(__pyx_ptype_11object_flow_4util_4geom_Geom);
 
   /* "(tree fragment)":1
  * def __pyx_unpickle_Geom(__pyx_type, long __pyx_checksum, __pyx_state):             # <<<<<<<<<<<<<<
  *     cdef object __pyx_PickleError
  *     cdef object __pyx_result
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_1__pyx_unpickle_Geom, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_1)) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Geom, __pyx_t_1) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_11object_flow_4util_4geom_1__pyx_unpickle_Geom, NULL, __pyx_n_s_object_flow_util_geom); if (unlikely(!__pyx_t_2)) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_pyx_unpickle_Geom, __pyx_t_2) < 0) __PYX_ERR(1, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "object_flow/util/geom.pyx":1
  * # -*- coding: utf-8 -*-             # <<<<<<<<<<<<<<
  * 
  * ##########################################################################################
  */
-  __pyx_t_1 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_1) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_test, __pyx_t_2) < 0) __PYX_ERR(0, 1, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /*--- Wrapped vars code ---*/
 
   goto __pyx_L0;
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   if (__pyx_m) {
     if (__pyx_d) {
       __Pyx_AddTraceback("init object_flow.util.geom", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -5573,6 +5800,72 @@ static PyObject* __Pyx_PyInt_AddObjC(PyObject *op1, PyObject *op2, CYTHON_UNUSED
 }
 #endif
 
+/* PyErrFetchRestore */
+#if CYTHON_FAST_THREAD_STATE
+static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
+    PyObject *tmp_type, *tmp_value, *tmp_tb;
+    tmp_type = tstate->curexc_type;
+    tmp_value = tstate->curexc_value;
+    tmp_tb = tstate->curexc_traceback;
+    tstate->curexc_type = type;
+    tstate->curexc_value = value;
+    tstate->curexc_traceback = tb;
+    Py_XDECREF(tmp_type);
+    Py_XDECREF(tmp_value);
+    Py_XDECREF(tmp_tb);
+}
+static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
+    *type = tstate->curexc_type;
+    *value = tstate->curexc_value;
+    *tb = tstate->curexc_traceback;
+    tstate->curexc_type = 0;
+    tstate->curexc_value = 0;
+    tstate->curexc_traceback = 0;
+}
+#endif
+
+/* WriteUnraisableException */
+static void __Pyx_WriteUnraisable(const char *name, CYTHON_UNUSED int clineno,
+                                  CYTHON_UNUSED int lineno, CYTHON_UNUSED const char *filename,
+                                  int full_traceback, CYTHON_UNUSED int nogil) {
+    PyObject *old_exc, *old_val, *old_tb;
+    PyObject *ctx;
+    __Pyx_PyThreadState_declare
+#ifdef WITH_THREAD
+    PyGILState_STATE state;
+    if (nogil)
+        state = PyGILState_Ensure();
+#ifdef _MSC_VER
+    else state = (PyGILState_STATE)-1;
+#endif
+#endif
+    __Pyx_PyThreadState_assign
+    __Pyx_ErrFetch(&old_exc, &old_val, &old_tb);
+    if (full_traceback) {
+        Py_XINCREF(old_exc);
+        Py_XINCREF(old_val);
+        Py_XINCREF(old_tb);
+        __Pyx_ErrRestore(old_exc, old_val, old_tb);
+        PyErr_PrintEx(1);
+    }
+    #if PY_MAJOR_VERSION < 3
+    ctx = PyString_FromString(name);
+    #else
+    ctx = PyUnicode_FromString(name);
+    #endif
+    __Pyx_ErrRestore(old_exc, old_val, old_tb);
+    if (!ctx) {
+        PyErr_WriteUnraisable(Py_None);
+    } else {
+        PyErr_WriteUnraisable(ctx);
+        Py_DECREF(ctx);
+    }
+#ifdef WITH_THREAD
+    if (nogil)
+        PyGILState_Release(state);
+#endif
+}
+
 /* PyDictVersioning */
 #if CYTHON_USE_DICT_VERSIONS && CYTHON_USE_TYPE_SLOTS
 static CYTHON_INLINE PY_UINT64_T __Pyx_get_tp_dict_version(PyObject *obj) {
@@ -5651,6 +5944,29 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
             "NULL result without error in PyObject_Call");
     }
     return result;
+}
+#endif
+
+/* PyCFunctionFastCall */
+#if CYTHON_FAST_PYCCALL
+static CYTHON_INLINE PyObject * __Pyx_PyCFunction_FastCall(PyObject *func_obj, PyObject **args, Py_ssize_t nargs) {
+    PyCFunctionObject *func = (PyCFunctionObject*)func_obj;
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+    int flags = PyCFunction_GET_FLAGS(func);
+    assert(PyCFunction_Check(func));
+    assert(METH_FASTCALL == (flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST | METH_KEYWORDS | METH_STACKLESS)));
+    assert(nargs >= 0);
+    assert(nargs == 0 || args != NULL);
+    /* _PyCFunction_FastCallDict() must not be called with an exception set,
+       because it may clear it (directly or indirectly) and so the
+       caller loses its exception */
+    assert(!PyErr_Occurred());
+    if ((PY_VERSION_HEX < 0x030700A0) || unlikely(flags & METH_KEYWORDS)) {
+        return (*((__Pyx_PyCFunctionFastWithKeywords)(void*)meth)) (self, args, nargs, NULL);
+    } else {
+        return (*((__Pyx_PyCFunctionFast)(void*)meth)) (self, args, nargs);
+    }
 }
 #endif
 
@@ -5771,29 +6087,6 @@ done:
     return result;
 }
 #endif
-#endif
-
-/* PyCFunctionFastCall */
-#if CYTHON_FAST_PYCCALL
-static CYTHON_INLINE PyObject * __Pyx_PyCFunction_FastCall(PyObject *func_obj, PyObject **args, Py_ssize_t nargs) {
-    PyCFunctionObject *func = (PyCFunctionObject*)func_obj;
-    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-    PyObject *self = PyCFunction_GET_SELF(func);
-    int flags = PyCFunction_GET_FLAGS(func);
-    assert(PyCFunction_Check(func));
-    assert(METH_FASTCALL == (flags & ~(METH_CLASS | METH_STATIC | METH_COEXIST | METH_KEYWORDS | METH_STACKLESS)));
-    assert(nargs >= 0);
-    assert(nargs == 0 || args != NULL);
-    /* _PyCFunction_FastCallDict() must not be called with an exception set,
-       because it may clear it (directly or indirectly) and so the
-       caller loses its exception */
-    assert(!PyErr_Occurred());
-    if ((PY_VERSION_HEX < 0x030700A0) || unlikely(flags & METH_KEYWORDS)) {
-        return (*((__Pyx_PyCFunctionFastWithKeywords)(void*)meth)) (self, args, nargs, NULL);
-    } else {
-        return (*((__Pyx_PyCFunctionFast)(void*)meth)) (self, args, nargs);
-    }
-}
 #endif
 
 /* PyObjectCall2Args */
@@ -6045,30 +6338,6 @@ static CYTHON_INLINE int __Pyx_PyErr_ExceptionMatchesInState(PyThreadState* tsta
     if (unlikely(PyTuple_Check(err)))
         return __Pyx_PyErr_ExceptionMatchesTuple(exc_type, err);
     return __Pyx_PyErr_GivenExceptionMatches(exc_type, err);
-}
-#endif
-
-/* PyErrFetchRestore */
-#if CYTHON_FAST_THREAD_STATE
-static CYTHON_INLINE void __Pyx_ErrRestoreInState(PyThreadState *tstate, PyObject *type, PyObject *value, PyObject *tb) {
-    PyObject *tmp_type, *tmp_value, *tmp_tb;
-    tmp_type = tstate->curexc_type;
-    tmp_value = tstate->curexc_value;
-    tmp_tb = tstate->curexc_traceback;
-    tstate->curexc_type = type;
-    tstate->curexc_value = value;
-    tstate->curexc_traceback = tb;
-    Py_XDECREF(tmp_type);
-    Py_XDECREF(tmp_value);
-    Py_XDECREF(tmp_tb);
-}
-static CYTHON_INLINE void __Pyx_ErrFetchInState(PyThreadState *tstate, PyObject **type, PyObject **value, PyObject **tb) {
-    *type = tstate->curexc_type;
-    *value = tstate->curexc_value;
-    *tb = tstate->curexc_traceback;
-    tstate->curexc_type = 0;
-    tstate->curexc_value = 0;
-    tstate->curexc_traceback = 0;
 }
 #endif
 
@@ -6498,6 +6767,26 @@ GOOD:
     Py_XDECREF(setstate);
     Py_XDECREF(setstate_cython);
     return ret;
+}
+
+/* GetNameInClass */
+static PyObject *__Pyx_GetGlobalNameAfterAttributeLookup(PyObject *name) {
+    PyObject *result;
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    if (unlikely(!__Pyx_PyErr_ExceptionMatches(PyExc_AttributeError)))
+        return NULL;
+    __Pyx_PyErr_Clear();
+    __Pyx_GetModuleGlobalNameUncached(result, name);
+    return result;
+}
+static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name) {
+    PyObject *result;
+    result = __Pyx_PyObject_GetAttrStr(nmspace, name);
+    if (!result) {
+        result = __Pyx_GetGlobalNameAfterAttributeLookup(name);
+    }
+    return result;
 }
 
 /* CLineInTraceback */
