@@ -58,6 +58,7 @@ class MultiFlow(Doer):
         self.last_frame_id = 0
         self.next_item_id={}
         self.video_items={}
+        self.item_threshold=4
 
     # ----------------------------------------------------------------------------------
     #
@@ -208,6 +209,11 @@ class MultiFlow(Doer):
     def assign_job2trackers(self, items, video_name, frame_index):
         self.num_items+=len(items)
         average_items=self.num_items//len(self._doers['trackers'])
+        if average_items>=self.item_threshold:
+            self._create_more_trackers(average_items)
+        elif average_items<self.item_threshold/2:
+            self._remove_trackers()
+        average_items = self.num_items // len(self._doers['trackers'])
         item_index=0
         send2trackers={}
         #for all the items:
@@ -365,4 +371,21 @@ class MultiFlow(Doer):
     def _test_tracker_communication(self):
         for tracker in self._doers['trackers']:
             self.tell(tracker, 'say_hello', 1, 2, 3, a = 4, b = 5, group='trackers')
+
+
+    def _create_more_trackers(self, average_items):
+        num_items=(average_items+1)*len(self._doers['trackers'])
+        num_trackers_needed=num_items//self.item_threshold+1-len(self._doers['trackers'])
+        for i in range(num_trackers_needed):
+            tracker_id=len(self._doers['trackers'])
+            tracker_name='Tracker_' + str(tracker_id)
+            self.hire(tracker_name, Tracker, id=tracker_id,
+                      tracker_type=self.system_cfg.data['system_info']['tracker_type'],
+                      group='trackers')
+            self.num_items_per_tracker[tracker_name]=0
+
+
+
+    def _remove_trackers(self):
+        return
         
