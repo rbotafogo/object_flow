@@ -392,7 +392,7 @@ class MultiFlow(Doer):
             print("@@@@@@@@@@@@@@@", tracker_name)
             for video_name, video_info in self.video_infos.items():
                 print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!here")
-                self.tell(tracker, 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
+                self.post(tracker, 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
 
 
 
