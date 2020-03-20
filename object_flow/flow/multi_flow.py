@@ -381,16 +381,18 @@ class MultiFlow(Doer):
     def _create_more_trackers(self, average_items):
         num_items=(average_items+1)*len(self._doers['trackers'])
         num_trackers_needed=num_items//self.item_threshold+1-len(self._doers['trackers'])
+
         for i in range(num_trackers_needed):
             tracker_id=len(self._doers['trackers'])
             tracker_name='Tracker_' + str(tracker_id)
-            self.hire(tracker_name, Tracker, id=tracker_id,
+            tracker=self.hire(tracker_name, Tracker, id=tracker_id,
                       tracker_type=self.system_cfg.data['system_info']['tracker_type'],
                       group='trackers')
             self.num_items_per_tracker[tracker_name]=0
-            tracker=self._doers['trackers'][tracker_name]
+            print("@@@@@@@@@@@@@@@", tracker_name)
             for video_name, video_info in self.video_infos.items():
-                self.phone(tracker[0], 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!here")
+                self.phone(tracker, 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
 
 
 
