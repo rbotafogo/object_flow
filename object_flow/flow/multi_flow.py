@@ -214,6 +214,11 @@ class MultiFlow(Doer):
     def assign_job2trackers(self, items, video_name, frame_index):
         self.num_items+=len(items)
         average_items=self.num_items//len(self._doers['trackers'])
+        if average_items>=self.item_threshold:
+            self._create_more_trackers(average_items)
+        elif average_items<self.item_threshold/2:
+            self._remove_trackers()
+        average_items = self.num_items // len(self._doers['trackers'])
         item_index=0
         send2trackers={}
         #for all the items:
@@ -241,10 +246,7 @@ class MultiFlow(Doer):
             tracker = self._doers['trackers'][tracker_name]
             self.post(tracker[0], 'tracks_list', video_name, frame_index,send2trackers[tracker_name])
         logging.info("items assigned to each tracker:%s",self.num_items_per_tracker)
-        if average_items>=self.item_threshold:
-            self._create_more_trackers(average_items)
-        elif average_items<self.item_threshold/2:
-            self._remove_trackers()
+
 
     # ----------------------------------------------------------------------------------
     #
@@ -383,6 +385,7 @@ class MultiFlow(Doer):
         for i in range(num_trackers_needed):
             tracker_id=len(self._doers['trackers'])
             tracker_name='Tracker_' + str(tracker_id)
+            self.ntrackers -= 1
             tracker=self.hire(tracker_name, Tracker, id=tracker_id,
                       tracker_type=self.system_cfg.data['system_info']['tracker_type'],
                       group='trackers')
