@@ -58,6 +58,7 @@ class MultiFlow(Doer):
         self.last_frame_id = 0
         self.next_item_id={}
         self.video_items={}
+        self.video_infos={}
         self.item_threshold=4
 
     # ----------------------------------------------------------------------------------
@@ -156,6 +157,7 @@ class MultiFlow(Doer):
         self._next_flow_id += 1
         self.next_item_id[cfg.video_name]=0
         self.video_items[cfg.video_name]={}
+        self.video_infos[cfg.video_name]={}
     # ----------------------------------------------------------------------------------
     #
     # ----------------------------------------------------------------------------------
@@ -172,8 +174,11 @@ class MultiFlow(Doer):
         # pass
 
 
-
     def register_trackers(self, video_name, video_id, width, height, depth):
+        self.video_infos[video_name]['video_id']=video_id
+        self.video_infos[video_name]['width']=width
+        self.video_infos[video_name]['height']=height
+        self.video_infos[video_name]['depth']=depth
         for tracker_name, tracker in self._doers['trackers'].items():
             self.phone(tracker[0],'register_video', video_name, video_id, width, height, depth, callback='register_done', reply_to=self.last_message_sender)
 
@@ -383,6 +388,9 @@ class MultiFlow(Doer):
                       tracker_type=self.system_cfg.data['system_info']['tracker_type'],
                       group='trackers')
             self.num_items_per_tracker[tracker_name]=0
+            tracker=self._doers['trackers'][tracker_name]
+            for video_name, video_info in self.video_infos.items():
+                self.phone(tracker[0], 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
 
 
 
