@@ -216,6 +216,7 @@ class MultiFlow(Doer):
         for tracker_name, num in self.removed_num_items_per_tracker.items():
             if num==0:
                 self.post(self._doers['trackers'][tracker_name][0], 'terminate')
+                del self.removed_num_items_per_tracker[tracker_name]
 
 
     def assign_job2trackers(self, items, video_name, frame_index):
