@@ -212,6 +212,7 @@ class MultiFlow(Doer):
         for tk_key in trackers:
             self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
                       video_name, trackers[tk_key]['items_ids'])
+        logging.info("removed trackes list:%s", self.removed_num_items_per_tracker)
         for tracker_name, num in self.removed_num_items_per_tracker.items():
             if num==0:
                 self.post(self._doers['trackers'][tracker_name][0], 'terminate')

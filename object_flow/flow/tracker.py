@@ -75,7 +75,7 @@ class Tracker(Doer):
 
     def terminate(self):
         super().terminate()
-        self._mmap.close()
+        # self._mmap.close()
     
     # ----------------------------------------------------------------------------------
     # 
