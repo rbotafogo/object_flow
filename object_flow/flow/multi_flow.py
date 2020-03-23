@@ -60,6 +60,7 @@ class MultiFlow(Doer):
         self.video_items={}
         self.video_infos={}
         self.item_threshold=4
+        self.removed_num_items_per_tracker={}
 
     # ----------------------------------------------------------------------------------
     #
@@ -202,23 +203,28 @@ class MultiFlow(Doer):
                     trackers[tracker_name]['items_ids'] = []
 
                 trackers[tracker_name]['items_ids'].append(item_id)
-                self.num_items_per_tracker[tracker_name]-=1
-                self.num_items-=1
+                if tracker_name in self.num_items_per_tracker:
+                    self.num_items_per_tracker[tracker_name]-=1
+                    self.num_items-=1
+                else: self.removed_num_items_per_tracker[tracker_name]-=1
                 del self.video_items[video_name][item_id]
 
         for tk_key in trackers:
             self.post(trackers[tk_key]['doer_address'], 'stop_tracking_items',
                       video_name, trackers[tk_key]['items_ids'])
+        for tracker_name, num in self.removed_num_items_per_tracker.items():
+            if num==0:
+                self.post(self._doers['trackers'][tracker_name][0], 'terminate')
 
 
     def assign_job2trackers(self, items, video_name, frame_index):
         self.num_items+=len(items)
-        average_items = self.num_items // len(self._doers['trackers'])
+        average_items = self.num_items // len(self.num_items_per_tracker)
         if average_items>=self.item_threshold:
             self._create_more_trackers(average_items)
         elif average_items<self.item_threshold/2:
             self._remove_trackers()
-        average_items = self.num_items // len(self._doers['trackers'])
+        average_items = self.num_items // len(self.num_items_per_tracker)
         item_index=0
         send2trackers={}
         #for all the items:
@@ -379,8 +385,8 @@ class MultiFlow(Doer):
 
 
     def _create_more_trackers(self, average_items):
-        num_items=(average_items+1)*len(self._doers['trackers'])
-        num_trackers_needed=num_items//self.item_threshold+1-len(self._doers['trackers'])
+        num_items=(average_items+1)*len(self.num_items_per_tracker)
+        num_trackers_needed=num_items//self.item_threshold+1-len(self.num_items_per_tracker)
 
         for i in range(num_trackers_needed):
             tracker_id=len(self._doers['trackers'])
@@ -396,5 +402,16 @@ class MultiFlow(Doer):
 
 
     def _remove_trackers(self):
-        return
+        min_items=-1
+        removed_tracker=None
+        for tracker_name, num in self.num_items_per_tracker.items():
+            if min_items==-1:
+                min_items=num
+                removed_tracker=tracker_name
+            elif min_items>num:
+                min_items=num
+                removed_tracker=tracker_name
+        del self.num_items_per_tracker[removed_tracker]
+        self.removed_num_items_per_tracker[removed_tracker]=min_items
+        self.num_items-=min_items
         
