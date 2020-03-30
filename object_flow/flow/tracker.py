@@ -75,6 +75,7 @@ class Tracker(Doer):
 
     def terminate(self):
         super().terminate()
+        logging.info("tracker%s got exit request", self.id)
         # self._mmap.close()
     
     # ----------------------------------------------------------------------------------
