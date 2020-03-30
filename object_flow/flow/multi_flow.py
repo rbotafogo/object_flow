@@ -93,6 +93,10 @@ class MultiFlow(Doer):
             # _main should only run after all the trackers and the neural net have
             # being instantiated. We call _main multiple times but check if
             # ntrackers == 0 (all trackers hired) and that nn_ready is True
+            if self.ntrackers < 0:
+                for video_name, video_info in self.video_infos.items():
+                    self.post(hiree_address, 'register_video', video_name, video_info['video_id'], video_info['width'],
+                              video_info['height'], video_info['depth'])
             self._main()
         if hiree_group == 'DeepLearners':
             logging.info("Yolo neural net ready to roll")
@@ -410,8 +414,7 @@ class MultiFlow(Doer):
                       tracker_type=self.system_cfg.data['system_info']['tracker_type'],
                       group='trackers')
             self.num_items_per_tracker[tracker_name]=0
-            for video_name, video_info in self.video_infos.items():
-                self.post(tracker, 'register_video', video_name, video_info['video_id'], video_info['width'], video_info['height'], video_info['depth'])
+
 
 
 
