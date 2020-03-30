@@ -61,7 +61,7 @@ class Stopwatch:
 
     @classmethod
     def report(cls, name, total_frames, main_measure = None, num_frames = 100):
-        
+        return_measures={}
         if total_frames % num_frames == 0:
             total = 0
             for measure in cls._measures:
@@ -71,6 +71,7 @@ class Stopwatch:
                              str(num_events) + " frames is %f",
                              name,
                              cls._measures[measure]['total'] / num_events)
+                return_measures[measure]=cls._measures[measure]['total'] / num_events
                 if measure != main_measure:
                     total += cls._measures[measure]['total'] / num_events
                 elif main_measure != None:
@@ -85,5 +86,5 @@ class Stopwatch:
                              process_total - total)
                 
             logging.info('=================================')
-    
+        return return_measures
 

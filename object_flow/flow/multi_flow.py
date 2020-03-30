@@ -15,6 +15,7 @@
 import os
 import time
 import logging
+import math
 from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
 from object_flow.util.config import Config
@@ -59,8 +60,10 @@ class MultiFlow(Doer):
         self.next_item_id={}
         self.video_items={}
         self.video_infos={}
-        self.item_threshold=4
         self.removed_num_items_per_tracker={}
+        self.process_time=1/30
+        self.yolo_time=0.02
+        self.tracking_time_per_item=0.01
 
     # ----------------------------------------------------------------------------------
     #
@@ -219,12 +222,17 @@ class MultiFlow(Doer):
                 del self.removed_num_items_per_tracker[tracker_name]
 
 
-    def assign_job2trackers(self, items, video_name, frame_index):
-        self.num_items+=len(items)
-        average_items = self.num_items // len(self.num_items_per_tracker)
-        if average_items>=self.item_threshold:
-            self._create_more_trackers(average_items)
-        elif average_items<self.item_threshold/2:
+    def assign_job2trackers(self, items, video_name, frame_index, measures):
+        if len(measures)>0:
+            self.yolo_time=measures['Yolo']
+            self.tracking_time_per_item=measures['tracking']/math.ceil(self.num_items/len(self.num_items_per_tracker))
+        self.num_items += len(items)
+        tracking_time = math.ceil(self.num_items/len(self.num_items_per_tracker))*self.tracking_time_per_item
+        if tracking_time>=self.process_time-self.yolo_time:
+            average_items=math.floor((self.process_time-self.yolo_time)/self.tracking_time_per_item)
+            num_trackers_needed=math.ceil(self.num_items/average_items)-len(self.num_items_per_tracker)
+            self._create_more_trackers(num_trackers_needed)
+        elif tracking_time<=(self.process_time-self.yolo_time)/2:
             self._remove_trackers()
         average_items = self.num_items // len(self.num_items_per_tracker)
         item_index=0
@@ -386,9 +394,7 @@ class MultiFlow(Doer):
             self.tell(tracker, 'say_hello', 1, 2, 3, a = 4, b = 5, group='trackers')
 
 
-    def _create_more_trackers(self, average_items):
-        num_items=(average_items+1)*len(self.num_items_per_tracker)
-        num_trackers_needed=num_items//self.item_threshold+1-len(self.num_items_per_tracker)
+    def _create_more_trackers(self, num_trackers_needed):
 
         for i in range(num_trackers_needed):
             tracker_id=len(self._doers['trackers'])

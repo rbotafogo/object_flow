@@ -66,6 +66,7 @@ class FlowManager(Doer):
         self.playback_started = False
 
         self.frame_index = 0
+        self.measures={}
 
     # ----------------------------------------------------------------------------------
     # 
@@ -503,8 +504,9 @@ class FlowManager(Doer):
     def _next_frame(self):
 
         Stopwatch.stop('process')
-        Stopwatch.report(self.video_name, self._total_frames, main_measure = 'process')
-        
+        measures=Stopwatch.report(self.video_name, self._total_frames, main_measure = 'process')
+        if len(measures)>0:
+            self.measures=measures
         # notify all the listeners to this flow_manager that we have finished
         # processing this frame and are going to process the next one.
         # TODO: Might not be enough time for all listeners to do something with the
@@ -578,7 +580,7 @@ class FlowManager(Doer):
 
         logging.debug("%s: adding to trackers %d items", self.video_name,
                       len(items))
-        self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index)
+        self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index, self.measures)
         for item in items:
             item.first_frame = self.cfg.frame_number
             self.next_item_id += 1
