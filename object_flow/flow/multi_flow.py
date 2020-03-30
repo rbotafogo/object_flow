@@ -229,6 +229,7 @@ class MultiFlow(Doer):
         self.num_items += len(items)
         tracking_time = math.ceil(self.num_items/len(self.num_items_per_tracker))*self.tracking_time_per_item
         if tracking_time>=self.process_time-self.yolo_time:
+            logging.info("Process time: %s, Yolo time: %s, Tracking time per item: %s", self.process_time, self.yolo_time, self.tracking_time_per_item)
             average_items=math.floor((self.process_time-self.yolo_time)/self.tracking_time_per_item)
             num_trackers_needed=math.ceil(self.num_items/average_items)-len(self.num_items_per_tracker)
             self._create_more_trackers(num_trackers_needed)
