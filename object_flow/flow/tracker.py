@@ -133,7 +133,6 @@ class Tracker(Doer):
     # ----------------------------------------------------------------------------------
 
     def update_tracked_items(self, video_name, frame_index):
-        start_time = time.perf_counter()
         Stopwatch.start('update_tracking')
         self._total_frames += 1
         logging.debug("%s: number of tracked items is %d", str(self.id),
@@ -152,8 +151,6 @@ class Tracker(Doer):
         for vn in self.videos.keys():
             num_items+=len(self.videos[vn]['items'])
         logging.info("Tracker%s, Video name:%s, Item length:%s", self.id, video_name, num_items)
-        end_time = time.perf_counter()
-        logging.info("time to read the frame: %s", end_time-start_time)
         for item_id, tracker in video_items.items():
             start_time = time.perf_counter()
             confidence, pos = self._update_tracker(frame, tracker, width, height)
@@ -165,7 +162,7 @@ class Tracker(Doer):
                 
             detections[item_id] = (confidence, pos)
             end_time = time.perf_counter()
-            # logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
+            logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
 
         Stopwatch.stop('update_tracking') 
         Stopwatch.report(str(self.id), self._total_frames)       
