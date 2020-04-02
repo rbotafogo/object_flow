@@ -162,7 +162,7 @@ class Tracker(Doer):
                 
             detections[item_id] = (confidence, pos)
             end_time = time.perf_counter()
-            logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
+            # logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
 
         Stopwatch.stop('update_tracking') 
         Stopwatch.report(str(self.id), self._total_frames)       
