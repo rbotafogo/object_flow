@@ -416,6 +416,8 @@ class MultiFlow(Doer):
 
 
     def _remove_trackers(self):
+        if len(self.num_items_per_tracker)<=1:
+            return
         min_items=-1
         removed_tracker=None
         for tracker_name, num in self.num_items_per_tracker.items():
