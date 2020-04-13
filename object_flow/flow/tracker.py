@@ -135,7 +135,7 @@ class Tracker(Doer):
 
         Stopwatch.start('update_tracking')
         self._total_frames += 1
-        logging.debug("%s: number of tracked items is %d", str(self.id),
+        logging.info("%s: number of tracked items is %d", str(self.id),
                       len(self.videos[video_name]['items']))
         
         if len(self.videos[video_name]['items']) == 0:
