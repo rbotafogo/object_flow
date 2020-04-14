@@ -16,12 +16,12 @@ import os
 import logging
 import time
 
-import tensorflow as tf
+
 import numpy as np
 import cv2
 
 from object_flow.ipc.doer import Doer
-from object_flow.nn.yolov3_tf2.models import YoloV3
+
 from object_flow.nn.yolov3_tf2.dataset import transform_images
 from object_flow.util.mmap_frames import MmapFrames
 from object_flow.util.mmap_bboxes import MmapBboxes
@@ -35,6 +35,8 @@ class YoloTf2(Doer):
     # ---------------------------------------------------------------------------------
 
     def __init__(self):
+        import tensorflow as tf
+        from object_flow.nn.yolov3_tf2.models import YoloV3
         super().__init__()
         
         logging.info("yolotf2 initialization started")
@@ -121,7 +123,7 @@ class YoloTf2(Doer):
     # ---------------------------------------------------------------------------------
 
     def find_bboxes(self, video_name, frame_index):
-
+        import tensorflow as tf
         frame_number, frame = self.videos[video_name]['frames'].read_data(frame_index)
         video_id = self.videos[video_name]['video_id']
         width = self.videos[video_name]['width']
