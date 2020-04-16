@@ -123,7 +123,7 @@ class YoloTf2(Doer):
     # ---------------------------------------------------------------------------------
 
     def find_bboxes(self, video_name, frame_index):
-        import tensorflow as tf
+        from tensorflow import expand_dims
         frame_number, frame = self.videos[video_name]['frames'].read_data(frame_index)
         video_id = self.videos[video_name]['video_id']
         width = self.videos[video_name]['width']
@@ -133,7 +133,7 @@ class YoloTf2(Doer):
         # to RGB
         frame = cv2.resize(frame, (416, 416))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        imge = transform_images(tf.expand_dims(frame, 0), 416)
+        imge = transform_images(expand_dims(frame, 0), 416)
 
         bboxes, scores, classes, nums = self.yolo.predict(imge)
         bboxes, objectness, classes, nums = bboxes[0], scores[0], classes[0], nums[0]
