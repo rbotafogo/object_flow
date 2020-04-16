@@ -546,8 +546,6 @@ class FlowManager(Doer):
 
     def _remove_items(self, items_ids):
 
-        if len(items_ids) == 0:
-            return
         self.post(self.parent_address, 'remove_items_in_trackers', items_ids, self.video_name)
         # trackers = {}
 
