@@ -220,6 +220,7 @@ class MultiFlow(Doer):
         for tracker_name, num in self.removed_num_items_per_tracker.items():
             if num==0:
                 self.post(self._doers['trackers'][tracker_name][0], 'terminate')
+                logging.info("remove tracker %s", tracker_name)
                 removed_tracker_name.append(tracker_name)
         for tracker_name in removed_tracker_name:
             del self.removed_num_items_per_tracker[tracker_name]
