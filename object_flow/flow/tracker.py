@@ -154,7 +154,7 @@ class Tracker(Doer):
         num_items=0
         for vn in self.videos.keys():
             num_items+=len(self.videos[vn]['items'])
-        logging.info("Tracker%s, Video name:%s, Item length:%s", self.id, video_name, num_items)
+        # logging.info("Tracker%s, Video name:%s, Item length:%s", self.id, video_name, num_items)
         for item_id, tracker in video_items.items():
             start_time = time.perf_counter()
             confidence, pos = self._update_tracker(frame, tracker, width, height)
