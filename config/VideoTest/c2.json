@@ -1,8 +1,8 @@
 {
   
   "io": {
-    "input": "resources/videos/shopping1.avi",
-    "record": "resources/output/shopping1.avi"
+    "input": "resources/videos/img2.avi",
+    "record": "resources/output/img2.avi"
   },
   
   "video_processor": {
@@ -42,23 +42,6 @@
   },
   
   "entry_lines": {
-    "top_line": {
-      "end_points": [250, 100, 413, 147],
-      "line_color": [255, 0, 255],
-      "side1": "Positive"
-    },
-
-    "bottom_line": {
-      "end_points": [13, 382, 411, 382],
-      "line_color": [255, 0, 255],
-      "side1": "Negative"
-    },
-
-    "left_vertical_line": {
-      "end_points": [29, 4, 29, 362],
-      "line_color": [255, 0, 255],
-      "side1": "Negative"
-    }
   }
   
 }

@@ -575,8 +575,6 @@ class FlowManager(Doer):
     # ---------------------------------------------------------------------------------
 
     def _distribute2trackers(self, items):
-        if len(items)==0:
-            return
         logging.debug("%s: adding to trackers %d items", self.video_name,
                       len(items))
         self.post(self.parent_address, 'assign_job2trackers', items, self.video_name, self.frame_index, self.measures)
