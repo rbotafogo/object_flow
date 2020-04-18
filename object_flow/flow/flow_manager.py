@@ -472,7 +472,7 @@ class FlowManager(Doer):
         if (self.cfg.frame_number >
             self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
             self._last_detection = self.cfg.frame_number
-            logging.debug("%s: calling Yolo for frame %d", self.video_name,
+            logging.info("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
             
             # initialize the colletion of data for Yolo execution
