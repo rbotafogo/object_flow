@@ -166,6 +166,8 @@ class Tracker(Doer):
                 
             detections[item_id] = (confidence, pos)
             end_time = time.perf_counter()
+            if end_time-start_time>0.018:
+                logging.info("$$find an object that is taking too long:%s", item_id)
             # logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
 
         Stopwatch.stop('update_tracking') 
