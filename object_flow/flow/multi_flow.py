@@ -229,7 +229,7 @@ class MultiFlow(Doer):
     def assign_job2trackers(self, items, video_name, frame_index, measures):
         if len(measures)>0:
             self.yolo_time=measures['Yolo']
-            self.tracking_time_per_item=measures['tracking']/math.ceil(self.num_items/len(self.num_items_per_tracker))
+            self.tracking_time_per_item=measures['tracking']/max(self.num_items_per_tracker.values())
         self.num_items += len(items)
         tracking_time = math.ceil(self.num_items/len(self.num_items_per_tracker))*self.tracking_time_per_item
         if tracking_time>=self.process_time-self.yolo_time:
