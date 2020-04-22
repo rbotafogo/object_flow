@@ -156,7 +156,7 @@ class Tracker(Doer):
             num_items+=len(self.videos[vn]['items'])
         # logging.info("Tracker%s, Video name:%s, Item length:%s", self.id, video_name, num_items)
         for item_id, tracker in video_items.items():
-            start_time = time.perf_counter()
+            # start_time = time.perf_counter()
             confidence, pos = self._update_tracker(frame, tracker, width, height)
             if (any(x < 0 for x in pos) or any (x > 65535 for x in pos)):
                 confidence = -1
@@ -165,9 +165,9 @@ class Tracker(Doer):
                 pos = np.array(pos, dtype=np.uint16)
                 
             detections[item_id] = (confidence, pos)
-            end_time = time.perf_counter()
-            if end_time-start_time>0.018:
-                logging.info("Tracker %s find an object %s that is taking too long at frame %s", self.id, item_id, frame_index)
+            # end_time = time.perf_counter()
+            # if end_time-start_time>0.018:
+            #     logging.info("Tracker %s find an object %s that is taking too long at frame %s", self.id, item_id, frame_index)
             # logging.info("Tracker Id: %s, Video name: %s, Item id: %d, Time took: %f",str(self.id), video_name, item_id, end_time-start_time)
 
         Stopwatch.stop('update_tracking') 
