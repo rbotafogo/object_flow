@@ -60,7 +60,7 @@ class Stopwatch:
     # ----------------------------------------------------------------------------------
 
     @classmethod
-    def report(cls, name, total_frames, main_measure = None, num_frames = 20):
+    def report(cls, name, total_frames, main_measure = None, num_frames = 100):
         
         if total_frames % num_frames == 0:
             total = 0
