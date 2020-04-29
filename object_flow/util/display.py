@@ -151,11 +151,11 @@ class Display(Doer):
         img_str = cv2.imencode('.jpg', self.frame)[1].tostring()
 
         # send the actual frame
-        self.channel.basic_publish(exchange='',
-                                   routing_key = 'display',
-                                   properties = pika.BasicProperties(
-                                       headers = {'video_name': self.video_name}),
-                                   body = img_str)
+        self.channel.basic_publish(
+            exchange='', routing_key = 'display',
+            properties = pika.BasicProperties(
+                headers = {'video_name': self.video_name}),
+            body = img_str)
 
     # ----------------------------------------------------------------------------------
     # 
