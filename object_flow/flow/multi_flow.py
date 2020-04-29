@@ -61,7 +61,7 @@ class MultiFlow(Doer):
         self.video_items={}
         self.video_infos={}
         self.removed_num_items_per_tracker={}
-        self.process_time=1/15
+        self.process_time=1/30
         self.yolo_time=0.02
         self.tracking_time_per_item=0.01
 

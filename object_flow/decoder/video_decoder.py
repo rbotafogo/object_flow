@@ -84,7 +84,7 @@ class VideoDecoder(Doer):
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(
-            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=67),
+            'DrumBeat', DrumBeat, self.video_name, timedelta(milliseconds=33),
             group = 'drum_beat')
         
     # ----------------------------------------------------------------------------------
