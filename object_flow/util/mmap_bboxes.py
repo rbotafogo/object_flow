@@ -74,8 +74,7 @@ class MmapBboxes:
         
         return mmap.mmap(self._fd, mmap.ALLOCATIONGRANULARITY,
                          access = mmap.ACCESS_WRITE,
-                         offset = alloc * mmap.ALLOCATIONGRANULARITY)
-    
+                         offset = self._alloc)
 
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
@@ -135,15 +134,7 @@ class MmapBboxes:
     def read_data(self, buf, num_elmts, dtype):
         return np.frombuffer(
             buf.read(num_elmts * np.dtype(dtype).itemsize), dtype=dtype)
-    
-    # ---------------------------------------------------------------------------------
-    # Write 0 to actually mapped file in memory
-    # ---------------------------------------------------------------------------------
-
-    def set0(self, buf):
-        # os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
-        buf.write(b'\x00' * self.bboxes_size)
-        
+            
     # ---------------------------------------------------------------------------------
     # Write header
     # ---------------------------------------------------------------------------------

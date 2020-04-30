@@ -16,12 +16,12 @@ import os
 import logging
 import time
 
-import tensorflow as tf
+# import tensorflow as tf
 import numpy as np
 import cv2
 
 from object_flow.ipc.doer import Doer
-from object_flow.nn.yolov3_tf2.models import YoloV3
+# from object_flow.nn.yolov3_tf2.models import YoloV3
 from object_flow.nn.yolov3_tf2.dataset import transform_images
 from object_flow.util.mmap_frames import MmapFrames
 from object_flow.util.mmap_bboxes import MmapBboxes
@@ -45,26 +45,15 @@ class YoloTf2(Doer):
         names_path = os.path.sep.join([coco_dir, 'coco.names'])
         
         self.LABELS = open(names_path).read().strip().split("\n")
+        
+        # class_names = [c.strip() for c in open(names_path).readlines()]
+        logging.info("classes loaded")
 
         # initialize a list of colors to represent each possible class label
         np.random.seed(42)
         
         self.COLORS = np.random.randint(0, 255, size=(len(self.LABELS), 3),
                                         dtype="uint8")
-
-        logging.info("set memory growth to True")
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-
-        # TODO: number of classes should be on the nn_cfg file
-        self.yolo = YoloV3(classes=80)
-        logging.info("loading weights from file 'object_flow/nn/resources/checkpoints/yolov3.tf'")
-        self.yolo.load_weights('object_flow/nn/resources/checkpoints/yolov3.tf')
-        logging.info("weights loaded")
-            
-        class_names = [c.strip() for c in open(names_path).readlines()]
-        logging.info("classes loaded")
 
         # Yolo performs detection for different videos, so it has a list of all
         # videos and for each video.
@@ -80,7 +69,24 @@ class YoloTf2(Doer):
     def __initialize__(self, confidence, threshold):
         logging.info("Yolo, setting confidence to %f", confidence)
         logging.info("Yolo, setting threshold to %f", threshold)
+
+        # tensorflow needs to be imported in the new process (doer). Having the
+        # import in the module does not work on Linux. Should work here
+        global tf
+        import tensorflow as tf
+        from object_flow.nn.yolov3_tf2.models import YoloV3
         
+        logging.info("set memory growth to True")
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+ 
+        # TODO: number of classes should be on the nn_cfg file
+        self.yolo = YoloV3(classes=80)
+        logging.info("loading weights from file 'object_flow/nn/resources/checkpoints/yolov3.tf'")
+        self.yolo.load_weights('object_flow/nn/resources/checkpoints/yolov3.tf')
+        logging.info("weights loaded")
+            
         self.min_confidence = confidence
         self.threshold = threshold
         

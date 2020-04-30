@@ -207,7 +207,7 @@ class FlowManager(Doer):
         
         # open the mmap file with the decoded frames
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
-        self._mmap.open_write2()
+        self._mmap.open_write()
         
         self._fix_dimensions()
         self._setting = Setting(self.cfg, self._buffer_max_size)

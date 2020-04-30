@@ -80,8 +80,9 @@ class VideoDecoder(Doer):
         self.frame_size = self.height * self.width * self.depth
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
+        self._mmap.create()
         self._mmap.open_write()
-        self._mmap.set0()
+        # self._mmap.set0()
         
         # start the drum_beat process
         self._drum_beat_address = self.hire(
