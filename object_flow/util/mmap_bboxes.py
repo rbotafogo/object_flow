@@ -30,20 +30,16 @@ class MmapBboxes:
     def __init__(self):
 
         self.mmap_path = "log/mmap_bboxes"
-        
+        self.page_size = 4000
         # size in bytes of one bbox
         # Yolo: four integers, each with 4 bytes + 1 float for confidences (8 bytes),
         # + 1 int for classID (2 bytes)
         self.yolo_block_size = 4 * 4 + 1 * 8 + 1 * 2
-        
         # Tracker: 1 bit for termination (1 byte) = 1 * 1 + 4 integers * 4 bytes for
         # bounding boxes 
         self.tracker_block_size = 1 * 1 + 4 * 4
-
-        # Maximum number of bounding boxes supported. TODO: make this value grow
-        # automatically if needed
-        self.max_bboxes = 50
         
+        self.max_bboxes = 50
         # header has the number of of bounding boxes stored in the buffer
         # 1 integer
         self.header_size = 1 * 4
@@ -51,36 +47,34 @@ class MmapBboxes:
         # maximum size in bytes of bounding boxes for one video
         self.bboxes_size = self.header_size + self.max_bboxes * self.yolo_block_size
 
-        self._alloc = mmap.ALLOCATIONGRANULARITY
-        
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing
     # ---------------------------------------------------------------------------------
  
     def create(self):
         self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
-        os.write(self._fd, b'\x00' * mmap.ALLOCATIONGRANULARITY)
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE)
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for writing. Assumes that the file was already created
     # ---------------------------------------------------------------------------------
 
     def open_write(self, video_name, video_id):
-        
+
         self._fd = os.open(self.mmap_path, os.O_RDWR)
         # pg_length = self.bboxes_size * (video_id + 1)
-        alloc = (self.bboxes_size * video_id) % self._alloc
-        self._alloc = (alloc + 1) * mmap.ALLOCATIONGRANULARITY
-        
-        return mmap.mmap(self._fd, mmap.ALLOCATIONGRANULARITY,
-                         access = mmap.ACCESS_WRITE,
-                         offset = self._alloc)
+
+        # self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        # # self._npage = self.bboxes_size
+        #
+        # pg_length = self.bboxes_size * (video_id + 1)
+        # os.write(self._fd, b'\x00' * pg_length)
 
         # It seems that there is no way to share memory between processes in
         # Windows, so we use mmap.ACCESS_WRITE that will store the frame on
         # the file. I had hoped that we could share memory.  In Linux, documentation
         # says that memory sharing is possible
-        # return mmap.mmap(self._fd, 0, access = mmap.ACCESS_WRITE)
+        return mmap.mmap(self._fd, 0, access = mmap.ACCESS_WRITE)
     
     # ---------------------------------------------------------------------------------
     # Open mmap file for reading only
@@ -103,7 +97,13 @@ class MmapBboxes:
 
     def close(self, buf):
         buf.close()
-        os.close(self._fd)
+        
+    # ---------------------------------------------------------------------------------
+    # Write 0 to actually mapped file in memory
+    # ---------------------------------------------------------------------------------
+
+    def set0(self):
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
         
     # ---------------------------------------------------------------------------------
     # read the header and advance the pointer in the file to the next byte
@@ -134,7 +134,7 @@ class MmapBboxes:
     def read_data(self, buf, num_elmts, dtype):
         return np.frombuffer(
             buf.read(num_elmts * np.dtype(dtype).itemsize), dtype=dtype)
-            
+    
     # ---------------------------------------------------------------------------------
     # Write header
     # ---------------------------------------------------------------------------------
@@ -153,5 +153,4 @@ class MmapBboxes:
         size += buf.write(confidence)
         size += buf.write(classID)
         logging.debug("writing box %s of size %d", bbox, size)
-        logging.debug("writing confidence with value %f", confidence)
         return size

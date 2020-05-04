@@ -318,9 +318,6 @@ class FlowManager(Doer):
 
         Stopwatch.stop('Yolo')
 
-        logging.debug("%s: number of objects detected: %d", self.video_name,
-                      detections[0])
-
         # read all the detected objects
         self._mmap_bbox.set_detection_address(self.bbox_buf, self.video_id)
         for i in range(detections[0]):
@@ -333,6 +330,7 @@ class FlowManager(Doer):
             classIDs.append(classID)
             
             logging.debug("%s: reading mmap file - bbox %s confidence %s classID: %s",
+            # logging.info("%s: reading mmap file - bbox %s confidence %s classID: %s",
                           self.video_name, box, confidence, classID)
             
         # convert the detected bounding boxes to Items
@@ -366,15 +364,13 @@ class FlowManager(Doer):
 
         fn = 0
         while fn == 0 or fn < self.cfg.frame_number:
+            logging.info("fn is %d", fn)
             fn = self._mmap.read_header(self.frame_index)
 
-        # if (self.video_name == 'cshopp1'):
-        #     logging.warning("%s: processing index %d with frame number: %d",
-        #                     self.video_name, self.frame_index, fn)
-            
         self.cfg.frame_number = fn
         
         logging.debug("******index %d: reading frame number %d ********",
+        # logging.info("******index %d: reading frame number %d ********",
                      self.frame_index, fn)
                 
         self.continue_process()
@@ -427,12 +423,15 @@ class FlowManager(Doer):
     # ----------------------------------------------------------------------------------
 
     def _detection_phase(self):
-        
+
+        logging.info("Detection phase for frame number %d", self.cfg.frame_number)
+
         # do detection on the frame
         if (self.cfg.frame_number >
             self._last_detection + self.cfg.data['video_analyser']['skip_detection_frames']):
             self._last_detection = self.cfg.frame_number
-            logging.debug("%s: calling Yolo for frame %d", self.video_name,
+            # logging.debug("%s: calling Yolo for frame %d", self.video_name,
+            logging.info("%s: calling Yolo for frame %d", self.video_name,
                          self._total_frames)
             
             # initialize the colletion of data for Yolo execution
@@ -450,6 +449,9 @@ class FlowManager(Doer):
             # This is one problem with callback functions: the '_next_frame' method is
             # called here and also on the 'boxes_detected' callback method. It's
             # a bit confusing.
+            logging.info("%s: calling next frame from %d", self.video_name,
+                         self._total_frames)
+
             self._next_frame()
     
     # ----------------------------------------------------------------------------------
@@ -471,15 +473,19 @@ class FlowManager(Doer):
         # frame before we get the next frame. Not a problem right now since we only
         # have one listener to this object
         self._notify_listeners()
-        
+
         # set the header of this frame to 0 indicating that this frame was processed
+        logging.info("writing header")
         self._mmap.write_header(self.frame_index, 0)
+
         # copy the current frame to the last position on the buffer that is never
         # used. This will be used by the 'display' and other listeners to work
         # with this frame
+        logging.info("copying to last")
         self._mmap.copy_last(self.frame_index)
 
         # process the next frame
+        logging.info("moving on")
         self._process_frame()
         
     # ----------------------------------------------------------------------------------
@@ -537,7 +543,8 @@ class FlowManager(Doer):
     def _distribute2trackers(self, items):
 
         logging.debug("%s: adding to trackers %d items", self.video_name,
-                      len(items))
+        # logging.info("%s: adding to trackers %d items", self.video_name,
+                     len(items))
         
         chunck_size = 3
         

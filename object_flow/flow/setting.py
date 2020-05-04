@@ -229,7 +229,7 @@ class Setting:
             
             # create a C bounding box
             item.cbbox = cBBox(bbox, class_ids[i], confidences[i])
-            item.cbbox.log()
+            # item.cbbox.log()
             
             new_inputs.append(item)
 

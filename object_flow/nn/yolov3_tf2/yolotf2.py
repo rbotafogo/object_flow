@@ -173,7 +173,7 @@ class YoloTf2(Doer):
                     logging.debug("writing detection with box %s confidence %s classID %s",
                                  box, confidence, obj_class)
 
-        logging.debug("number of objects detected %d", num_elmts)
+        logging.info("Yolo: number of objects detected %d", num_elmts)
         
         # write the number of detected object on the header of the block
         self._mmap_bbox.set_base_address(buf, video_id)

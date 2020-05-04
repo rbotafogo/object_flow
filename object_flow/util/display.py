@@ -38,8 +38,15 @@ class Display(Doer):
         self._stop = False
 
         # for pika communication
-        self.connection = pika.BlockingConnection(
-            pika.ConnectionParameters('localhost'))
+        credentials = pika.PlainCredentials('CountingApp', 'test1234')
+        parameters = pika.ConnectionParameters('10.195.27.3',
+                                               5672,
+                                               '/',
+                                               credentials)
+        self.connection = pika.BlockingConnection(parameters)
+
+        # self.connection = pika.BlockingConnection(
+        #     pika.ConnectionParameters('localhost'))
         self.channel = self.connection.channel()
         self.channel.queue_declare(queue='display')
     
@@ -138,11 +145,14 @@ class Display(Doer):
             if counting:
                 self._add_counters(spec)
 
+    def display(self):
+        pass
+
     # ----------------------------------------------------------------------------------
     # Sends the image through the rabbitmq queue
     # ----------------------------------------------------------------------------------
 
-    def display(self):
+    def display0(self):
         # ret, img_buf = cv2.imencode('.jpg', self.frame)
         # dec = cv2.imdecode(img_buf, cv2.IMREAD_COLOR)
         # cv2.imshow("Iris 8 - Contagem - " + self.video_name, dec)

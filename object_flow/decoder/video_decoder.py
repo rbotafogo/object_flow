@@ -80,7 +80,7 @@ class VideoDecoder(Doer):
         self.frame_size = self.height * self.width * self.depth
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
-        self._mmap.create()
+        # self._mmap.create()
         self._mmap.open_write()
         # self._mmap.set0()
         

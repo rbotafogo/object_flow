@@ -71,6 +71,7 @@ class MultiFlow(Doer):
 
         # read from conf file how many trackers we want and create the trackers
         self.ntrackers = system_cfg.data['system_info']['num_trackers']
+        logging.info("Number of trackers %d", self.ntrackers)
         self.add_trackers(self.ntrackers)
         
     # ----------------------------------------------------------------------------------
