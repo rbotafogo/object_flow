@@ -41,6 +41,7 @@ class MmapFrames:
         self.header_size = 8
 
         self._buffer_rear = 0
+        self.num_frame_lose=0
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for reading only
@@ -189,6 +190,8 @@ class MmapFrames:
         # the frame
         val = self.read_header(next_index)
         if val != 0:
+            self.num_frame_lose+=1
+            logging.info("Number of Frame Losing:%s", self.num_frame_lose)
             return 0
 
         # check to see if the frame was already processed.  If not, wait to write
