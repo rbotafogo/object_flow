@@ -171,12 +171,6 @@ class MmapFrames:
         if val != 0:
             return 0
 
-        # check to see if the frame was already processed.  If not, wait to write
-        # the frame.  This will block the video_decoder.
-        # val = -1
-        # while val != 0:
-        #     val = self.read_header(next_index)
-
         # move last element of buffer to the next index
         self._buffer_rear = next_index
         
