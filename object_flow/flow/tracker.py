@@ -138,7 +138,7 @@ class Tracker(Doer):
         self._total_frames += 1
         self._num_objects+=len(self.videos[video_name]['items'])
         if self._total_frames%100==0:
-            logging.debug("tracker %s, Number of object for the last 100 frames:%s", str(self.id), self._num_objects)
+            logging.info("tracker %s, Number of object for the last 100 frames:%s", str(self.id), self._num_objects)
             self._num_objects=0
         logging.debug("%s: number of tracked items is %d", str(self.id),
                       len(self.videos[video_name]['items']))
