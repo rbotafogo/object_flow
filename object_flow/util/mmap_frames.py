@@ -191,7 +191,7 @@ class MmapFrames:
         val = self.read_header(next_index)
         if val != 0:
             self.num_frame_lose+=1
-            logging.info("Number of Frame Losing:%s, Frame number:%s", self.num_frame_lose, frame_number)
+            logging.debug("Number of Frame Losing:%s, Frame number:%s", self.num_frame_lose, frame_number)
             return 0
 
         # check to see if the frame was already processed.  If not, wait to write
