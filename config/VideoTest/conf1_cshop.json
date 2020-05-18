@@ -11,7 +11,7 @@
   },
   
   "video_cameras": {
-    "cam3": "cameras/cshopp1.json"
+    "cam3": "cshopp1.json"
   },
 
   "videos2": {

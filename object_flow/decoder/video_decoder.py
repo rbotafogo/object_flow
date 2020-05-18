@@ -80,7 +80,7 @@ class VideoDecoder(Doer):
         self.frame_size = self.height * self.width * self.depth
 
         self._mmap = MmapFrames(self.video_name, self.width, self.height, self.depth)
-        # self._mmap.create()
+        self._mmap.create()
         self._mmap.open_write()
         # self._mmap.set0()
         
@@ -174,7 +174,6 @@ class VideoDecoder(Doer):
     # ----------------------------------------------------------------------------------
 
     def capture_next_frame(self):
-        # (grabbed, frame) = self._stream.read()
         grabbed = self._stream.grab()
         (grabbed, frame) = self._stream.retrieve()
         self.frame_number += 1
@@ -199,6 +198,8 @@ class VideoDecoder(Doer):
                     self.video_name, self._capture_average)
                 self.init_time = now
 
+            # TODO: _drop_frames is never true... see if this will change or remove
+            # this code
             if (self._drop_frames):
                 if ((self.frame_number % self._drop_by) == 0):
                     logging.info("%s: adding frame %d", self.video_name,

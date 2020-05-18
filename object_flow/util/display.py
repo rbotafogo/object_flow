@@ -39,10 +39,23 @@ class Display(Doer):
 
         # for pika communication
         credentials = pika.PlainCredentials('CountingApp', 'test1234')
-        parameters = pika.ConnectionParameters('10.195.27.3',
-                                               5672,
+
+        # This should be used when knowing the RabbitMQ server address
+        # parameters = pika.ConnectionParameters('10.195.27.11',
+        #                                        5672,
+        #                                        '/',
+        #                                        credentials)
+
+        # Using remote port forwarding with SSH. Connection with the
+        # server should be done as:
+        #       ssh -X -R 8080:$SSH_CLIENT:5672
+        # this makes 'localhost' on port 8080 to be forwarded to the
+        # SSH_CLIENT on port 5672 where RabbitMQ is running
+        parameters = pika.ConnectionParameters('localhost',
+                                               8080,
                                                '/',
                                                credentials)
+
         self.connection = pika.BlockingConnection(parameters)
 
         # self.connection = pika.BlockingConnection(
@@ -145,14 +158,18 @@ class Display(Doer):
             if counting:
                 self._add_counters(spec)
 
-    def display(self):
+    # ----------------------------------------------------------------------------------
+    #
+    # ----------------------------------------------------------------------------------
+
+    def display0(self):
         pass
 
     # ----------------------------------------------------------------------------------
     # Sends the image through the rabbitmq queue
     # ----------------------------------------------------------------------------------
 
-    def display0(self):
+    def display(self):
         # ret, img_buf = cv2.imencode('.jpg', self.frame)
         # dec = cv2.imdecode(img_buf, cv2.IMREAD_COLOR)
         # cv2.imshow("Iris 8 - Contagem - " + self.video_name, dec)

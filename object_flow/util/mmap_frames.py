@@ -37,10 +37,21 @@ class MmapFrames:
         self.frame_size = width * height * depth
         self.temp_file=None
         self.buffer_max_size = 500
-        self.page_size = 4000
+        self.page_size = mmap.PAGESIZE
         self.header_size = 8
 
         self._buffer_rear = 0
+        
+    # ---------------------------------------------------------------------------------
+    # Open mmap file for writing
+    # ---------------------------------------------------------------------------------
+ 
+    def create(self):
+        self._fd = os.open(self.mmap_path, os.O_CREAT | os.O_RDWR | os.O_TRUNC)
+        self._npage = ((math.ceil(self.frame_size / self.page_size) + 10) *
+                       self.buffer_max_size + 1)
+
+        os.write(self._fd, b'\x00' * mmap.PAGESIZE * self._npage)
         
     # ---------------------------------------------------------------------------------
     # Open mmap file for reading only
