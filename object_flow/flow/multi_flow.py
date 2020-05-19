@@ -15,6 +15,7 @@
 import os
 import time
 import logging
+import pika
 
 from object_flow.ipc.doer import Doer
 from object_flow.util.util import Util
@@ -195,6 +196,16 @@ class MultiFlow(Doer):
                 config_file, self.system_cfg.data['system_info'])
             cfg.video_name = os.path.splitext(os.path.basename(videos[video]))[0]
             cfg.delta_csv_update = self.system_cfg.data['system_info']['delta']
+            cfg.message_broker = self.system_cfg.data['system_info']['message_broker']
+
+            if cfg.message_broker:
+                cfg.mbroker = {}
+                cfg.mbroker['user'] = self.system_cfg.data[cfg.message_broker]['user']
+                cfg.mbroker['passwd'] = self.system_cfg.data[cfg.message_broker]['passwd']
+                cfg.mbroker['IPAddress'] = self.system_cfg.data[cfg.message_broker]['IPAddress']
+                cfg.mbroker['port'] = self.system_cfg.data[cfg.message_broker]['port']
+                cfg.mbroker['directory'] = self.system_cfg.data[cfg.message_broker]['directory']
+                cfg.mbroker['display_queue'] = self.system_cfg.data[cfg.message_broker]['display_queue']
 
             self.add_camera(cfg)
             

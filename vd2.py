@@ -71,6 +71,11 @@ if __name__ == '__main__':
         "-p", "--process",
         help="The neural net processing engine to use, either 'opencv' or 'tf2'")
     
+    # messaging broker
+    ap.add_argument(
+        "-b", "--broker", default=False,
+        help="Name of the messaging broker to use as configured in the system_defaults.json file")
+    
     args = vars(ap.parse_args())
 
     # Create configuration object and loads the defaults configuration file
@@ -85,6 +90,7 @@ if __name__ == '__main__':
     cfg.data['system_info']['edit'] = (args['edit'] == 'True')
     cfg.data['system_info']['output'] = (args['output'] == 'True')
     cfg.data['system_info']['minutes'] = args['minutes']
+    cfg.data['system_info']['message_broker'] = args['broker']
 
     now = Util.br_time_raw()
     

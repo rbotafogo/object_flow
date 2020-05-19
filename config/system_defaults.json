@@ -1,8 +1,10 @@
 {
   "system_info": {
-    "comment": "Use by default the yolov3 algorithm trained on the Coco dataset.",
+    "comment1": "Use by default the yolov3 algorithm trained on the Coco dataset.",
     "neural_net": "yolov3_tf2",
+    "comment2": "Use the dlib tracker for tracking",
     "tracker_type": "dlib",
+    "comment3": "Total number of trackers to use. If using dynamic tracker generation, this is the maximum number of trackers. Use 0 if there is no limit",
     "num_trackers": 4
   },
 
@@ -18,6 +20,36 @@
     "config_file": "yolov3.cfg",
     "weights": "yolov3.weights",
     "tf2_weights": "object_flow/nn/resources/checkpoints/yolov3.tf"
+  },
+
+  "linux_queue": {
+    "broker": "RabbitMQ",
+    "IPAddress": "10.195.27.11",
+    "port": "5672",
+    "directory": "/",
+    "user": "CountingApp",
+    "passwd": "test1234",
+    "display_queue": "display"
+  },
+  
+  "ssh_remote_queue": {
+    "broker": "RabbitMQ",
+    "IPAddress": "localhost",
+    "port": "8080",
+    "directory": "/",
+    "user": "CountingApp",
+    "passwd": "test1234",
+    "display_queue": "display"
+  },
+  
+  "windows_queue": {
+    "broker": "RabbitMQ",
+    "IPAddress": "localhost",
+    "port": "5672",
+    "directory": "/",
+    "user": "CountingApp",
+    "passwd": "test1234",
+    "display_queue": "display"
   }
   
 }

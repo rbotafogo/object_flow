@@ -37,31 +37,19 @@ class Display(Doer):
         self.cfg = cfg
         self._stop = False
 
-        # for pika communication
-        credentials = pika.PlainCredentials('CountingApp', 'test1234')
-
-        # This should be used when knowing the RabbitMQ server address
-        # parameters = pika.ConnectionParameters('10.195.27.11',
-        #                                        5672,
-        #                                        '/',
-        #                                        credentials)
-
-        # Using remote port forwarding with SSH. Connection with the
-        # server should be done as:
-        #       ssh -X -R 8080:$SSH_CLIENT:5672
-        # this makes 'localhost' on port 8080 to be forwarded to the
-        # SSH_CLIENT on port 5672 where RabbitMQ is running
-        parameters = pika.ConnectionParameters('localhost',
-                                               8080,
-                                               '/',
-                                               credentials)
-
-        self.connection = pika.BlockingConnection(parameters)
-
-        # self.connection = pika.BlockingConnection(
-        #     pika.ConnectionParameters('localhost'))
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(queue='display')
+        if cfg.message_broker:
+            credentials = pika.PlainCredentials(
+                cfg.mbroker['user'],
+                cfg.mbroker['passwd'])
+            parameters = pika.ConnectionParameters(
+                cfg.mbroker['IPAddress'],
+                cfg.mbroker['port'],
+                cfg.mbroker['directory'],
+                credentials)
+            self.connection = pika.BlockingConnection(parameters)
+            self.channel = self.connection.channel()
+            self.channel.queue_declare(
+                queue=cfg.mbroker['display_queue'])
     
     # ----------------------------------------------------------------------------------
     # 
@@ -159,40 +147,48 @@ class Display(Doer):
                 self._add_counters(spec)
 
     # ----------------------------------------------------------------------------------
-    #
+    # Sends the image through the rabbitmq queue
     # ----------------------------------------------------------------------------------
 
-    def display0(self):
-        pass
+    def display(self):
+
+        if self.cfg.message_broker:
+            # convert image to string so that it can be sent through MQ
+            img_str = cv2.imencode('.jpg', self.frame)[1].tostring()
+
+            # send the actual frame
+            self.channel.basic_publish(
+                exchange='', routing_key = 'display',
+                properties = pika.BasicProperties(
+                    headers = {'video_name': self.video_name}),
+                body = img_str)
+        else:
+            cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
+            cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
+                                 self._read_input, self.video_name)
+            cv2.waitKey(25)
 
     # ----------------------------------------------------------------------------------
     # Sends the image through the rabbitmq queue
     # ----------------------------------------------------------------------------------
 
-    def display(self):
-        # ret, img_buf = cv2.imencode('.jpg', self.frame)
-        # dec = cv2.imdecode(img_buf, cv2.IMREAD_COLOR)
-        # cv2.imshow("Iris 8 - Contagem - " + self.video_name, dec)
-
-        # convert image to string so that it can be sent through MQ
-        img_str = cv2.imencode('.jpg', self.frame)[1].tostring()
-
-        # send the actual frame
-        self.channel.basic_publish(
-            exchange='', routing_key = 'display',
-            properties = pika.BasicProperties(
-                headers = {'video_name': self.video_name}),
-            body = img_str)
-
-    # ----------------------------------------------------------------------------------
-    # 
-    # ----------------------------------------------------------------------------------
-
     def display2(self):
-        cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
-        cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
-                             self._read_input, self.video_name)
-        cv2.waitKey(25)
+
+        if self.cfg.message_broker:
+            # convert image to string so that it can be sent through MQ
+            img_str = cv2.imencode('.jpg', self.frame)[1].tostring()
+
+            # send the actual frame
+            self.channel.basic_publish(
+                exchange='', routing_key = 'display',
+                properties = pika.BasicProperties(
+                    headers = {'video_name': self.video_name}),
+                body = img_str)
+        else:
+            cv2.imshow("Iris 8 - Contagem - " + self.video_name, self.frame)
+            cv2.setMouseCallback("Iris 8 - Contagem - " + self.video_name,
+                                 self._read_input, self.video_name)
+            cv2.waitKey(25)
 
     # ----------------------------------------------------------------------------------
     # Destroys the display window. Need to set self._stop = True to make sure that no
@@ -288,3 +284,24 @@ class Display(Doer):
         yprime = y * kh
         
         return (int(xprime), int(yprime))
+
+    # ----------------------------------------------------------------------------------
+    # ----------------------------------------------------------------------------------
+
+        # for pika communication
+        # credentials = pika.PlainCredentials('CountingApp', 'test1234')
+
+        # Using remote port forwarding with SSH. Connection with the
+        # server should be done as:
+        #       ssh -X -R 8080:$SSH_CLIENT:5672
+        # this makes 'localhost' on port 8080 to be forwarded to the
+        # SSH_CLIENT on port 5672 where RabbitMQ is running
+        # parameters = pika.ConnectionParameters('localhost',
+        #                                        8080,
+        #                                        '/',
+        #                                        credentials)
+
+        # self.connection = pika.BlockingConnection(parameters)
+        # self.channel = self.connection.channel()
+        # self.channel.queue_declare(queue='display')
+    
